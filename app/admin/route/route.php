@@ -3,6 +3,7 @@ use think\facade\Route;
 use app\admin\controller\Menu;
 use app\admin\controller\Role;
 use app\admin\controller\User;
+use app\admin\controller\AccountCate;
 use app\middleware\admin\JwtMiddleware;
 use app\admin\controller\Login;
 
@@ -35,6 +36,13 @@ Route::group('admin', function () {
     Route::delete('user', User::class.'@delUser');
     Route::get('user/one', User::class.'@getUser');
     Route::put('user/status', User::class.'@updateStatus');
+
+    # 账号类型路由
+    Route::get('account_cate', AccountCate::class."@cateList");
+    Route::post('account_cate', AccountCate::class."@addCate");
+    Route::get('account_cate/one', AccountCate::class."@cateOne");
+    Route::put('account_cate', AccountCate::class."@updateCate");
+    Route::delete('account_cate', AccountCate::class."@delCate");
 })->allowCrossDomain()->middleware([JwtMiddleware::class]);
 
 # 后台路由组   不需要jwt登录验证

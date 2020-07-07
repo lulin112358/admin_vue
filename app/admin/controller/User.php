@@ -7,6 +7,7 @@ namespace app\admin\controller;
 use app\admin\service\UserRoleService;
 use app\Code;
 use app\validate\UserRoleValidate;
+use think\facade\Validate;
 
 class User extends Base
 {
@@ -76,8 +77,14 @@ class User extends Base
      */
     public function updateUser(UserRoleService $service, UserRoleValidate $validate) {
         $param = input("param.");
+        # 数据验证
         if (!$validate->scene("update")->check($param))
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        $va = Validate::rule([
+            "user_name|账户名称" => "require|unique:user,user_name,{$param['user_id']},id"
+        ]);
+        if (!$va->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $va->getError());
 
         try {
             $res = $service->updateUser($param);

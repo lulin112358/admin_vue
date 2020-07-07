@@ -14,7 +14,7 @@ class UserRoleValidate extends Validate
      * @var array
      */	
 	protected $rule = [
-	    "user_name|账户信息" => "require",
+	    "user_name|账户信息" => "require|unique:user",
         "password|密码" => "require",
         "role_id|角色" => "require",
         "user_id|用户id" => "require",
@@ -26,8 +26,8 @@ class UserRoleValidate extends Validate
      * @var \string[][]
      */
 	protected $scene = [
-	    "add" => ["user_name", "password", "role_id"],
-        "update" => ["user_name", "role_id", "user_id"],
+	    "add" => ["user_name", "role_id"],
+        "update" => ["role_id", "user_id"],
         "del" => ["user_id"],
         "upStatus" => ["id", "status"],
         "getOne" => ["user_id"]

@@ -61,10 +61,11 @@ class UserRoleService
         try {
             $user_role = $data["role_id"];
             unset($data["role_id"]);
-            $data["password"] = password_hash($data["password"], PASSWORD_DEFAULT);
-            $is_exits = (new UserMapper())->getUserByName($data);
-            if ($is_exits)
-                throw new Exception("已存在该用户名");
+            if (isset($data["password"]) && !empty($data["password"])) {
+                $data["password"] = password_hash($data["password"], PASSWORD_DEFAULT);
+            }else {
+                $data["password"] = password_hash("123456", PASSWORD_DEFAULT);
+            }
 
             $user = $this->userMapper->addUser($data);
             if (!$user)
@@ -109,13 +110,10 @@ class UserRoleService
                 $data["password"] = password_hash($data["password"], PASSWORD_DEFAULT);
             if (isset($data["password"]) && empty($data["password"]))
                 unset($data["password"]);
-            $is_exits = (new UserMapper())->getUserByName($data);
-            if ($is_exits)
-                throw new Exception("已存在该用户名");
 
             $res = $this->userMapper->updateUser($data);
             if ($res === false)
-                throw new Exception("更新失败");
+                throw new Exception("更新失败!!");
 
             $user_role_data = [];
             foreach ($user_role as $item) {
