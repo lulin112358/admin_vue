@@ -5,6 +5,7 @@ namespace app\admin\controller;
 
 
 use app\admin\service\UserRoleService;
+use app\admin\service\UserService;
 use app\Code;
 use app\validate\UserRoleValidate;
 use think\facade\Validate;
@@ -140,5 +141,44 @@ class User extends Base
             $this->ajaxReturn(Code::ERROR, "操作失败");
 
         $this->ajaxReturn(Code::SUCCESS, "操作成功");
+    }
+
+    /**
+     * 市场专员
+     * @param UserService $service
+     */
+    public function commissioner(UserService $service) {
+        try {
+            $data = $service->commissioner();
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
+
+    /**
+     * 市场经理
+     * @param UserService $service
+     */
+    public function manager(UserService $service) {
+        try {
+            $data = $service->manager();
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
+
+    /**
+     * 市场维护
+     * @param UserService $service
+     */
+    public function maintain(UserService $service) {
+        try {
+            $data = $service->maintain();
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
     }
 }

@@ -5,6 +5,7 @@ namespace app\mapper;
 
 
 use app\model\User;
+use app\model\UserRole;
 
 class UserMapper
 {
@@ -45,5 +46,38 @@ class UserMapper
      */
     public function delUser($ids) {
         return User::destroy($ids);
+    }
+
+    /**
+     * 市场专员
+     * @return \think\Collection
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function commissioner() {
+        return User::field("id, name")->select();
+    }
+
+    /**
+     * 市场经理
+     * @return \think\Collection
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function manager() {
+        return User::field("id, name")->select();
+    }
+
+    /**
+     * 市场维护
+     * @return \think\Collection
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function maintain() {
+        return User::field("id, name")->select();
     }
 }

@@ -36,6 +36,10 @@ Route::group('admin', function () {
     Route::delete('user', User::class.'@delUser');
     Route::get('user/one', User::class.'@getUser');
     Route::put('user/status', User::class.'@updateStatus');
+    # 获取市场来源人员选择信息
+    Route::get('user/commissioner', User::class.'@commissioner');
+    Route::get('user/manager', User::class.'@manager');
+    Route::get('user/maintain', User::class.'@maintain');
 
     # 账号类型路由
     Route::get('account_cate', AccountCate::class."@cateList");

@@ -31,6 +31,7 @@ class JwtMiddleware
         }catch(\Firebase\JWT\BeforeValidException $e) {
             (new Base())->ajaxReturn(Code::JWT_ERROR, 'token还未生效');
         }catch(\Firebase\JWT\ExpiredException $e) {
+            http_response_code(401);
             (new Base())->ajaxReturn(Code::JWT_ERROR, 'token过期');
         }catch(Exception $e) {
             (new Base())->ajaxReturn(Code::JWT_ERROR, 'token解析出错');

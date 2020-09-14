@@ -17,7 +17,7 @@ class Jwt
             "aud" => config('jwt.aud'),
             "iat" => time(),
             "nbf" => time(),
-            "exp" => time() + 3600 * 24,
+            "exp" => time()+3600*24*7,
             "data" => $data
         ];
         $jwt = \Firebase\JWT\JWT::encode($payload, config('jwt.key'));
