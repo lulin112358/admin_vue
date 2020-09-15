@@ -35,6 +35,6 @@ class Login extends Base
             'uid' => $user['id']
         ];
         $jwt = Jwt::generateToken($data);
-        $this->ajaxReturn(Code::SUCCESS, '登录成功', null, $jwt);
+        $this->ajaxReturn(Code::SUCCESS, '登录成功', null, $jwt["jwt"]);
     }
 }

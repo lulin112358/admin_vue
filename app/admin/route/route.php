@@ -1,4 +1,6 @@
 <?php
+
+use app\admin\controller\Category;
 use think\facade\Route;
 use app\admin\controller\Menu;
 use app\admin\controller\Role;
@@ -42,11 +44,17 @@ Route::group('admin', function () {
     Route::get('user/maintain', User::class.'@maintain');
 
     # 账号类型路由
-    Route::get('account_cate', AccountCate::class."@cateList");
-    Route::post('account_cate', AccountCate::class."@addCate");
-    Route::get('account_cate/one', AccountCate::class."@cateOne");
-    Route::put('account_cate', AccountCate::class."@updateCate");
-    Route::delete('account_cate', AccountCate::class."@delCate");
+//    Route::get('account_cate', AccountCate::class."@cateList");
+//    Route::post('account_cate', AccountCate::class."@addCate");
+//    Route::get('account_cate/one', AccountCate::class."@cateOne");
+//    Route::put('account_cate', AccountCate::class."@updateCate");
+//    Route::delete('account_cate', AccountCate::class."@delCate");
+
+    # 业务类型
+    Route::get("category", Category::class."@list");
+    Route::post("category", Category::class."@add");
+    Route::put("category", Category::class."@update");
+    Route::delete("category", Category::class."@del");
 })->allowCrossDomain()->middleware([JwtMiddleware::class]);
 
 # 后台路由组   不需要jwt登录验证
