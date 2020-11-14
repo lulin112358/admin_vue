@@ -16,22 +16,28 @@ class OriginService extends BaseService
 {
     protected $mapper = OriginMapper::class;
 
+    /**
+     * 添加市场来源
+     *
+     * @param $data
+     * @return bool
+     */
     public function addOrigin($data) {
         # 现有来源/新账号
         if ($data["cate"][0] == 1 && $data["cate"][1] == 2) {
-            $this->oldNew($data);
+            return $this->oldNew($data);
         }
         # 现有来源/现有账号
         if ($data["cate"][0] == 1 && $data["cate"][1] == 4) {
-            $this->oldOld($data);
+            return $this->oldOld($data);
         }
         # 新来源/新接单账号
         if ($data["cate"][0] == 0 && $data["cate"][1] == 1) {
-            $this->newNew($data);
+            return $this->newNew($data);
         }
         # 新来源/现有账号
         if ($data["cate"][0] == 0 && $data["cate"][1] == 3) {
-            $this->newOld($data);
+            return $this->newOld($data);
         }
     }
 
