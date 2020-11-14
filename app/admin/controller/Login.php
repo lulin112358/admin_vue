@@ -24,7 +24,7 @@ class Login extends Base
         if (!$validate->scene('login')->check($param))
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
-        $user = $service->findBy($param);
+        $user = $service->findBy(["user_name" => $param["user_name"]]);
         if (!$user)
             $this->ajaxReturn(Code::ERROR, '该用户不存在');
 

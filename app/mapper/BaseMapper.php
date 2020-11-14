@@ -43,7 +43,7 @@ class BaseMapper
      * @return int
      */
     public function addAll($data) {
-        return Db::table((new $this->model())->table)->insertAll($data);
+        return (new $this->model())->saveAll($data);
     }
 
     /**
@@ -64,7 +64,7 @@ class BaseMapper
      * @return mixed
      */
     public function findBy($where, $field = "*") {
-        return $this->model::where($where)->field($field)->find()->toArray();
+        return $this->model::where($where)->field($field)->find();
     }
 
     /**
