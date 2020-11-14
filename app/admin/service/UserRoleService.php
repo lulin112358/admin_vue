@@ -9,14 +9,13 @@ use app\mapper\UserRoleMapper;
 use think\Exception;
 use think\facade\Db;
 
-class UserRoleService
+class UserRoleService extends BaseService
 {
-    private $mapper;
+    protected $mapper = UserRoleMapper::class;
     private $userMapper;
 
     public function __construct()
     {
-        $this->mapper = new UserRoleMapper();
         $this->userMapper = new UserMapper();
     }
 
@@ -28,7 +27,7 @@ class UserRoleService
      * @throws \think\db\exception\ModelNotFoundException
      */
     public function getList() {
-        $data = $this->mapper->getList()->toArray();
+        $data = (new UserRoleMapper())->getList()->toArray();
         foreach ($data as $k => $v) {
             $roles = "";
             foreach ($v["roles"] as $idx => $item) {
@@ -48,7 +47,7 @@ class UserRoleService
      * @throws \think\db\exception\ModelNotFoundException
      */
     public function getOne($data) {
-        return $this->mapper->getOne($data);
+        return (new UserRoleMapper())->getOne($data);
     }
 
     /**
@@ -67,7 +66,7 @@ class UserRoleService
                 $data["password"] = password_hash("123456", PASSWORD_DEFAULT);
             }
 
-            $user = $this->userMapper->addUser($data);
+            $user = $this->userMapper->add($data);
             if (!$user)
                 throw new Exception("添加失败");
 
@@ -80,7 +79,7 @@ class UserRoleService
                     "update_time" => time()
                 ];
             }
-            $res = $this->mapper->addData($user_role_data);
+            $res = $this->addAll($user_role_data);
             if (!$res)
                 throw new Exception("添加失败!");
 
@@ -111,7 +110,7 @@ class UserRoleService
             if (isset($data["password"]) && empty($data["password"]))
                 unset($data["password"]);
 
-            $res = $this->userMapper->updateUser($data);
+            $res = $this->userMapper->updateBy($data);
             if ($res === false)
                 throw new Exception("更新失败!!");
 
@@ -123,11 +122,11 @@ class UserRoleService
                 ];
             }
 
-            $res = $this->mapper->delData(["user_id" => $data["user_id"]]);
+            $res = $this->deleteBy(["user_id" => $data["user_id"]]);
             if ($res === false)
                 throw new Exception("更新失败啦");
 
-            $res = $this->mapper->addData($user_role_data);
+            $res = $this->addAll($user_role_data);
             if (!$res)
                 throw new Exception("更新失败!");
 
@@ -147,11 +146,11 @@ class UserRoleService
     public function delData($data) {
         Db::startTrans();
         try {
-            $res = $this->userMapper->delUser($data["user_id"]);
+            $res = $this->userMapper->deleteBy(["id" => $data["user_id"]]);
             if ($res === false)
                 throw new Exception("删除失败");
 
-            $res = $this->mapper->delData(["user_id" => $data["user_id"]]);
+            $res = $this->deleteBy(["user_id" => $data["user_id"]]);
             if ($res === false)
                 throw new Exception("删除失败!");
 
@@ -169,6 +168,6 @@ class UserRoleService
      * @return \app\model\User
      */
     public function updateStatus($data) {
-        return $this->userMapper->updateUser($data);
+        return $this->userMapper->updateBy($data);
     }
 }

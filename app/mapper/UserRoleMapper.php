@@ -9,6 +9,7 @@ use app\model\UserRole;
 
 class UserRoleMapper extends BaseMapper
 {
+    protected $model = UserRole::class;
     /**
      * 获取用户/角色关联列表
      * @return \think\Collection
@@ -36,24 +37,4 @@ class UserRoleMapper extends BaseMapper
             $query->field("roles.id, roles.role_name");
         }])->field("id, user_name, name, create_time, update_time, status")->find();
     }
-
-    /**
-     * 添加关联数据
-     * @param $data
-     * @return int
-     */
-    public function addData($data) {
-        return (new UserRole())->insertAll($data);
-    }
-
-    /**
-     * 删除关联数据
-     * @param $where
-     * @return bool
-     * @throws \Exception
-     */
-    public function delData($where) {
-        return UserRole::where($where)->delete();
-    }
-
 }

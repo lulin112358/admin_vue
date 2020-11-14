@@ -33,7 +33,7 @@ class BaseMapper
      * @return mixed
      */
     public function add($data) {
-        return $this->model::insert($data);
+        return $this->model::create($data);
     }
 
     /**

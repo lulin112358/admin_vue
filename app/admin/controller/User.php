@@ -149,7 +149,7 @@ class User extends Base
      */
     public function commissioner(UserService $service) {
         try {
-            $data = $service->commissioner();
+            $data = $service->selectBy([], "id, name");
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -162,7 +162,7 @@ class User extends Base
      */
     public function manager(UserService $service) {
         try {
-            $data = $service->manager();
+            $data = $service->selectBy([], "id, name");
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -175,7 +175,7 @@ class User extends Base
      */
     public function maintain(UserService $service) {
         try {
-            $data = $service->maintain();
+            $data = $service->selectBy([], "id, name");
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
