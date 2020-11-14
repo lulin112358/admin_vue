@@ -16,7 +16,7 @@ class Category extends Base
      */
     public function list(CategoryService $service) {
         try {
-            $list = $service->list("id, pid, cate_name");
+            $list = $service->all("id, pid, cate_name");
             $list = generateTree($list);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
@@ -58,7 +58,7 @@ class Category extends Base
         try {
             $where = ["id" => $data["id"]];
             unset($data["id"]);
-            $res = $service->update($data, $where);
+            $res = $service->updateWhere($where, $data);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -79,7 +79,7 @@ class Category extends Base
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
         try {
-            $res = $service->del(["id" => $data["id"]]);
+            $res = $service->deleteBy(["id" => $data["id"]]);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }

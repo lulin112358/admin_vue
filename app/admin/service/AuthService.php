@@ -8,14 +8,9 @@ use app\mapper\AuthMapper;
 use think\Exception;
 use think\facade\Db;
 
-class AuthService
+class AuthService extends BaseService
 {
-    private $mapper;
-
-    public function __construct()
-    {
-        $this->mapper = new AuthMapper();
-    }
+    protected $mapper = AuthMapper::class;
 
     /**
      * 添加/修改权限
@@ -26,7 +21,7 @@ class AuthService
         Db::startTrans();
         try {
             $where = ["role_id" => $data["role_id"]];
-            $res = $this->mapper->delAuth($where);
+            $res = (new $this->mapper())->deleteBy($where);
             if ($res === false)
                 throw new Exception("操作失败");
 
@@ -38,7 +33,7 @@ class AuthService
                 ];
             }
             if (!empty($ins)) {
-                $res = $this->mapper->addAuth($ins);
+                $res = (new $this->mapper())->addAll($ins);
                 if (!$res)
                     throw new Exception("操作失败!");
             }
@@ -49,14 +44,5 @@ class AuthService
             return false;
         }
         return true;
-    }
-
-    /**
-     * 根据角色获取权限
-     * @param $role_id
-     * @return array
-     */
-    public function getRuleByRole($role_id) {
-        return $this->mapper->getAuthByRoleId($role_id);
     }
 }

@@ -18,7 +18,7 @@ class Role extends Base
      */
     public function allRole(RoleService $service) {
         try {
-            $data = $service->allRole();
+            $data = $service->all();
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -36,7 +36,7 @@ class Role extends Base
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
         try {
-            $data = $service->getRole($param["id"]);
+            $data = $service->findBy(["id" => $param["id"]]);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -57,7 +57,7 @@ class Role extends Base
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
         try {
-            $res = $service->addRole($param);
+            $res = $service->add($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -101,7 +101,7 @@ class Role extends Base
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
         try {
-            $res = $service->delRole($param["id"]);
+            $res = $service->deleteBy(["id" => $param["id"]]);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -166,7 +166,7 @@ class Role extends Base
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
         try {
-            $res = $service->getRuleByRole($param["role_id"]);
+            $res = $service->columnBy(["role_id" => $param["role_id"]], "rule_id");
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }

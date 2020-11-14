@@ -67,7 +67,7 @@ class Menu extends Base
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
         try {
-            $data = $service->getMenu($param['id']);
+            $data = $service->findBy(["id" => $param['id']]);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -89,7 +89,7 @@ class Menu extends Base
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
         try {
-            $res = $service->addMenu($param);
+            $res = $service->add($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -131,7 +131,7 @@ class Menu extends Base
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
         try {
-            $res = $service->deleteMenu($param['id']);
+            $res = $service->deleteBy(["id" => $param['id']]);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }

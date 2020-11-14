@@ -57,7 +57,7 @@ class AccountCate extends Base
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
         try {
-            $data = $service->one(["id" => $param["id"]], "id, cate_name");
+            $data = $service->findBy(["id" => $param["id"]], "id, cate_name");
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -79,7 +79,7 @@ class AccountCate extends Base
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
         try {
-            $res = $service->update($param);
+            $res = $service->updateBy($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -101,7 +101,7 @@ class AccountCate extends Base
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
         try {
-            $res = $service->del($param["id"]);
+            $res = $service->deleteBy(["id" => $param["id"]]);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }

@@ -7,7 +7,7 @@ namespace app\mapper;
 use app\model\User;
 use app\model\UserRole;
 
-class UserMapper
+class UserMapper extends BaseMapper
 {
     /**
      * 根据用户名查找用户信息

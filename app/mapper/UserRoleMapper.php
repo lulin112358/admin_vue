@@ -7,7 +7,7 @@ namespace app\mapper;
 use app\model\User;
 use app\model\UserRole;
 
-class UserRoleMapper
+class UserRoleMapper extends BaseMapper
 {
     /**
      * 获取用户/角色关联列表
@@ -56,13 +56,4 @@ class UserRoleMapper
         return UserRole::where($where)->delete();
     }
 
-
-    /**
-     * 通过用户获取角色
-     * @param $user_id
-     * @return array
-     */
-    public function getRoleByUser($user_id) {
-        return UserRole::where(["user_id" => $user_id])->column("role_id");
-    }
 }
