@@ -25,7 +25,15 @@ class JwtMiddleware
             (new Base())->ajaxReturn(Code::JWT_ERROR, '缺少token');
         try {
             $decoded = Jwt::decodeToken($jwt);
-            $request->user = $decoded;
+            $data = (array)$decoded["data"];
+            $request->user = $data;
+            $request->uid = $data["uid"];
+            if ($data["time"] <= time() + 3600) {
+                $data["time"] = time() + 24 * 3600;
+                $request->token = Jwt::generateToken($data);
+            }else{
+                $request->token = '';
+            }
         }catch(\Firebase\JWT\SignatureInvalidException $e) {
             (new Base())->ajaxReturn(Code::JWT_ERROR, 'token错误');
         }catch(\Firebase\JWT\BeforeValidException $e) {
