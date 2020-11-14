@@ -1,6 +1,7 @@
 <?php
 
 use app\admin\controller\Category;
+use app\admin\controller\Origin;
 use think\facade\Route;
 use app\admin\controller\Menu;
 use app\admin\controller\Role;
@@ -44,11 +45,15 @@ Route::group('admin', function () {
     Route::get('user/maintain', User::class.'@maintain');
 
     # 账号类型路由
-//    Route::get('account_cate', AccountCate::class."@cateList");
+    Route::get('account_cate', AccountCate::class."@cateList");
 //    Route::post('account_cate', AccountCate::class."@addCate");
 //    Route::get('account_cate/one', AccountCate::class."@cateOne");
 //    Route::put('account_cate', AccountCate::class."@updateCate");
 //    Route::delete('account_cate', AccountCate::class."@delCate");
+
+    # 来源管理
+    Route::post('origin', Origin::class."@addOrigin");
+    Route::get('origin', Origin::class."@allOrigin");
 
     # 业务类型
     Route::get("category", Category::class."@list");
