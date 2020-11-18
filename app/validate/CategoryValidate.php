@@ -15,7 +15,8 @@ class CategoryValidate extends Validate
     ];
 
     protected $scene = [
-        "save" => ["pid", "cate_name"],
-        "del" => ["id"]
+        "save" => ["cate_name"],
+        "del" => ["id"],
+        "info" => ["id"]
     ];
 }

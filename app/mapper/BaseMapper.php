@@ -63,8 +63,8 @@ class BaseMapper
      * @param string $field
      * @return mixed
      */
-    public function findBy($where, $field = "*") {
-        return $this->model::where($where)->field($field)->find();
+    public function findBy($where, $field = "*", $order = "") {
+        return $this->model::where($where)->order($order)->field($field)->find();
     }
 
     /**

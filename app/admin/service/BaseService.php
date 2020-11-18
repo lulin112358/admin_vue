@@ -24,8 +24,8 @@ class BaseService
         return (new $this->mapper())->countBy($where, $field);
     }
 
-    public function findBy($where, $field = "*") {
-        return (new $this->mapper())->findBy($where, $field);
+    public function findBy($where, $field = "*", $order = "") {
+        return (new $this->mapper())->findBy($where, $field, $order);
     }
 
     public function selectBy($where, $field = "*", $order = "") {

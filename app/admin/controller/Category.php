@@ -25,13 +25,28 @@ class Category extends Base
     }
 
     /**
+     * 列表text
+     *
+     * @param CategoryService $service
+     */
+    public function listText(CategoryService $service) {
+        try {
+            $list = $service->all("id, pid, cate_name as name");
+            $list = generateTreeText($list);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($list);
+    }
+
+    /**
      * 添加
      * @param CategoryService $service
      * @param CategoryValidate $validate
      */
     public function add(CategoryService $service, CategoryValidate $validate) {
         $data = input("param.");
-        if ($validate->scene("save")->check($data))
+        if (!$validate->scene("save")->check($data))
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
         try {
@@ -46,13 +61,31 @@ class Category extends Base
     }
 
     /**
+     * 获取分类信息
+     *
+     * @param CategoryService $service
+     * @param CategoryValidate $validate
+     */
+    public function categoryInfo(CategoryService $service, CategoryValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("info")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $info = $service->findBy(["id" => $param["id"]]);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($info);
+    }
+
+    /**
      * 更新
      * @param CategoryService $service
      * @param CategoryValidate $validate
      */
     public function update(CategoryService $service, CategoryValidate $validate) {
         $data = input("param.");
-        if ($validate->scene("save")->check($data))
+        if (!$validate->scene("save")->check($data))
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
         try {
@@ -75,7 +108,7 @@ class Category extends Base
      */
     public function del(CategoryService $service, CategoryValidate $validate) {
         $data = input("param.");
-        if ($validate->scene("del")->check($data))
+        if (!$validate->scene("del")->check($data))
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
         try {
