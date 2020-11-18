@@ -3,7 +3,12 @@
 use app\admin\controller\Account;
 use app\admin\controller\AmountAccount;
 use app\admin\controller\Category;
+use app\admin\controller\Degree;
+use app\admin\controller\Evaluation;
+use app\admin\controller\GroupChat;
 use app\admin\controller\Origin;
+use app\admin\controller\Software;
+use app\admin\controller\Tendency;
 use app\admin\controller\Wechat;
 use think\facade\Route;
 use app\admin\controller\Menu;
@@ -83,6 +88,41 @@ Route::group('admin', function () {
     Route::post("wechat", Wechat::class."@addWechat");
     Route::put("wechat", Wechat::class."@updateWechat");
     Route::delete("wechat", Wechat::class."@delWechat");
+
+    # 群
+    Route::get("group_chat", GroupChat::class."@groupChat");
+    Route::get("group_chat/info", GroupChat::class."@groupChatInfo");
+    Route::post("group_chat", GroupChat::class."@addGroupChat");
+    Route::put("group_chat", GroupChat::class."@updateGroupChat");
+    Route::delete("group_chat", GroupChat::class."@delGroupChat");
+
+    # 学位
+    Route::get("degree", Degree::class."@degree");
+    Route::get("degree/info", Degree::class."@degreeInfo");
+    Route::post("degree", Degree::class."@addDegree");
+    Route::put("degree", Degree::class."@updateDegree");
+    Route::delete("degree", Degree::class."@delDegree");
+
+    # 擅长软件
+    Route::get("software", Software::class."@software");
+    Route::get("software/info", Software::class."@softwareInfo");
+    Route::post("software", Software::class."@addSoftware");
+    Route::put("software", Software::class."@updateSoftware");
+    Route::delete("software", Software::class."@delSoftware");
+
+    # 倾向类型
+    Route::get("tendency", Tendency::class."@tendency");
+    Route::get("tendency/info", Tendency::class."@tendencyInfo");
+    Route::post("tendency", Tendency::class."@addTendency");
+    Route::put("tendency", Tendency::class."@updateTendency");
+    Route::delete("tendency", Tendency::class."@delTendency");
+
+    # 倾向类型
+    Route::get("evaluation", Evaluation::class."@evaluation");
+    Route::get("evaluation/info", Evaluation::class."@evaluationInfo");
+    Route::post("evaluation", Evaluation::class."@addEvaluation");
+    Route::put("evaluation", Evaluation::class."@updateEvaluation");
+    Route::delete("evaluation", Evaluation::class."@delEvaluation");
 
     # 业务类型
     Route::get("category", Category::class."@list");
