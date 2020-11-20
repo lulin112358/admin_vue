@@ -28,7 +28,7 @@ class OriginService extends BaseService
      * @return mixed
      */
     public function originList() {
-        $list = $this->all();
+        $list = $this->selectBy(["status" => 1]);
         $users = (new UserMapper())->all("name, id");
         $users = array_combine(array_column($users, "id"), array_column($users, "name"));
         foreach ($list as $k => $v) {

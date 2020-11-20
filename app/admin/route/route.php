@@ -4,8 +4,12 @@ use app\admin\controller\Account;
 use app\admin\controller\AmountAccount;
 use app\admin\controller\Category;
 use app\admin\controller\Degree;
+use app\admin\controller\Engineer;
 use app\admin\controller\Evaluation;
 use app\admin\controller\GroupChat;
+use app\admin\controller\Orders;
+use app\admin\controller\OrdersDeposit;
+use app\admin\controller\OrdersFinalPayment;
 use app\admin\controller\Origin;
 use app\admin\controller\Software;
 use app\admin\controller\Tendency;
@@ -117,7 +121,7 @@ Route::group('admin', function () {
     Route::put("tendency", Tendency::class."@updateTendency");
     Route::delete("tendency", Tendency::class."@delTendency");
 
-    # 倾向类型
+    # 评价
     Route::get("evaluation", Evaluation::class."@evaluation");
     Route::get("evaluation/info", Evaluation::class."@evaluationInfo");
     Route::post("evaluation", Evaluation::class."@addEvaluation");
@@ -131,6 +135,21 @@ Route::group('admin', function () {
     Route::post("category", Category::class."@add");
     Route::put("category", Category::class."@update");
     Route::delete("category", Category::class."@del");
+
+    # 工程师
+    Route::get("engineer", Engineer::class."@engineer");
+    Route::put("engineer", Engineer::class."@updateEngineer");
+
+    # 订单
+    Route::get("orders", Orders::class."@orders");
+    Route::post("orders", Orders::class."@addOrder");
+    Route::put("orders", Orders::class."@updateOrder");
+
+    # 定金
+    Route::get("deposit", OrdersDeposit::class."@deposit");
+
+    # 尾款
+    Route::get("final_payment", OrdersFinalPayment::class."@finalPayment");
 })->allowCrossDomain()->middleware([JwtMiddleware::class]);
 
 # 后台路由组   不需要jwt登录验证

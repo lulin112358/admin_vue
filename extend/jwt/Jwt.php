@@ -9,7 +9,7 @@ class Jwt
     /**
      * 生成jwt
      * @param $data
-     * @return array
+     * @return string
      */
     public static function generateToken($data) {
         $time = time();
@@ -23,9 +23,7 @@ class Jwt
             "data" => $data
         ];
         $jwt = \Firebase\JWT\JWT::encode($payload, config('jwt.key'));
-        return [
-            "jwt" => $jwt
-        ];
+        return $jwt;
     }
 
     /**
