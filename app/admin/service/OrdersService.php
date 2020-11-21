@@ -4,10 +4,12 @@
 namespace app\admin\service;
 
 
+use app\mapper\CategoryMapper;
 use app\mapper\OrdersDepositMapper;
 use app\mapper\OrdersMainMapper;
 use app\mapper\OrdersMapper;
 use app\mapper\UserMapper;
+use Carbon\Carbon;
 use think\facade\Db;
 
 class OrdersService extends BaseService
@@ -46,6 +48,12 @@ class OrdersService extends BaseService
         "contact_qq" => "engineer_id"
     ];
 
+    # 定义autoFill字段映射关系
+    private $autoFillMap = [
+        "origin_id" => "om.origin_id",
+        "order_account_id" => "om.order_account_id",
+    ];
+
     /**
      * 获取所有订单
      *
@@ -55,8 +63,10 @@ class OrdersService extends BaseService
      * @throws \think\db\exception\ModelNotFoundException
      */
     public function orders() {
+        // 设置中文
+        Carbon::setLocale("zh");
         # orders_view试图
-        $data = Db::table("orders_view")->select()->toArray();
+        $data = Db::table("orders_view")->order("order_id desc")->select()->toArray();
         # 查询所有用户
         $user = (new UserMapper())->all("id, name");
         $user = array_combine(array_column($user, "id"), array_column($user, "name"));
@@ -67,9 +77,45 @@ class OrdersService extends BaseService
             $data[$k]["customer_manager"] = $user[$v["customer_manager"]];
             $data[$k]["market_maintain"] = $user[$v["market_maintain"]];
             $data[$k]["market_manager"] = $user[$v["market_manager"]];
+            $data[$k]["customer_id"] = $user[$v["customer_id"]];
             $data[$k]["market_user"] = $user[$v["market_user"]];
             $data[$k]["biller"] = $v["biller"]==0?"暂未填写":$user[$v["biller"]];
             $data[$k]["status"] = $this->status[$v["status"]];
+            $time = Carbon::parse(date("Y-m-d H:i:s", $v["delivery_time"]));
+            # 天数差
+            $diffDay = (new Carbon())->diffInDays($time);
+            # 小时差
+            $diffHour = (new Carbon())->diffInHours($time);
+            if ($diffHour > 24) {
+                $diff = $diffDay."天".($diffHour - $diffDay * 24)."时";
+                if (!$time->gt(Carbon::now())) {
+                    $diff = "已超".$diff;
+                    $data[$k]["color"] = "red";
+                }else{
+                    if ($v["status"] == 2 || $v["status"] == 1)
+                        $data[$k]["color"] = "blue";
+                }
+            }else{
+                $diff = $diffHour."时";
+                if (!$time->gt(Carbon::now())) {
+                    $diff = "已超".$diff;
+                    $data[$k]["color"] = "red";
+                }else{
+                    if ($diffHour > 0 && $diffHour <= 6 && ($v["status"] == 1 || $v["status"] == 2)) {
+                        $data[$k]["color"] = "red";
+                    }
+                    if ($diffHour > 6 && $diffHour <= 12 && ($v["status"] == 1 || $v["status"] == 2)) {
+                        $data[$k]["color"] = "yellow";
+                    }
+                    if ($diffHour > 12 && ($v["status"] == 1 || $v["status"] == 2)) {
+                        $data[$k]["color"] = "blue";
+                    }
+                }
+            }
+            $data[$k]["countdown"] = $diff;
+            if ($v["status"] == 3) {
+                $data[$k]["color"] = "green";
+            }
         }
         return $data;
     }
@@ -83,8 +129,17 @@ class OrdersService extends BaseService
     public function addOrder($data) {
         Db::startTrans();
         try {
+            # 查询用户代号
+            $codename = (new UserMapper())->findBy(["id" => request()->uid], "codename")["codename"];
+            # 查询今日接单数量
+            $count = (new OrdersMainMapper())->countBy([
+                ["customer_id", "=", request()->uid],
+                ["create_time", ">=", strtotime(date("Y-m-d"))],
+                ["create_time", "<=", time()]
+            ]) + 1;
             # 主订单添加信息
             $orderMainData = [
+                "customer_id" => request()->uid,
                 "origin_id" => $data["origin_id"],
                 "order_account_id" => $data["account_id"],
                 "total_amount" => $data["total_amount"],
@@ -101,7 +156,7 @@ class OrdersService extends BaseService
             # 分订单信息添加
             $orderData = [
                 "main_order_id" => $mainRes->id,
-                "order_sn" => "测试订单号",
+                "order_sn" => $codename.date("Ymd").str_pad($count, 2, "0", STR_PAD_LEFT),
                 "require" => $data["require"],
                 "note" => $data["note"],
                 "delivery_time" => strtotime($data["delivery_time"]),
@@ -176,5 +231,64 @@ class OrdersService extends BaseService
             ];
             return (new OrdersMapper())->updateBy($updateData);
         }
+    }
+
+    /**
+     * 自动填充
+     *
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function autoFill($param) {
+        $where = [];
+        if (!empty($param)) {
+            $where = [
+                $this->autoFillMap[$param["field"]] => $param["value"]
+            ];
+        }
+        $data = (new OrdersMainMapper())->autoFillData($where);
+
+        if (!empty($data)) {
+            $wechat = $this->maxAutoValue($data, "wechat_id");
+            $category = $this->maxAutoValue($data, "category_id");
+            $category_pid = (new CategoryMapper())->findBy(["id" => $category], "pid")["pid"];
+            $category = [$category_pid, $category];
+            $customer_manager = $this->maxAutoValue($data, "customer_manager");
+            $auto = $this->maxAutoValue($data, "auto");
+            $autoData = explode("-", $auto);
+            $origin = $autoData[0];
+            $order_account_id = $autoData[1];
+            $amount_account_id = $autoData[2];
+
+            $retData = compact("wechat", "category", "customer_manager", "origin", "order_account_id", "amount_account_id");
+            if (isset($param["field"])) {
+                if ($param["field"] == "origin_id")
+                    unset($retData["origin"]);
+                if ($param["field"] == "order_account_id") {
+                    unset($retData["origin"]);
+                    unset($retData["order_account_id"]);
+                }
+            }
+            return $retData;
+        }else{
+            return [];
+        }
+    }
+
+
+    /**
+     * 获取出现次数最多的可能值
+     *
+     * @param $data
+     * @param $key
+     * @return mixed
+     */
+    private function maxAutoValue($data, $key) {
+        $_data = array_flip(array_count_values(array_column($data, $key)));
+        $array_keys = array_keys($_data);
+        rsort($array_keys);
+        return $_data[$array_keys[0]];
     }
 }

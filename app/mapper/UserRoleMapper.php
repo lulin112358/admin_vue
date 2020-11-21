@@ -21,7 +21,7 @@ class UserRoleMapper extends BaseMapper
         # 预加载查询
         return User::with(["roles" => function($query) {
             $query->field("roles.id, roles.role_name");
-        }])->field("id, user_name, name, create_time, update_time, status")->select();
+        }])->field("id, user_name, name, codename, create_time, update_time, status")->select();
     }
 
     /**
@@ -35,6 +35,6 @@ class UserRoleMapper extends BaseMapper
     public function getOne($data) {
         return User::where(["id" => $data["user_id"]])->with(["roles" => function($query) {
             $query->field("roles.id, roles.role_name");
-        }])->field("id, user_name, name, create_time, update_time, status")->find();
+        }])->field("id, user_name, name, codename, create_time, update_time, status")->find();
     }
 }

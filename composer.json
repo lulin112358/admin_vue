@@ -25,7 +25,8 @@
         "topthink/think-orm": "^2.0",
         "topthink/think-multi-app": "^1.0",
         "ext-json": "*",
-        "firebase/php-jwt": "^5.2"
+        "firebase/php-jwt": "^5.2",
+        "nesbot/carbon": "^2.41"
     },
     "require-dev": {
         "symfony/var-dumper": "^4.2",

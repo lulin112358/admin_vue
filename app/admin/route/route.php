@@ -142,6 +142,7 @@ Route::group('admin', function () {
 
     # 订单
     Route::get("orders", Orders::class."@orders");
+    Route::get("orders/auto_fill", Orders::class."@ordersAutoFill");
     Route::post("orders", Orders::class."@addOrder");
     Route::put("orders", Orders::class."@updateOrder");
 

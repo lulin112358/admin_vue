@@ -90,4 +90,19 @@ class Orders extends Base
 
         $this->ajaxReturn("修改成功");
     }
+
+
+    /**
+     * 获取添加订单自动填充数据
+     * @param OrdersService $service
+     */
+    public function ordersAutoFill(OrdersService $service) {
+        $param = input("param.");
+        try {
+            $data = $service->autoFill($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
 }
