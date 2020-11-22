@@ -291,28 +291,45 @@ class OrdersService extends BaseService
         $count = $this->countBy(["main_order_id" => $data["main_order_id"]]);
         Db::startTrans();
         try {
-            $orderSn = $this->findBy(["main_order_id" => $data["main_order_id"]], "order_sn")["order_sn"];
-            $orderSn = explode("-", $orderSn)[0];
+            $info = $this->findBy(["main_order_id" => $data["main_order_id"]])->toArray();
+            $orderSn = explode("-", $info["order_sn"])[0];
             if ($count == 1) {
                 $res = $this->updateWhere(["main_order_id" => $data["main_order_id"]], ["order_sn" => $orderSn."-1"]);
                 if ($res === false)
                     throw new \Exception("操作失败");
             }
-            $insertData = [];
-            $all = $count + ($data["split_count"]??1);
-            for ($i = $count + 1; $i <= $all; $i++) {
-                $insertData[] = [
+            $splitCount = $data["split_count"]??1;
+            if ($splitCount == 1) {
+                $insertData = [
                     "main_order_id" => $data["main_order_id"],
-                    "order_sn" => $orderSn."-".$i,
+                    "order_sn" => $orderSn."-2",
                     "manuscript_fee" => $data["manuscript_fee"]??0,
                     "check_fee" => $data["split_check_fee"]??0,
+                    "delivery_time" => $info["delivery_time"],
                     "create_time" => time(),
                     "update_time" => time()
                 ];
+                $res = $this->add($insertData);
+                if (!$res)
+                    throw new \Exception("操作失败！！");
+            }else {
+                $insertData = [];
+                $all = $count + ($data["split_count"]??1);
+                for ($i = $count + 1; $i < $all; $i++) {
+                    $insertData[] = [
+                        "main_order_id" => $data["main_order_id"],
+                        "order_sn" => $orderSn."-".$i,
+                        "manuscript_fee" => $data["manuscript_fee"]??0,
+                        "check_fee" => $data["split_check_fee"]??0,
+                        "delivery_time" => $info["delivery_time"],
+                        "create_time" => time(),
+                        "update_time" => time()
+                    ];
+                }
+                $res = $this->addAll($insertData);
+                if (!$res)
+                    throw new \Exception("操作失败!");
             }
-            $res = $this->addAll($insertData);
-            if (!$res)
-                throw new \Exception("操作失败!");
             Db::commit();
             return true;
         }catch (\Exception $exception) {
