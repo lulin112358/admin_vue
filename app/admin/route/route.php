@@ -145,6 +145,9 @@ Route::group('admin', function () {
     Route::get("orders/auto_fill", Orders::class."@ordersAutoFill");
     Route::post("orders", Orders::class."@addOrder");
     Route::put("orders", Orders::class."@updateOrder");
+    Route::delete("orders", Orders::class."@delOrder");
+    Route::delete("orders/engineer", Orders::class."@delEngineer");
+    Route::post("orders/split", Orders::class."@splitOrder");
 
     # 定金
     Route::get("deposit", OrdersDeposit::class."@deposit");

@@ -105,4 +105,69 @@ class Orders extends Base
         }
         $this->ajaxReturn($data);
     }
+
+
+    /**
+     * 删除订单
+     *
+     * @param OrdersService $service
+     * @param OrdersValidate $validate
+     */
+    public function delOrder(OrdersService $service, OrdersValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("del")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+
+        try {
+            $res = $service->deleteBy(["id" => $param["order_id"]]);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        if ($res === false)
+            $this->ajaxReturn(Code::ERROR, "删除失败");
+        $this->ajaxReturn("删除成功");
+    }
+
+    /**
+     * 删除订单工程师
+     *
+     * @param OrdersService $service
+     * @param OrdersValidate $validate
+     */
+    public function delEngineer(OrdersService $service, OrdersValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("del")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+
+        try {
+            $res = $service->updateWhere(["id" => $param["order_id"]], ["engineer_id" => 0]);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        if ($res === false)
+            $this->ajaxReturn(Code::ERROR, "删除失败");
+        $this->ajaxReturn("删除成功");
+    }
+
+
+    /**
+     * 分单
+     *
+     * @param OrdersService $service
+     * @param OrdersValidate $validate
+     */
+    public function splitOrder(OrdersService $service, OrdersValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("split")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $res = $service->splitOrder($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        if ($res === false)
+            $this->ajaxReturn(Code::ERROR, "操作失败");
+
+        $this->ajaxReturn("操作成功");
+    }
 }

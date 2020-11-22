@@ -81,6 +81,8 @@ class OrdersService extends BaseService
             $data[$k]["market_user"] = $user[$v["market_user"]];
             $data[$k]["biller"] = $v["biller"]==0?"暂未填写":$user[$v["biller"]];
             $data[$k]["status"] = $this->status[$v["status"]];
+
+            # TODO 此处待优化
             $time = Carbon::parse(date("Y-m-d H:i:s", $v["delivery_time"]));
             # 天数差
             $diffDay = (new Carbon())->diffInDays($time);
@@ -112,10 +114,11 @@ class OrdersService extends BaseService
                     }
                 }
             }
-            $data[$k]["countdown"] = $diff;
             if ($v["status"] == 3) {
+                $diff = "已交稿";
                 $data[$k]["color"] = "green";
             }
+            $data[$k]["countdown"] = $diff;
         }
         return $data;
     }
@@ -274,6 +277,47 @@ class OrdersService extends BaseService
             return $retData;
         }else{
             return [];
+        }
+    }
+
+
+    /**
+     * 分单
+     * @param $data
+     * @return bool
+     */
+    public function splitOrder($data) {
+        # 查看现有单数
+        $count = $this->countBy(["main_order_id" => $data["main_order_id"]]);
+        Db::startTrans();
+        try {
+            $orderSn = $this->findBy(["main_order_id" => $data["main_order_id"]], "order_sn")["order_sn"];
+            $orderSn = explode("-", $orderSn)[0];
+            if ($count == 1) {
+                $res = $this->updateWhere(["main_order_id" => $data["main_order_id"]], ["order_sn" => $orderSn."-1"]);
+                if ($res === false)
+                    throw new \Exception("操作失败");
+            }
+            $insertData = [];
+            $all = $count + ($data["split_count"]??1);
+            for ($i = $count + 1; $i <= $all; $i++) {
+                $insertData[] = [
+                    "main_order_id" => $data["main_order_id"],
+                    "order_sn" => $orderSn."-".$i,
+                    "manuscript_fee" => $data["manuscript_fee"]??0,
+                    "check_fee" => $data["split_check_fee"]??0,
+                    "create_time" => time(),
+                    "update_time" => time()
+                ];
+            }
+            $res = $this->addAll($insertData);
+            if (!$res)
+                throw new \Exception("操作失败!");
+            Db::commit();
+            return true;
+        }catch (\Exception $exception) {
+            Db::rollback();
+            return false;
         }
     }
 
