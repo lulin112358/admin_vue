@@ -2,6 +2,7 @@
 
 use app\admin\controller\Account;
 use app\admin\controller\AmountAccount;
+use app\admin\controller\AuthFields;
 use app\admin\controller\Category;
 use app\admin\controller\Degree;
 use app\admin\controller\Engineer;
@@ -11,9 +12,14 @@ use app\admin\controller\Orders;
 use app\admin\controller\OrdersDeposit;
 use app\admin\controller\OrdersFinalPayment;
 use app\admin\controller\Origin;
+use app\admin\controller\RoleAuthFields;
+use app\admin\controller\RoleAuthRow;
 use app\admin\controller\Software;
 use app\admin\controller\Tendency;
+use app\admin\controller\UserAuthFields;
+use app\admin\controller\UserAuthRow;
 use app\admin\controller\Wechat;
+use app\middleware\admin\Auth;
 use think\facade\Route;
 use app\admin\controller\Menu;
 use app\admin\controller\Role;
@@ -154,9 +160,28 @@ Route::group('admin', function () {
 
     # 尾款
     Route::get("final_payment", OrdersFinalPayment::class."@finalPayment");
+
+    # 权限列管理
+    Route::get("auth_field", AuthFields::class."@authFields");
+    Route::get("user_auth_fields", UserAuthFields::class."@userAuthFields");
+    Route::post("user_auth_fields", UserAuthFields::class."@assignUserAuthFields");
+    Route::get("fields", AuthFields::class."@fieldsList");
+    Route::get("role_auth_field/info", RoleAuthFields::class."@roleAuthFieldInfo");
+    Route::get("auth_field/info", AuthFields::class."@authFieldInfo");
+    Route::post("auth_field", AuthFields::class."@addAuthField");
+    Route::post("role_auth_field", RoleAuthFields::class."@assignRoleAuthField");
+    Route::put("auth_field", AuthFields::class."@updateAuthField");
+    Route::delete("auth_field", AuthFields::class."@delAuthField");
+
+    # 权限行管理
+    Route::get("role_auth_row/info", RoleAuthRow::class."@roleAuthRowInfo");
+    Route::get("user_auth_row/info", UserAuthRow::class."@userAuthRowInfo");
+    Route::post("role_auth_row", RoleAuthRow::class."@assignRoleAuthRow");
+    Route::post("user_auth_row", UserAuthRow::class."@assignUserAuthRow");
 })->allowCrossDomain()->middleware([JwtMiddleware::class]);
 
 # 后台路由组   不需要jwt登录验证
 Route::group('admin', function () {
     Route::post('login', Login::class."@login");
+    Route::post("orders/export", Orders::class."@export");
 })->allowCrossDomain();

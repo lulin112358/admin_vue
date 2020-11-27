@@ -38,8 +38,9 @@ class Orders extends Base
      * @param OrdersService $service
      */
     public function orders(OrdersService $service) {
+        $param = input("param.");
         try {
-            $data = $service->orders();
+            $data = $service->orders($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -169,5 +170,20 @@ class Orders extends Base
             $this->ajaxReturn(Code::ERROR, "操作失败");
 
         $this->ajaxReturn("操作成功");
+    }
+
+
+    /**
+     * 导出订单数据
+     *
+     * @param OrdersService $service
+     */
+    public function export(OrdersService $service) {
+        $param = input("param.");
+        try {
+            $service->export($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
     }
 }

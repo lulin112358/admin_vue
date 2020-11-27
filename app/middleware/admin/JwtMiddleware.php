@@ -22,7 +22,7 @@ class JwtMiddleware
         //
         $jwt = $request->header("token");
         if (!$jwt)
-            (new Base())->ajaxReturn(Code::JWT_ERROR, '缺少token');
+            exit(["code" => Code::JWT_ERROR, "msg" => "缺少token", "data" => null, "token" => ""]);
         try {
             $decoded = Jwt::decodeToken($jwt);
             $data = (array)$decoded["data"];
@@ -35,14 +35,14 @@ class JwtMiddleware
                 $request->token = '';
             }
         }catch(\Firebase\JWT\SignatureInvalidException $e) {
-            (new Base())->ajaxReturn(Code::JWT_ERROR, 'token错误');
+            exit(["code" => Code::JWT_ERROR, "msg" => "token错误", "data" => null, "token" => ""]);
         }catch(\Firebase\JWT\BeforeValidException $e) {
-            (new Base())->ajaxReturn(Code::JWT_ERROR, 'token还未生效');
+            exit(["code" => Code::JWT_ERROR, "msg" => "token还未生效", "data" => null, "token" => ""]);
         }catch(\Firebase\JWT\ExpiredException $e) {
             http_response_code(401);
-            (new Base())->ajaxReturn(Code::JWT_ERROR, 'token过期');
+            exit(["code" => Code::JWT_ERROR, "msg" => "token过期", "data" => null, "token" => ""]);
         }catch(Exception $e) {
-            (new Base())->ajaxReturn(Code::JWT_ERROR, 'token解析出错');
+            exit(["code" => Code::JWT_ERROR, "msg" => "token解析出错", "data" => null, "token" => ""]);
         }
 
         return $next($request);

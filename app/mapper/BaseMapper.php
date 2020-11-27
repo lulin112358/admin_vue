@@ -3,9 +3,6 @@
 
 namespace app\mapper;
 
-
-use think\facade\Db;
-
 class BaseMapper
 {
     /**

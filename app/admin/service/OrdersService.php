@@ -10,6 +10,7 @@ use app\mapper\OrdersMainMapper;
 use app\mapper\OrdersMapper;
 use app\mapper\UserMapper;
 use Carbon\Carbon;
+use excel\Excel;
 use think\facade\Db;
 
 class OrdersService extends BaseService
@@ -62,11 +63,109 @@ class OrdersService extends BaseService
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function orders() {
+    public function orders($params, $export = false) {
         // 设置中文
         Carbon::setLocale("zh");
+        # 行权限过滤
+        $whereRow = [];
+        $authRow = [];
+        if (request()->uid != 1) {
+            $authRow = row_auth();
+            foreach ($authRow as $k => $v) {
+                $whereRow[] = ["account_id", "in", $authRow["account_id"]??[]];
+                $whereRow[] = ["origin_id", "in", $authRow["origin_id"]??[]];
+                $whereRow[] = ["wechat_id", "in", $authRow["wechat_id"]??[]];
+                $whereRow[] = ["customer_id", "in", $authRow["user_id"]??[]];
+                $whereRow[] = ["deposit_amount_account_id", "in", $authRow["amount_account_id"]??[]];
+            }
+        }
+        # 构造字段查询条件
+        $where = [];
+        if (isset($params["search_fields"])) {
+            foreach ($params["search_fields"] as $k => $v) {
+                $val = json_decode($v, true);
+                $where[$val[0]][] = $val[1];
+            }
+        }
+        # 构造时间段查询条件
+        if (isset($params["date_time"])) {
+            if (strstr($params["search_order"], "create_time")) {
+                $where[] = ["create_time", ">=", strtotime($params["date_time"][0])];
+                $where[] = ["create_time", "<=", strtotime($params["date_time"][1])];
+            }else{
+                $where[] = ["delivery_time", ">=", strtotime($params["date_time"][0])];
+                $where[] = ["delivery_time", "<=", strtotime($params["date_time"][1])];
+            }
+        }
+        # 构造收款账号查询条件
+        $amountAccountId = $where["amount_account_id"]??[];
+        $searchKey = $params["search_key"]??"";
+        unset($where["amount_account_id"]);
         # orders_view试图
-        $data = Db::table("orders_view")->order("order_id desc")->select()->toArray();
+        if (!$export) {
+            $data = Db::table("orders_view")
+                # 查询目前可用的记录
+                ->where(["deposit_status" => 1])
+                ->where(function ($query) {
+                    $query->where(["final_payment_status" => 1])->whereOr("final_payment_status", null);
+                })
+                # 收款账号查询条件
+                ->where(function ($query)use ($amountAccountId) {
+                    if (!empty($amountAccountId)) {
+                        $query->where(["deposit_amount_account_id" => $amountAccountId])
+                            ->whereOr(["final_payment_amount_account_id" => $amountAccountId]);
+                    }
+                })
+                # 行权限控制
+                ->where($whereRow)
+                ->where(function ($query) use ($authRow) {
+                    if (request()->uid != 1) {
+                        $query->where(["engineer_id" => $authRow["engineer_id"]??[]])
+                        ->whereOr("engineer_id", null);
+                    }
+                })
+                ->where(function ($query) use ($authRow) {
+                    if (request()->uid != 1) {
+                        $query->where(["final_payment_amount_account_id" => $authRow["amount_account_id"]??[]])
+                        ->whereOr("final_payment_amount_account_id", null);
+                    }
+                })
+                # 模糊匹配查询条件
+                ->where("order_sn|total_amount|customer_contact|deposit|final_payment|require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|note", "like", "%$searchKey%")
+                ->where($where)->order($params["search_order"])->order("order_id desc")->paginate(100, true)->items();
+        }else {         # 导出excel不需要分页
+            $data = Db::table("orders_view")
+                # 查询目前可用的记录
+                ->where(["deposit_status" => 1])
+                ->where(function ($query) {
+                    $query->where(["final_payment_status" => 1])->whereOr("final_payment_status", null);
+                })
+                # 收款账号查询条件
+                ->where(function ($query)use ($amountAccountId) {
+                    if (!empty($amountAccountId)) {
+                        $query->where(["deposit_amount_account_id" => $amountAccountId])
+                            ->whereOr(["final_payment_amount_account_id" => $amountAccountId]);
+                    }
+                })
+                # 行权限控制
+                ->where($whereRow)
+                ->where(function ($query) use ($authRow) {
+                    if (request()->uid != 1) {
+                        $query->where(["engineer_id" => $authRow["engineer_id"]??[]])
+                            ->whereOr("engineer_id", null);
+                    }
+                })
+                ->where(function ($query) use ($authRow) {
+                    if (request()->uid != 1) {
+                        $query->where(["final_payment_amount_account_id" => $authRow["amount_account_id"]??[]])
+                            ->whereOr("final_payment_amount_account_id", null);
+                    }
+                })
+                # 模糊匹配查询条件
+                ->where("order_sn|total_amount|customer_contact|deposit|final_payment|require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|note", "like", "%$searchKey%")
+                ->where($where)->order($params["search_order"])->order("order_id desc")->select()->toArray();
+        }
+
         # 查询所有用户
         $user = (new UserMapper())->all("id, name");
         $user = array_combine(array_column($user, "id"), array_column($user, "name"));
@@ -77,10 +176,26 @@ class OrdersService extends BaseService
             $data[$k]["customer_manager"] = $user[$v["customer_manager"]];
             $data[$k]["market_maintain"] = $user[$v["market_maintain"]];
             $data[$k]["market_manager"] = $user[$v["market_manager"]];
-            $data[$k]["customer_id"] = $user[$v["customer_id"]];
+            $data[$k]["customer_name"] = $user[$v["customer_id"]];
             $data[$k]["market_user"] = $user[$v["market_user"]];
             $data[$k]["biller"] = $v["biller"]==0?"暂未填写":$user[$v["biller"]];
             $data[$k]["status"] = $this->status[$v["status"]];
+            # 保留有效位数
+            $data[$k]["total_amount"] = floatval($v["total_amount"]);
+            $data[$k]["total_fee"] = floatval($v["total_amount"]);
+            $data[$k]["deposit"] = floatval($v["deposit"]);
+            $data[$k]["final_payment"] = floatval($v["final_payment"]);
+            $data[$k]["manuscript_fee"] = floatval($v["manuscript_fee"]);
+            $data[$k]["check_fee"] = floatval($v["check_fee"]);
+            # 消除分单后的总价/定金/尾款显示
+            $order_sn = explode("-", $v["order_sn"]);
+            if (count($order_sn) > 1) {
+                if ($order_sn[1] != "1") {
+                    $data[$k]["total_amount"] = "";
+                    $data[$k]["deposit"] = "";
+                    $data[$k]["final_payment"] = "";
+                }
+            }
 
             # TODO 此处待优化
             $time = Carbon::parse(date("Y-m-d H:i:s", $v["delivery_time"]));
@@ -91,7 +206,7 @@ class OrdersService extends BaseService
             if ($diffHour > 24) {
                 $diff = $diffDay."天".($diffHour - $diffDay * 24)."时";
                 if (!$time->gt(Carbon::now())) {
-                    $diff = "已超".$diff;
+                    $diff = "超".$diff;
                     $data[$k]["color"] = "red";
                 }else{
                     if ($v["status"] == 2 || $v["status"] == 1)
@@ -100,7 +215,7 @@ class OrdersService extends BaseService
             }else{
                 $diff = $diffHour."时";
                 if (!$time->gt(Carbon::now())) {
-                    $diff = "已超".$diff;
+                    $diff = "超".$diff;
                     $data[$k]["color"] = "red";
                 }else{
                     if ($diffHour > 0 && $diffHour <= 6 && ($v["status"] == 1 || $v["status"] == 2)) {
@@ -232,6 +347,13 @@ class OrdersService extends BaseService
                 "id" => $data["order_id"],
                 $data["field"] => $data["value"]
             ];
+            # 如果更新发单人顺便更新订单状态为已发出，如果之前已经更新过发单人则忽略更新订单状态
+            if ($data["field"] == "biller") {
+                $biller_id = (new OrdersMapper())->findBy(["id" => $data["order_id"]], "biller")["biller"];
+                if ($biller_id == 0) {
+                    $updateData["status"] = 2;
+                }
+            }
             return (new OrdersMapper())->updateBy($updateData);
         }
     }
@@ -336,6 +458,52 @@ class OrdersService extends BaseService
             Db::rollback();
             return false;
         }
+    }
+
+
+    /**
+     * 导出订单数据
+     *
+     * @param $data
+     * @return bool
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function export($data) {
+        $_data = $this->orders($data, true);
+        $header = [
+            ["接单客服", "customer_id"],
+            ["订单编号", "order_sn"],
+            ["总价", "total_amount"],
+            ["客户联系方式", "customer_contact"],
+            ["业务分支", "cate_name"],
+            ["创建时间", "create_time"],
+            ["倒计时", "countdown"],
+            ["检测费", "check_fee"],
+            ["稿费", "manuscript_fee"],
+            ["定金", "deposit"],
+            ["尾款", "final_payment"],
+            ["备注", "note"],
+            ["要求", "require"],
+            ["状态", "status"],
+            ["客服主管", "customer_manager"],
+            ["发单人", "biller"],
+            ["沉淀微信", "wechat"],
+            ["来源", "origin_name"],
+            ["接单账号", "account"],
+            ["接单昵称", "nickname"],
+            ["提成比例", "commission_ratio"],
+            ["市场专员", "market_user"],
+            ["市场管理", "market_manager"],
+            ["市场维护", "market_maintain"],
+            ["交稿时间", "delivery_time"],
+            ["工程师QQ", "contact_qq"],
+            ["工程师", "qq_nickname"],
+        ];
+        return Excel::exportData($_data, $header, "订单数据");
     }
 
 
