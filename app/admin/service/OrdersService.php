@@ -72,11 +72,11 @@ class OrdersService extends BaseService
         if (request()->uid != 1) {
             $authRow = row_auth();
             foreach ($authRow as $k => $v) {
-                $whereRow[] = ["account_id", "in", $authRow["account_id"]??[]];
-                $whereRow[] = ["origin_id", "in", $authRow["origin_id"]??[]];
-                $whereRow[] = ["wechat_id", "in", $authRow["wechat_id"]??[]];
-                $whereRow[] = ["customer_id", "in", $authRow["user_id"]??[]];
-                $whereRow[] = ["deposit_amount_account_id", "in", $authRow["amount_account_id"]??[]];
+                $whereRow[] = ["account_id", "in", ($authRow["account_id"]??[])];
+                $whereRow[] = ["origin_id", "in", ($authRow["origin_id"]??[])];
+                $whereRow[] = ["wechat_id", "in", ($authRow["wechat_id"]??[])];
+                $whereRow[] = ["customer_id", "in", ($authRow["user_id"]??[])];
+                $whereRow[] = ["deposit_amount_account_id", "in", ($authRow["amount_account_id"]??[])];
             }
         }
         # 构造字段查询条件
@@ -120,13 +120,13 @@ class OrdersService extends BaseService
                 ->where($whereRow)
                 ->where(function ($query) use ($authRow) {
                     if (request()->uid != 1) {
-                        $query->where(["engineer_id" => $authRow["engineer_id"]??[]])
+                        $query->where(["engineer_id" => ($authRow["engineer_id"]??[])])
                         ->whereOr("engineer_id", null);
                     }
                 })
                 ->where(function ($query) use ($authRow) {
                     if (request()->uid != 1) {
-                        $query->where(["final_payment_amount_account_id" => $authRow["amount_account_id"]??[]])
+                        $query->where(["final_payment_amount_account_id" => ($authRow["amount_account_id"]??[])])
                         ->whereOr("final_payment_amount_account_id", null);
                     }
                 })

@@ -81,11 +81,11 @@ class Base
             if (request()->uid != 1) {
                 if (is_array($data)) {
                     if (in_array($url, array_keys($this->tableMap)) && request()->method() == "GET") {
-                        $data = array_values(collect($data)->whereIn("id", row_auth()[$this->tableMap[$url]])->toArray());
+                        $data = array_values(collect($data)->whereIn("id", row_auth()[$this->tableMap[$url]]??[])->toArray());
                     }
                 }else if ($data instanceof Collection) {
                     if (in_array($url, array_keys($this->tableMap)) && request()->method() == "GET") {
-                        $data = $data->whereIn("id", row_auth()[$this->tableMap[$url]]);
+                        $data = $data->whereIn("id", row_auth()[$this->tableMap[$url]]??[]);
                     }
                 }
             }

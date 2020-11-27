@@ -58,7 +58,7 @@ function row_auth() {
     $rows = (new \app\admin\service\UserAuthRowService())->userAuthRow(["uid" => request()->uid]);
     $ret = [];
     foreach ($rows as $k => $v) {
-        $ret[explode("/", $v)[0]][] = explode("/", $v)[1];
+        $ret[explode("/", $v)[0]][] = (int)explode("/", $v)[1];
     }
     return $ret;
 }
