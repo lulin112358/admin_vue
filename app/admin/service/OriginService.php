@@ -14,6 +14,7 @@ use app\mapper\OriginMapper;
 use app\mapper\OriginOrdersAccountMapper;
 use app\mapper\OriginUserMapper;
 use app\mapper\OriginWechatMapper;
+use app\mapper\UserAuthRowMapper;
 use app\mapper\UserMapper;
 use app\mapper\WechatMapper;
 use think\facade\Db;
@@ -21,6 +22,37 @@ use think\facade\Db;
 class OriginService extends BaseService
 {
     protected $mapper = OriginMapper::class;
+
+    /**
+     * 添加来源
+     * @param $param
+     * @return bool
+     */
+    public function addOrigin($param) {
+        Db::startTrans();
+        try {
+            $res = $this->add($param);
+            if (!$res)
+                throw new \Exception("添加失败");
+            # 添加来源可见权限
+            $userAuthRowData = [
+                "type" => "origin_id",
+                "type_id" => $res->id,
+                "user_id" => request()->uid,
+                "status" => 1,
+                "create_time" => time(),
+                "update_time" => time()
+            ];
+            $res = (new UserAuthRowMapper())->add($userAuthRowData);
+            if (!$res)
+                throw new \Exception("添加失败啦");
+            Db::commit();
+            return true;
+        }catch (\Exception $exception) {
+            Db::rollback();
+            return false;
+        }
+    }
 
     /**
      * 来源列表
@@ -57,6 +89,18 @@ class OriginService extends BaseService
             $res = $this->add($data);
             if (!$res)
                 throw new \Exception("修改失败啦");
+            # 添加来源可见权限
+            $userAuthRowData = [
+                "type" => "origin_id",
+                "type_id" => $res->id,
+                "user_id" => request()->uid,
+                "status" => 1,
+                "create_time" => time(),
+                "update_time" => time()
+            ];
+            $res = (new UserAuthRowMapper())->add($userAuthRowData);
+            if (!$res)
+                throw new \Exception("添加失败啦");
             Db::commit();
             return true;
         }catch (\Exception $exception) {

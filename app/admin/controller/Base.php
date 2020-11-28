@@ -92,11 +92,18 @@ class Base
         }
         # 列权限控制
         if (in_array($url, $this->authColumnRequest)) {
+            $columns = column_auth();
+            if ($url == "/admin/orders") {
+                # 添加必须字段
+                $columns[] = "main_order_id";
+                $columns[] = "order_id";
+                $columns[] = "color";
+            }
             if (request()->uid != 1) {
                 if (is_array($data)) {
-                    return visible($data, column_auth());
+                    return visible($data, $columns);
                 }else if ($data instanceof Collection) {
-                    return $data->visible(column_auth());
+                    return $data->visible($columns);
                 }else {
                     # 原样返回
                     return $data;

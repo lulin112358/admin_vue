@@ -7,6 +7,7 @@ namespace app\admin\service;
 use app\mapper\AccountCateMapper;
 use app\mapper\AccountMapper;
 use app\mapper\OrdersAccountMapper;
+use app\mapper\UserAuthRowMapper;
 use think\facade\Db;
 
 class AccountService extends BaseService
@@ -96,6 +97,18 @@ class AccountService extends BaseService
             $re1 = (new OrdersAccountMapper())->add($ordersAccountData);
             if (!$re1)
                 throw new \Exception("添加失败啦!");
+            # 添加该账号可见权限
+            $userAuthRowData = [
+                "type" => "account_id",
+                "type_id" => $re1->id,
+                "user_id" => request()->uid,
+                "status" => 1,
+                "create_time" => time(),
+                "update_time" => time()
+            ];
+            $res = (new UserAuthRowMapper())->add($userAuthRowData);
+            if (!$res)
+                throw new \Exception("添加失败！！");
             Db::commit();
             return true;
         }catch (\Exception $exception) {
@@ -143,6 +156,18 @@ class AccountService extends BaseService
             $res = (new OrdersAccountMapper())->add($ordersAccountData);
             if (!$res)
                 throw new \Exception("修改失败啦!");
+            # 添加该账号可见权限
+            $userAuthRowData = [
+                "type" => "account_id",
+                "type_id" => $res->id,
+                "user_id" => request()->uid,
+                "status" => 1,
+                "create_time" => time(),
+                "update_time" => time()
+            ];
+            $res = (new UserAuthRowMapper())->add($userAuthRowData);
+            if (!$res)
+                throw new \Exception("添加失败！！");
             Db::commit();
             return true;
         }catch (\Exception $exception) {

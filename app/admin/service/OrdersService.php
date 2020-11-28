@@ -11,6 +11,7 @@ use app\mapper\OrdersMapper;
 use app\mapper\UserMapper;
 use Carbon\Carbon;
 use excel\Excel;
+use jwt\Jwt;
 use think\facade\Db;
 
 class OrdersService extends BaseService
@@ -66,6 +67,9 @@ class OrdersService extends BaseService
     public function orders($params, $export = false) {
         // 设置中文
         Carbon::setLocale("zh");
+        if ($export) {
+            request()->uid = Jwt::decodeToken($params["token"])["data"]->uid;
+        }
         # 行权限过滤
         $whereRow = [];
         $authRow = [];
@@ -83,7 +87,11 @@ class OrdersService extends BaseService
         $where = [];
         if (isset($params["search_fields"])) {
             foreach ($params["search_fields"] as $k => $v) {
-                $val = json_decode($v, true);
+                if (!$export) {
+                    $val = json_decode($v, true);
+                }else {
+                    $val = explode(",", $v);
+                }
                 $where[$val[0]][] = $val[1];
             }
         }
@@ -475,7 +483,7 @@ class OrdersService extends BaseService
     public function export($data) {
         $_data = $this->orders($data, true);
         $header = [
-            ["接单客服", "customer_id"],
+            ["接单客服", "customer_name"],
             ["订单编号", "order_sn"],
             ["总价", "total_amount"],
             ["客户联系方式", "customer_contact"],
