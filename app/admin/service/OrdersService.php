@@ -75,6 +75,7 @@ class OrdersService extends BaseService
         $authRow = [];
         if (request()->uid != 1) {
             $authRow = row_auth();
+            array_push($authRow["user_id"], request()->uid);
             foreach ($authRow as $k => $v) {
                 $whereRow[] = ["account_id", "in", ($authRow["account_id"]??[])];
                 $whereRow[] = ["origin_id", "in", ($authRow["origin_id"]??[])];
@@ -282,10 +283,10 @@ class OrdersService extends BaseService
             # 分订单信息添加
             $orderData = [
                 "main_order_id" => $mainRes->id,
-                "order_sn" => $codename.date("Ymd").str_pad($count, 2, "0", STR_PAD_LEFT),
+                "order_sn" => $codename.substr(date("ymd"), 1).str_pad($count, 2, "0", STR_PAD_LEFT),
                 "require" => $data["require"],
-                "note" => $data["note"],
-                "delivery_time" => strtotime($data["delivery_time"]),
+                "note" => $data["note"]??"",
+                "delivery_time" => strtotime($data["delivery_time"].":00:00"),
                 "create_time" => time(),
                 "update_time" => time()
             ];
@@ -350,7 +351,7 @@ class OrdersService extends BaseService
             # 更新数据库
             # 时间格式特殊处理
             if ($data["field"] == "delivery_time")
-                $data["value"] = strtotime($data["value"]);
+                $data["value"] = strtotime($data["value"].":00:00");
             $updateData = [
                 "id" => $data["order_id"],
                 $data["field"] => $data["value"]
@@ -392,7 +393,7 @@ class OrdersService extends BaseService
             $auto = $this->maxAutoValue($data, "auto");
             $autoData = explode("-", $auto);
             $origin = $autoData[0];
-            $order_account_id = $autoData[1];
+            $order_account_id = (int)$autoData[1];
             $amount_account_id = $autoData[2];
 
             $retData = compact("wechat", "category", "customer_manager", "origin", "order_account_id", "amount_account_id");

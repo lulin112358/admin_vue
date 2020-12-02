@@ -16,12 +16,55 @@ class Engineer extends Base
      * @param EngineerService $service
      */
     public function engineer(EngineerService $service) {
+        $param = input("param.");
         try {
-            $list = $service->engineer();
+            $list = $service->engineer($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
         $this->ajaxReturn($list);
+    }
+
+    /**
+     * 添加工程师
+     * @param EngineerService $service
+     * @param EngineerValidate $validate
+     */
+    public function addEngineer(EngineerService $service, EngineerValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("add")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $param["create_time"] = time();
+            $res = $service->add($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        if (!$res)
+            $this->ajaxReturn(Code::ERROR, "添加失败");
+        $this->ajaxReturn("添加成功");
+    }
+
+
+    /**
+     * 删除工程师
+     *
+     * @param EngineerService $service
+     * @param EngineerValidate $validate
+     */
+    public function delEngineer(EngineerService $service, EngineerValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("del")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $res = $service->updateWhere(["id" => $param["id"]], ["is_delete" => 1]);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        if ($res === false)
+            $this->ajaxReturn(Code::ERROR, "删除失败");
+
+        $this->ajaxReturn("删除成功");
     }
 
 

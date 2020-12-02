@@ -21,6 +21,30 @@ class AuthFieldsService extends BaseService
         ["value" => 6, "label" => "已发全能"]
     ];
 
+    /**
+     * 获取权限列管理列表
+     *
+     * @return array
+     */
+    public function authFields() {
+        $list = $this->all();
+        $data = [];
+        foreach ($list as $k => $v) {
+            $data[$v["page"]][] = $v;
+        }
+        $retData = [];
+        foreach ($data as $k => $v) {
+            $retData[] = [
+                "field_name" => $k,
+                "id" => 0,
+                "create_time" => $v[0]["create_time"],
+                "update_time" => $v[0]["update_time"],
+                "children" => $v
+            ];
+        }
+        return $retData;
+    }
+
 
     /**
      * 获取orders用户可见列
@@ -60,7 +84,7 @@ class AuthFieldsService extends BaseService
             }
             $retFields[] = $field;
         }
-        $column = column_auth();
+        $column = column_auth("客服订单管理页");
         foreach ($retFields as $k => $v) {
             if (!in_array($v["field"], $column)) {
                 unset($retFields[$k]);

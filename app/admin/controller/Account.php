@@ -9,6 +9,7 @@ use app\admin\service\OrdersAccountService;
 use app\Code;
 use app\validate\AccountValidate;
 use app\validate\OrdersAccountValidate;
+use think\facade\Db;
 
 class Account extends Base
 {

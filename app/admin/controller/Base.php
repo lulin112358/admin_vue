@@ -15,11 +15,11 @@ class Base
 {
 
     /**
-     * 需要权限列验证的接口
+     * 需要权限列验证的接口    url => page
      * @var string[]
      */
     private $authColumnRequest = [
-        "/admin/orders"
+        "/admin/orders" => "home"
     ];
 
     /**
@@ -91,8 +91,8 @@ class Base
             }
         }
         # 列权限控制
-        if (in_array($url, $this->authColumnRequest)) {
-            $columns = column_auth();
+        if (in_array($url, array_keys($this->authColumnRequest))) {
+            $columns = column_auth($this->authColumnRequest[$url]);
             if ($url == "/admin/orders") {
                 # 添加必须字段
                 $columns[] = "main_order_id";

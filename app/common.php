@@ -38,12 +38,14 @@ function download_file($filePath,$saveAsFileName){
  * 获取用户可见列
  * @return array
  */
-function column_auth() {
+function column_auth($page) {
     if (request()->uid == 1) {
-        return Db::table("auth_fields")->column("field");
+        return Db::table("auth_fields")->where(["page" => $page])->column("field");
     }
     $columns_id = (new \app\admin\service\UserAuthFieldsService())->userAuthFields(["uid" => request()->uid]);
-    $column = Db::table("auth_fields")->where(["id" => $columns_id])->column("field");
+    $column = Db::table("auth_fields")->where(["id" => $columns_id, "page" => $page])->column("field");
+    # 添加必须字段id
+    $column[] = "id";
     return $column;
 }
 

@@ -58,6 +58,7 @@ class WechatService extends BaseService
                 throw new \Exception("修改失败");
             $wechatData = [
                 "wechat" => $data["wechat"],
+                "wechat_id" => $data["wechat_id"],
                 "create_time" => time(),
                 "update_time" => time()
             ];

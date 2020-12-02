@@ -17,7 +17,7 @@ class AuthFields extends Base
      */
     public function authFields(AuthFieldsService $service) {
         try {
-            $list = $service->all();
+            $list = $service->authFields();
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }

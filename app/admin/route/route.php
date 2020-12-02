@@ -12,8 +12,10 @@ use app\admin\controller\Orders;
 use app\admin\controller\OrdersDeposit;
 use app\admin\controller\OrdersFinalPayment;
 use app\admin\controller\Origin;
+use app\admin\controller\Profession;
 use app\admin\controller\RoleAuthFields;
 use app\admin\controller\RoleAuthRow;
+use app\admin\controller\School;
 use app\admin\controller\Software;
 use app\admin\controller\Tendency;
 use app\admin\controller\UserAuthFields;
@@ -144,6 +146,8 @@ Route::group('admin', function () {
 
     # 工程师
     Route::get("engineer", Engineer::class."@engineer");
+    Route::post("engineer", Engineer::class."@addEngineer");
+    Route::delete("engineer", Engineer::class."@delEngineer");
     Route::put("engineer", Engineer::class."@updateEngineer");
 
     # 订单
@@ -178,6 +182,12 @@ Route::group('admin', function () {
     Route::get("user_auth_row/info", UserAuthRow::class."@userAuthRowInfo");
     Route::post("role_auth_row", RoleAuthRow::class."@assignRoleAuthRow");
     Route::post("user_auth_row", UserAuthRow::class."@assignUserAuthRow");
+
+    # 专业
+    Route::get("profession", Profession::class."@professions");
+
+    # 学校
+    Route::get("school", School::class."@schools");
 })->allowCrossDomain()->middleware([JwtMiddleware::class]);
 
 # 后台路由组   不需要jwt登录验证
