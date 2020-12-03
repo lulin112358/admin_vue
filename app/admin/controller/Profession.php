@@ -15,9 +15,9 @@ class Profession extends Base
      * @param ProfessionService $service
      */
     public function professions(ProfessionService $service) {
+        $pid = input("param.pid", 0);
         try {
-            $list = $service->all();
-            $list = generateTree($list);
+            $list = $service->professions(["pid" => $pid]);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }

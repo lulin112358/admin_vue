@@ -33,4 +33,5 @@ return [
     'error_message'    => '页面错误！请稍后再试～',
     // 显示错误信息
     'show_error_msg'   => true,
+    'down_url' => "http://api.erp2020.top/storage/"
 ];

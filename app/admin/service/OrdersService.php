@@ -8,6 +8,7 @@ use app\mapper\CategoryMapper;
 use app\mapper\OrdersDepositMapper;
 use app\mapper\OrdersMainMapper;
 use app\mapper\OrdersMapper;
+use app\mapper\SchoolMapper;
 use app\mapper\UserMapper;
 use Carbon\Carbon;
 use excel\Excel;
@@ -75,12 +76,13 @@ class OrdersService extends BaseService
         $authRow = [];
         if (request()->uid != 1) {
             $authRow = row_auth();
-            array_push($authRow["user_id"], request()->uid);
+            $authRowUser = $authRow["user_id"]??[];
+            array_push($authRowUser, request()->uid);
             foreach ($authRow as $k => $v) {
                 $whereRow[] = ["account_id", "in", ($authRow["account_id"]??[])];
                 $whereRow[] = ["origin_id", "in", ($authRow["origin_id"]??[])];
                 $whereRow[] = ["wechat_id", "in", ($authRow["wechat_id"]??[])];
-                $whereRow[] = ["customer_id", "in", ($authRow["user_id"]??[])];
+                $whereRow[] = ["customer_id", "in", $authRowUser];
                 $whereRow[] = ["deposit_amount_account_id", "in", ($authRow["amount_account_id"]??[])];
             }
         }
@@ -189,6 +191,7 @@ class OrdersService extends BaseService
             $data[$k]["market_user"] = $user[$v["market_user"]];
             $data[$k]["biller"] = $v["biller"]==0?"暂未填写":$user[$v["biller"]];
             $data[$k]["status"] = $this->status[$v["status"]];
+            $data[$k]["file"] = config("app.down_url").$v["file"];
             # 保留有效位数
             $data[$k]["total_amount"] = floatval($v["total_amount"]);
             $data[$k]["total_fee"] = floatval($v["total_amount"]);
@@ -274,6 +277,7 @@ class OrdersService extends BaseService
                 "customer_manager" => $data["customer_manager"],
                 "category_id" => $data["cate_id"][1],
                 "wechat_id" => $data["wechat_id"],
+                "file" => $data["file"]??"",
                 "create_time" => time(),
                 "update_time" => time()
             ];
@@ -356,12 +360,10 @@ class OrdersService extends BaseService
                 "id" => $data["order_id"],
                 $data["field"] => $data["value"]
             ];
-            # 如果更新发单人顺便更新订单状态为已发出，如果之前已经更新过发单人则忽略更新订单状态
-            if ($data["field"] == "biller") {
-                $biller_id = (new OrdersMapper())->findBy(["id" => $data["order_id"]], "biller")["biller"];
-                if ($biller_id == 0) {
-                    $updateData["status"] = 2;
-                }
+            # 如果更新工程师则更新发单人和订单状态
+            if ($data["field"] == "engineer_id") {
+                $updateData["biller"] = request()->uid;
+                $updateData["status"] = 2;
             }
             return (new OrdersMapper())->updateBy($updateData);
         }
@@ -513,6 +515,18 @@ class OrdersService extends BaseService
             ["工程师", "qq_nickname"],
         ];
         return Excel::exportData($_data, $header, "订单数据");
+    }
+
+    /**
+     * 获取之前添加的前10学校列表
+     * @return mixed
+     */
+    public function topSchools() {
+        $data = (new OrdersMainMapper())->selectBy(["customer_id" => request()->uid], "school_id");
+        $school_ids = array_keys(array_count_values(array_column($data, "school_id")));
+        rsort($school_ids);
+        array_splice($school_ids, 0, 10);
+        return (new SchoolMapper())->selectBy(["id" => $school_ids], "id, name");
     }
 
 

@@ -88,4 +88,17 @@ class Engineer extends Base
 
         $this->ajaxReturn("更新成功");
     }
+
+    /**
+     * 工程师导出
+     * @param EngineerService $service
+     */
+    public function export(EngineerService $service) {
+        $param = input("param.");
+        try {
+            $service->export($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+    }
 }

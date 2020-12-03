@@ -186,4 +186,17 @@ class Orders extends Base
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
     }
+
+    /**
+     * 获取之前添加的前10学校列表
+     * @param OrdersService $service
+     */
+    public function topSchool(OrdersService $service) {
+        try {
+            $data = $service->topSchools();
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
 }

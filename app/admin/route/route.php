@@ -18,6 +18,7 @@ use app\admin\controller\RoleAuthRow;
 use app\admin\controller\School;
 use app\admin\controller\Software;
 use app\admin\controller\Tendency;
+use app\admin\controller\Upload;
 use app\admin\controller\UserAuthFields;
 use app\admin\controller\UserAuthRow;
 use app\admin\controller\Wechat;
@@ -188,10 +189,15 @@ Route::group('admin', function () {
 
     # 学校
     Route::get("school", School::class."@schools");
+    Route::get("search/school", School::class."@searchSchools");
+    Route::get("school/top", Orders::class."@topSchool");
 })->allowCrossDomain()->middleware([JwtMiddleware::class]);
 
 # 后台路由组   不需要jwt登录验证
 Route::group('admin', function () {
     Route::post('login', Login::class."@login");
     Route::post("orders/export", Orders::class."@export");
+    Route::post("engineer/export", Engineer::class."@export");
+    # 文件上传
+    Route::post("upload", Upload::class."@upload");
 })->allowCrossDomain();
