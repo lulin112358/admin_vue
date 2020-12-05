@@ -53,16 +53,33 @@ class AuthFieldsService extends BaseService
      */
     public function fields() {
         $fields = $this->all("field, field_name, is_edit, edit_type, data_source");
-        $retFields = [];
+        $retFields = [
+            [
+                "type" => "seq",
+                "title" => "序号",
+                "width" => 60,
+                "showHeaderOverflow" => true,
+                "showOverflow" => true,
+                "fixed" => "left"
+            ],
+            [
+                "type" => "checkbox",
+                "width" => 30,
+                "minWidth" => 30,
+                "fixed" => "right"
+            ],
+        ];
         foreach ($fields as $k => $v) {
             $field = [
                 "field" => $v["field"],
                 "title" => $v["field_name"],
                 "minWidth" => 100,
+                "showHeaderOverflow" => true,
+                "showOverflow" => true
             ];
             if ($v["is_edit"]) {
                 if ($v["edit_type"] == '$input') {
-                    $field["render"] = [
+                    $field["editRender"] = [
                         "name" => '$input',
                         "attrs" => [
                             "type" => "text"
@@ -75,7 +92,7 @@ class AuthFieldsService extends BaseService
                     if ($v["field"] == "status") {
                         $data = $this->status;
                     }
-                    $field["render"] = [
+                    $field["editRender"] = [
                         "name" => '$select',
                         "options" => $data,
                         "optionProps" => ["value" => "value", "label" => "label"]
@@ -83,13 +100,16 @@ class AuthFieldsService extends BaseService
                 }
             }
             $retFields[] = $field;
+            $data = [];
         }
         $column = column_auth("客服订单管理页");
         foreach ($retFields as $k => $v) {
-            if (!in_array($v["field"], $column)) {
-                unset($retFields[$k]);
+            if (isset($v["field"])) {
+                if (!in_array($v["field"], $column)) {
+                    unset($retFields[$k]);
+                }
             }
         }
-        return $retFields;
+        return array_values($retFields);
     }
 }

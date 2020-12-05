@@ -47,6 +47,25 @@ class Orders extends Base
         $this->ajaxReturn($data);
     }
 
+
+    /**
+     * 获取指定订单记录
+     *
+     * @param OrdersService $service
+     * @param OrdersValidate $validate
+     */
+    public function order(OrdersService $service, OrdersValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("one")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $data = $service->order($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
+
     /**
      * 添加订单
      *
@@ -186,6 +205,7 @@ class Orders extends Base
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
     }
+
 
     /**
      * 获取之前添加的前10学校列表

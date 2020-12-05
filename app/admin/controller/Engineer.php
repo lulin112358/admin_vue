@@ -10,6 +10,15 @@ use app\validate\EngineerValidate;
 
 class Engineer extends Base
 {
+    public function engineerBaseInfo(EngineerService $service) {
+        try {
+            $data = $service->engineersBaseInfo();
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
+
     /**
      * 工程师列表
      *

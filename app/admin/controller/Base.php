@@ -19,7 +19,7 @@ class Base
      * @var string[]
      */
     private $authColumnRequest = [
-        "/admin/orders" => "home"
+        "/admin/orders" => "客服订单管理页"
     ];
 
     /**

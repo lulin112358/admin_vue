@@ -250,6 +250,129 @@ class OrdersService extends BaseService
         return $data;
     }
 
+
+    /**
+     * 获取指定订单记录
+     *
+     * @param $param
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function order($param) {
+        // 设置中文
+        Carbon::setLocale("zh");
+
+        # 行权限过滤
+        $whereRow = [];
+        $authRow = [];
+        if (request()->uid != 1) {
+            $authRow = row_auth();
+            $authRowUser = $authRow["user_id"]??[];
+            array_push($authRowUser, request()->uid);
+            foreach ($authRow as $k => $v) {
+                $whereRow[] = ["account_id", "in", ($authRow["account_id"]??[])];
+                $whereRow[] = ["origin_id", "in", ($authRow["origin_id"]??[])];
+                $whereRow[] = ["wechat_id", "in", ($authRow["wechat_id"]??[])];
+                $whereRow[] = ["customer_id", "in", $authRowUser];
+                $whereRow[] = ["deposit_amount_account_id", "in", ($authRow["amount_account_id"]??[])];
+            }
+        }
+
+        $data = Db::table("orders_view")
+            # 查询目前可用的记录
+            ->where(["deposit_status" => 1, "order_id" => $param["order_id"]])
+            ->where(function ($query) {
+                $query->where(["final_payment_status" => 1])->whereOr("final_payment_status", null);
+            })
+            # 行权限控制
+            ->where($whereRow)
+            ->where(function ($query) use ($authRow) {
+                if (request()->uid != 1) {
+                    $query->where(["engineer_id" => ($authRow["engineer_id"]??[])])
+                        ->whereOr("engineer_id", null);
+                }
+            })
+            ->where(function ($query) use ($authRow) {
+                if (request()->uid != 1) {
+                    $query->where(["final_payment_amount_account_id" => ($authRow["amount_account_id"]??[])])
+                        ->whereOr("final_payment_amount_account_id", null);
+                }
+            })->find();
+
+        # 查询所有用户
+        $user = (new UserMapper())->all("id, name");
+        $user = array_combine(array_column($user, "id"), array_column($user, "name"));
+
+        $data["create_time"] = date("Y-m-d H:i:s", $data["create_time"]);
+        $data["delivery_time"] = date("Y-m-d H:i:s", $data["delivery_time"]);
+        $data["commission_ratio"] = $data["commission_ratio"]."%";
+        $data["customer_manager"] = $user[$data["customer_manager"]];
+        $data["market_maintain"] = $user[$data["market_maintain"]];
+        $data["market_manager"] = $user[$data["market_manager"]];
+        $data["customer_name"] = $user[$data["customer_id"]];
+        $data["market_user"] = $user[$data["market_user"]];
+        $data["biller"] = $data["biller"]==0?"暂未填写":$user[$data["biller"]];
+        $data["status"] = $this->status[$data["status"]];
+        $data["file"] = config("app.down_url").$data["file"];
+        # 保留有效位数
+        $data["total_amount"] = floatval($data["total_amount"]);
+        $data["total_fee"] = floatval($data["total_amount"]);
+        $data["deposit"] = floatval($data["deposit"]);
+        $data["final_payment"] = floatval($data["final_payment"]);
+        $data["manuscript_fee"] = floatval($data["manuscript_fee"]);
+        $data["check_fee"] = floatval($data["check_fee"]);
+        # 消除分单后的总价/定金/尾款显示
+        $order_sn = explode("-", $data["order_sn"]);
+        if (count($order_sn) > 1) {
+            if ($order_sn[1] != "1") {
+                $data["total_amount"] = "";
+                $data["deposit"] = "";
+                $data["final_payment"] = "";
+            }
+        }
+
+        # TODO 此处待优化
+        $time = Carbon::parse($data["delivery_time"]);
+        # 天数差
+        $diffDay = (new Carbon())->diffInDays($time);
+        # 小时差
+        $diffHour = (new Carbon())->diffInHours($time);
+        if ($diffHour > 24) {
+            $diff = $diffDay."天".($diffHour - $diffDay * 24)."时";
+            if (!$time->gt(Carbon::now())) {
+                $diff = "超".$diff;
+                $data["color"] = "red";
+            }else{
+                if ($data["status"] == 2 || $data["status"] == 1)
+                    $data[$k]["color"] = "blue";
+            }
+        }else{
+            $diff = $diffHour."时";
+            if (!$time->gt(Carbon::now())) {
+                $diff = "超".$diff;
+                $data["color"] = "red";
+            }else{
+                if ($diffHour > 0 && $diffHour <= 6 && ($data["status"] == 1 || $data["status"] == 2)) {
+                    $data["color"] = "red";
+                }
+                if ($diffHour > 6 && $diffHour <= 12 && ($data["status"] == 1 || $data["status"] == 2)) {
+                    $data["color"] = "yellow";
+                }
+                if ($diffHour > 12 && ($data["status"] == 1 || $data["status"] == 2)) {
+                    $data["color"] = "blue";
+                }
+            }
+        }
+        if ($data["status"] == 3) {
+            $diff = "已交稿";
+            $data["color"] = "green";
+        }
+        $data["countdown"] = $diff;
+        return $data;
+    }
+
     /**
      * 添加订单
      *

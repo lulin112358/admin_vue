@@ -24,7 +24,8 @@ class OrdersValidate extends Validate
         "field|变动字段" => "require",
         "value|变动值" => "require",
         "main_order_id" => "require",
-        "order_id" => "require"
+        "order_id" => "require",
+        "settlement_fee" => "require"
     ];
 
     protected $scene = [
@@ -32,6 +33,8 @@ class OrdersValidate extends Validate
             "cate_id", "wechat_id", "require", "delivery_time", "deposit_amount"],
         "update" => ["field", "value", "main_order_id", "order_id"],
         "del" => ["order_id"],
-        "split" => ["main_order_id"]
+        "split" => ["main_order_id"],
+        "settlement" => ["order_id", "settlement_fee"],
+        "one" => ["order_id"]
     ];
 }

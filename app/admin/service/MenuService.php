@@ -53,6 +53,6 @@ class MenuService extends BaseService
             return generateMenu($this->selectBy(["is_show" => 1], "icon, path, name, id, pid", "sort asc"));
         }
         $rule_ids = (new AuthMapper())->columnBy(["role_id" => $role_ids], 'rule_id');
-        return generateMenu($this->selectBy(["id" => $rule_ids, "is_show" => 1], "id, pid, path, name, icon"));
+        return generateMenu($this->selectBy(["id" => $rule_ids, "is_show" => 1], "id, pid, path, name, icon", "sort asc"));
     }
 }

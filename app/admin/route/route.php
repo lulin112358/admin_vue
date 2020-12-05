@@ -8,6 +8,7 @@ use app\admin\controller\Degree;
 use app\admin\controller\Engineer;
 use app\admin\controller\Evaluation;
 use app\admin\controller\GroupChat;
+use app\admin\controller\ManuscriptFee;
 use app\admin\controller\Orders;
 use app\admin\controller\OrdersDeposit;
 use app\admin\controller\OrdersFinalPayment;
@@ -22,7 +23,6 @@ use app\admin\controller\Upload;
 use app\admin\controller\UserAuthFields;
 use app\admin\controller\UserAuthRow;
 use app\admin\controller\Wechat;
-use app\middleware\admin\Auth;
 use think\facade\Route;
 use app\admin\controller\Menu;
 use app\admin\controller\Role;
@@ -147,12 +147,14 @@ Route::group('admin', function () {
 
     # 工程师
     Route::get("engineer", Engineer::class."@engineer");
+    Route::get("engineers_base", Engineer::class."@engineerBaseInfo");
     Route::post("engineer", Engineer::class."@addEngineer");
     Route::delete("engineer", Engineer::class."@delEngineer");
     Route::put("engineer", Engineer::class."@updateEngineer");
 
     # 订单
     Route::get("orders", Orders::class."@orders");
+    Route::get("order", Orders::class."@order");
     Route::get("orders/auto_fill", Orders::class."@ordersAutoFill");
     Route::post("orders", Orders::class."@addOrder");
     Route::put("orders", Orders::class."@updateOrder");
@@ -191,6 +193,11 @@ Route::group('admin', function () {
     Route::get("school", School::class."@schools");
     Route::get("search/school", School::class."@searchSchools");
     Route::get("school/top", Orders::class."@topSchool");
+
+    # 稿费计算
+    Route::get("manuscript_fee", ManuscriptFee::class."@manuscriptFees");
+    Route::get("manuscript_fee/detail", ManuscriptFee::class."@engineerDetail");
+    Route::post("settlement_all", ManuscriptFee::class."@settlementAll");
 })->allowCrossDomain()->middleware([JwtMiddleware::class]);
 
 # 后台路由组   不需要jwt登录验证

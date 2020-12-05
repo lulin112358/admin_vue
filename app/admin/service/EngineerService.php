@@ -16,6 +16,18 @@ class EngineerService extends BaseService
     protected $mapper = EngineerMapper::class;
 
     /**
+     * 获取所有工程师(基本信息)
+     * @return mixed
+     */
+    public function engineersBaseInfo() {
+        $data = $this->all("id, qq_nickname, contact_qq");
+        foreach ($data as $k => $v)
+            $data[$k]["qqinfo"] = $v["qq_nickname"]." / ".$v["contact_qq"];
+
+        return $data;
+    }
+
+    /**
      * 查询所有工程师
      *
      * @return array
@@ -99,8 +111,8 @@ class EngineerService extends BaseService
             $list[$k]["personnel_manager_name"] = $user[$v["personnel_manager_id"]];
 //            $list[$k]["personnel_train_name"] = $user[$v["personnel_train_id"]];
             $list[$k]["join_days"] = ceil((time() - $v["create_time"]) / (3600 * 24));
-            $list[$k]["today_receive"] = empty($today) ? 0 : $todayValue[$v["id"]];
-            $list[$k]["total_receive"] = empty($receiveData) ? 0 : $receiveValueData[$v["id"]];
+            $list[$k]["today_receive"] = empty($today) ? 0 : ($todayValue[$v["id"]]??0);
+            $list[$k]["total_receive"] = empty($receiveData) ? 0 : ($receiveValueData[$v["id"]]??0);
 
             $recentTime = collect($receiveData)->where("engineer_id", "=", $v["id"])->first()["create_time"];
             # 天数差
