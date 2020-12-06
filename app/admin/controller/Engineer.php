@@ -45,7 +45,7 @@ class Engineer extends Base
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
         try {
             $param["create_time"] = time();
-            $res = $service->add($param);
+            $res = $service->addEngineer($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }

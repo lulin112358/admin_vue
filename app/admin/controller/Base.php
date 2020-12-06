@@ -46,7 +46,16 @@ class Base
         "/admin/account" => "account_id",
         "/admin/amount_account" => "amount_account_id",
         "/admin/engineer" => "engineer_id",
-        "/admin/user" => "user_id"
+        "/admin/user" => "user_id",
+        "/admin/user/user_manager" => "user_user_manager_id",
+        "/admin/user/customer_user" => "user_customer_id",
+        "/admin/user/biller_user" => "user_biller_id",
+        "/admin/user/almighty_user" => "user_almighty_id",
+        "/admin/user/partner_user" => "user_partner_id",
+        "/admin/user/part_time_editor" => "user_part_time_editor_id",
+        "/admin/user/commissioner" => "user_commissioner_id",
+        "/admin/user/maintain" => "user_maintain_id",
+        "/admin/user/manager" => "user_manager_id",
     ];
 
     public function __call($name, $arguments)

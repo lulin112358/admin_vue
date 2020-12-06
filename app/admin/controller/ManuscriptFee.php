@@ -19,8 +19,9 @@ class ManuscriptFee extends Base
      * @param OrdersService $service
      */
     public function manuscriptFees(ManuscriptFeeService $service) {
+        $param = input("param.");
         try {
-            $list = $service->manuscriptFees();
+            $list = $service->manuscriptFees($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -61,5 +62,32 @@ class ManuscriptFee extends Base
         if ($res === false)
             $this->ajaxReturn(Code::ERROR, "结算失败");
         $this->ajaxReturn("结算成功");
+    }
+
+
+    /**
+     * 导出
+     * @param ManuscriptFeeService $service
+     */
+    public function export(ManuscriptFeeService $service) {
+        $param = input("param.");
+        try {
+            $service->export($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+    }
+
+    /**
+     * 导出详情
+     * @param ManuscriptFeeService $service
+     */
+    public function exportDetail(ManuscriptFeeService $service) {
+        $param = input("param.");
+        try {
+            $service->exportDetail($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
     }
 }

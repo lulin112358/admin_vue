@@ -7,11 +7,58 @@ namespace app\admin\service;
 use app\mapper\OrdersMapper;
 use app\mapper\SettlementLogMapper;
 use app\model\Orders;
+use excel\Excel;
 use think\facade\Db;
 
 class SettlementLogService extends BaseService
 {
     protected $mapper = SettlementLogMapper::class;
+
+    /**
+     * 获取全部结算记录
+     *
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function settlementLogs($param) {
+        $where = [];
+        if (isset($param["search_key"]) && !empty($param["search_key"])) {
+            $where[] = ["o.order_sn|u.name", "like", "%{$param['search_key']}%"];
+        }
+        if (isset($param["create_time"]) && !empty($param["create_time"])) {
+            $where[] = ["sl.create_time", ">=", strtotime($param["create_time"][0])];
+            $where[] = ["sl.create_time", "<=", strtotime($param["create_time"][1])];
+        }
+        $data = (new SettlementLogMapper())->settlementLogs($where);
+        foreach ($data as $k => $v) {
+            $data[$k]["create_time"] = date("Y-m-d H:i:s", $v["create_time"]);
+            $data[$k]["settlement_fee"] = floatval($v["settlement_fee"]);
+        }
+        return $data;
+    }
+
+    /**
+     * 导出结算记录
+     * @param $param
+     * @return bool
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function export($param) {
+        $_data = $this->settlementLogs($param);
+        $header = [
+            ["订单编号", "order_sn"],
+            ["结算金额", "settlement_fee"],
+            ["结算人", "settlement_user_name"],
+            ["结算时间", "create_time"]
+        ];
+        return Excel::exportData($_data, $header, "结算记录数据");
+    }
 
     /**
      * 全部结算

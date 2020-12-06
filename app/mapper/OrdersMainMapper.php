@@ -37,9 +37,18 @@ class OrdersMainMapper extends BaseMapper
      * @throws \think\db\exception\ModelNotFoundException
      */
     public function autoFillData($where) {
+        $map = [];
+        if (request()->uid != 1) {
+            $rowAuth = row_auth();
+            $map = ["om.order_account_id" => $rowAuth["account_id"],
+                "om.origin_id" => $rowAuth["origin_id"],
+                "od.amount_account_id" => $rowAuth["amount_account_id"]];
+        }
+
         return Db::table("orders_main")->alias("om")
             ->join(["orders_deposit" => "od"], "om.id=od.main_order_id")
             ->where(["om.customer_id" => request()->uid])
+            ->where($map)
             ->where($where)
             ->field("od.main_order_id, od.create_time, om.origin_id, om.order_account_id, om.customer_manager, om.id, 
             concat(om.origin_id, '-', om.order_account_id, '-', od.amount_account_id) as auto,

@@ -365,7 +365,7 @@ class OrdersService extends BaseService
                 }
             }
         }
-        if ($data["status"] == 3) {
+        if ($data["status"] == "已交稿") {
             $diff = "已交稿";
             $data["color"] = "green";
         }
@@ -487,6 +487,10 @@ class OrdersService extends BaseService
             if ($data["field"] == "engineer_id") {
                 $updateData["biller"] = request()->uid;
                 $updateData["status"] = 2;
+            }
+            # 如果更新订单状态为已交稿则更新实际交稿时间
+            if ($data["field"] == "status" && $data["value"] == 3) {
+                $updateData["actual_delivery_time"] = time();
             }
             return (new OrdersMapper())->updateBy($updateData);
         }

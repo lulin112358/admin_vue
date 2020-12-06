@@ -22,8 +22,6 @@ class User extends Base
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
-        if (!$data)
-            $this->ajaxReturn(Code::ERROR, "暂无数据");
 
         $this->ajaxReturn($data);
     }
@@ -144,12 +142,96 @@ class User extends Base
     }
 
     /**
+     * 获取管理层用户
+     * @param UserRoleService $service
+     */
+    public function managerUser(UserService $service) {
+        try {
+            $data = $service->groupUsers(1);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+
+        $this->ajaxReturn($data);
+    }
+
+    /**
+     * 获取接单客服用户
+     * @param UserService $service
+     */
+    public function customerUser(UserService $service) {
+        try {
+            $data = $service->groupUsers(5);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+
+        $this->ajaxReturn($data);
+    }
+
+    /**
+     * 获取发单人事用户
+     * @param UserService $service
+     */
+    public function billerUser(UserService $service) {
+        try {
+            $data = $service->groupUsers(6);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+
+        $this->ajaxReturn($data);
+    }
+
+    /**
+     * 获取全能客服用户
+     * @param UserService $service
+     */
+    public function almightyUser(UserService $service) {
+        try {
+            $data = $service->groupUsers(7);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+
+        $this->ajaxReturn($data);
+    }
+
+    /**
+     * 获取上游合作代理用户
+     * @param UserService $service
+     */
+    public function partnerUser(UserService $service) {
+        try {
+            $data = $service->groupUsers(8);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+
+        $this->ajaxReturn($data);
+    }
+
+    /**
+     * 获取兼职编辑用户
+     * @param UserService $service
+     */
+    public function partTimeEditor(UserService $service) {
+        try {
+            $data = $service->groupUsers(9);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+
+        $this->ajaxReturn($data);
+    }
+
+    /**
      * 市场专员
      * @param UserService $service
      */
     public function commissioner(UserService $service) {
         try {
-            $data = $service->selectBy([], "id, name");
+            $data = $service->groupUsers(10);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -162,7 +244,7 @@ class User extends Base
      */
     public function manager(UserService $service) {
         try {
-            $data = $service->selectBy([], "id, name");
+            $data = $service->groupUsers(12);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -175,7 +257,21 @@ class User extends Base
      */
     public function maintain(UserService $service) {
         try {
-            $data = $service->selectBy([], "id, name");
+            $data = $service->groupUsers(11);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
+
+
+    /**
+     * 获取所有分组用户数据
+     * @param UserService $service
+     */
+    public function allGroupUsers(UserService $service) {
+        try {
+            $data = $service->allGroupUsers();
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }

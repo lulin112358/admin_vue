@@ -6,6 +6,7 @@ namespace app\admin\service;
 
 use app\mapper\OrdersMapper;
 use Carbon\Carbon;
+use excel\Excel;
 
 class ManuscriptFeeService extends BaseService
 {
@@ -28,7 +29,7 @@ class ManuscriptFeeService extends BaseService
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function manuscriptFees() {
+    public function manuscriptFees($param) {
         // 设置中文
         Carbon::setLocale("zh");
         $now = Carbon::now();
@@ -42,7 +43,15 @@ class ManuscriptFeeService extends BaseService
         }else {
             $day = $now->daysInMonth;
         }
-        $data = (new OrdersMapper())->manuscripts();
+        $where = [];
+        if (isset($param["search_key"]) && !empty($param["search_key"])) {
+            $where[] = ["e.qq_nickname|e.contact_qq|o.order_sn", "like", "%{$param["search_key"]}%"];
+        }
+        if (isset($param["delivery_time"]) && !empty($param["delivery_time"])) {
+            $where[] = ["o.delivery_time", ">=", strtotime($param["delivery_time"][0])];
+            $where[] = ["o.delivery_time", "<=", strtotime($param["delivery_time"][1])];
+        }
+        $data = (new OrdersMapper())->manuscripts($where);
         $canSettlement = collect($data)->where("delivery_time", "<=", time())->toArray();
         $canSettlementData = [];
         foreach ($canSettlement as $k => $v) {
@@ -73,11 +82,15 @@ class ManuscriptFeeService extends BaseService
      */
     public function engineerDetail($param)
     {
-        $data = (new OrdersMapper())->engineerDetail($param["engineer_id"]);
+        $where = [];
+        if (isset($param["order_sn"]) && !empty($param["order_sn"]))
+            $where[] = ["o.order_sn", "like", "%{$param['order_sn']}%"];
+        $data = (new OrdersMapper())->engineerDetail($param["engineer_id"], $where);
         foreach ($data as $k => $v) {
             $data[$k]["remain_fee"] = floatval($v["manuscript_fee"] - $v["settlemented"] - $v["deduction"]);
             $data[$k]["status_text"] = $this->status[$v["status"]];
             $data[$k]["delivery_time"] = date("Y-m-d H", $v["delivery_time"]);
+            $data[$k]["actual_delivery_time"] = $v["actual_delivery_time"] == 0 ? "暂未交稿" :date("Y-m-d H", $v["actual_delivery_time"]);
             $data[$k]["manuscript_fee"] = floatval($v["manuscript_fee"]);
             $data[$k]["settlemented"] = floatval($v["settlemented"]);
             $data[$k]["deduction"] = floatval($v["deduction"]);
@@ -117,5 +130,61 @@ class ManuscriptFeeService extends BaseService
         $sortField = array_column($data, 'remain_fee');
         array_multisort($sortField, SORT_DESC, $data);
         return $data;
+    }
+
+
+    /**
+     * 导出
+     * @param $param
+     * @return bool
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function export($param) {
+        $_data = $this->manuscriptFees($param);
+        foreach ($_data as $k => $v)
+            $_data[$k]["rate"] = $v["rate"]."%";
+        $header = [
+            ["编辑", "qq_nickname"],
+            ["应结", "manuscript_fee"],
+            ["未发总计", "remain_fee"],
+            ["应结率", "rate"],
+            ["应结时间", "settlement_time"]
+        ];
+        return Excel::exportData($_data, $header, "编辑稿费数据");
+    }
+
+    /**
+     * 导出详情
+     *
+     * @param $param
+     * @return bool
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     */
+    public function exportDetail($param) {
+        $_data = $this->engineerDetail($param);
+        $header = [
+            ["订单编号", "order_sn"],
+            ["业务分类", "cate_name"],
+            ["稿费预计发放时间", "settlement_time"],
+            ["稿费", "manuscript_fee"],
+            ["已结算", "settlemented"],
+            ["未结算", "remain_fee"],
+            ["扣款", "deduction"],
+            ["预计交稿时间", "delivery_time"],
+            ["实际交稿时间", "actual_delivery_time"],
+            ["结算状态", "settlement_status"],
+            ["订单状态", "status_text"],
+        ];
+        foreach ($_data as $k => $v) {
+            if ($v["actual_delivery_time"] == 0) {
+                $_data[$k]["actual_delivery_time"] = "暂未交稿";
+            }
+        }
+        return Excel::exportData($_data, $header, "编辑稿费数据");
     }
 }

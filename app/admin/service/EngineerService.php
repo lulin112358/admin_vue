@@ -6,6 +6,7 @@ namespace app\admin\service;
 
 use app\mapper\EngineerMapper;
 use app\mapper\OrdersMapper;
+use app\mapper\UserAuthRowMapper;
 use app\mapper\UserMapper;
 use Carbon\Carbon;
 use excel\Excel;
@@ -20,11 +21,44 @@ class EngineerService extends BaseService
      * @return mixed
      */
     public function engineersBaseInfo() {
-        $data = $this->all("id, qq_nickname, contact_qq");
+        $data = $this->selectBy(["status" => 1, "is_delete" => 0], "id, qq_nickname, contact_qq");
         foreach ($data as $k => $v)
             $data[$k]["qqinfo"] = $v["qq_nickname"]." / ".$v["contact_qq"];
 
         return $data;
+    }
+
+    /**
+     * 添加工程师
+     * @param $param
+     * @return bool
+     */
+    public function addEngineer($param) {
+        Db::startTrans();
+        try {
+            # 添加工程师
+            $res = $this->add($param);
+            if (!$res)
+                throw new \Exception("添加失败");
+            # 添加该行可见权限
+            $addData = [
+                "type" => "engineer_id",
+                "type_id" => $res->id,
+                "user_id" => request()->uid,
+                "status" => 1,
+                "create_time" => time(),
+                "update_time" => time()
+            ];
+            $res = (new UserAuthRowMapper())->add($addData);
+            if (!$res)
+                throw new \Exception("添加失败啦");
+            Db::commit();
+            return true;
+        }catch (\Exception $exception) {
+            Db::rollback();
+            return false;
+        }
+
     }
 
     /**
