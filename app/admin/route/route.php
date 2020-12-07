@@ -14,6 +14,7 @@ use app\admin\controller\OrdersDeposit;
 use app\admin\controller\OrdersFinalPayment;
 use app\admin\controller\Origin;
 use app\admin\controller\Profession;
+use app\admin\controller\Refund;
 use app\admin\controller\RoleAuthFields;
 use app\admin\controller\RoleAuthRow;
 use app\admin\controller\School;
@@ -207,6 +208,12 @@ Route::group('admin', function () {
     Route::get("manuscript_fee/detail", ManuscriptFee::class."@engineerDetail");
     Route::post("settlement_all", ManuscriptFee::class."@settlementAll");
     Route::get("settlement/log", SettlementLog::class."@settlementLogs");
+
+    # 退款
+    Route::get("refund", Refund::class."@refundList");
+    Route::get("refund_log", Refund::class."@refundLogList");
+    Route::post("refund", Refund::class."@refund");
+    Route::post("refund_handle", Refund::class."@refundHandle");
 })->allowCrossDomain()->middleware([JwtMiddleware::class]);
 
 # 后台路由组   不需要jwt登录验证
@@ -217,6 +224,8 @@ Route::group('admin', function () {
     Route::post("manuscript_fee/export", ManuscriptFee::class."@export");
     Route::post("manuscript_fee/export_detail", ManuscriptFee::class."@exportDetail");
     Route::post("settlement_log/export", SettlementLog::class."@export");
+    Route::post("refund/export", Refund::class."@exportRefund");
+    Route::post("refund_log/export", Refund::class."@exportRefundLog");
     # 文件上传
     Route::post("upload", Upload::class."@upload");
 })->allowCrossDomain();

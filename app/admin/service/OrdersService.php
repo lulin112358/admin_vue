@@ -59,7 +59,6 @@ class OrdersService extends BaseService
 
     /**
      * 获取所有订单
-     *
      * @return array
      * @throws \think\db\exception\DataNotFoundException
      * @throws \think\db\exception\DbException
@@ -142,7 +141,7 @@ class OrdersService extends BaseService
                     }
                 })
                 # 模糊匹配查询条件
-                ->where("order_sn|total_amount|customer_contact|deposit|final_payment|require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|note", "like", "%$searchKey%")
+                ->where("manuscript_fee|biller|cate_name|check_fee|commission_ratio|customer_manager|customer_name|market_maintain|market_manager|market_user|order_sn|total_amount|customer_contact|deposit|final_payment|require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|note", "like", "%$searchKey%")
                 ->where($where)->order($params["search_order"])->order("order_id desc")->paginate(100, true)->items();
         }else {         # 导出excel不需要分页
             $data = Db::table("orders_view")
@@ -173,25 +172,16 @@ class OrdersService extends BaseService
                     }
                 })
                 # 模糊匹配查询条件
-                ->where("order_sn|total_amount|customer_contact|deposit|final_payment|require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|note", "like", "%$searchKey%")
+                ->where("manuscript_fee|biller|cate_name|check_fee|commission_ratio|customer_manager|customer_name|market_maintain|market_manager|market_user|order_sn|total_amount|customer_contact|deposit|final_payment|require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|note", "like", "%$searchKey%")
                 ->where($where)->order($params["search_order"])->order("order_id desc")->select()->toArray();
         }
 
-        # 查询所有用户
-        $user = (new UserMapper())->all("id, name");
-        $user = array_combine(array_column($user, "id"), array_column($user, "name"));
         foreach ($data as $k => $v) {
             $data[$k]["create_time"] = date("Y-m-d H:i:s", $v["create_time"]);
             $data[$k]["delivery_time"] = date("Y-m-d H:i:s", $v["delivery_time"]);
             $data[$k]["commission_ratio"] = $v["commission_ratio"]."%";
-            $data[$k]["customer_manager"] = $user[$v["customer_manager"]];
-            $data[$k]["market_maintain"] = $user[$v["market_maintain"]];
-            $data[$k]["market_manager"] = $user[$v["market_manager"]];
-            $data[$k]["customer_name"] = $user[$v["customer_id"]];
-            $data[$k]["market_user"] = $user[$v["market_user"]];
-            $data[$k]["biller"] = $v["biller"]==0?"暂未填写":$user[$v["biller"]];
+            $data[$k]["biller"] = is_null($v["biller"])?"暂未填写":$v["biller"];
             $data[$k]["status"] = $this->status[$v["status"]];
-            $data[$k]["file"] = config("app.down_url").$v["file"];
             # 保留有效位数
             $data[$k]["total_amount"] = floatval($v["total_amount"]);
             $data[$k]["total_fee"] = floatval($v["total_amount"]);
@@ -269,13 +259,14 @@ class OrdersService extends BaseService
         $authRow = [];
         if (request()->uid != 1) {
             $authRow = row_auth();
-            $authRowUser = $authRow["user_id"]??[];
             array_push($authRowUser, request()->uid);
             foreach ($authRow as $k => $v) {
                 $whereRow[] = ["account_id", "in", ($authRow["account_id"]??[])];
                 $whereRow[] = ["origin_id", "in", ($authRow["origin_id"]??[])];
                 $whereRow[] = ["wechat_id", "in", ($authRow["wechat_id"]??[])];
-                $whereRow[] = ["customer_id", "in", $authRowUser];
+                $whereRow[] = ["customer_id", "in", ($authRow["user_customer_id"]??[])];
+                $whereRow[] = ["biller", "in", ($authRow["user_biller_id"]??[])];
+                $whereRow[] = ["customer_manager", "in", ($authRow["user_almighty_id"]??[])];
                 $whereRow[] = ["deposit_amount_account_id", "in", ($authRow["amount_account_id"]??[])];
             }
         }
@@ -301,19 +292,10 @@ class OrdersService extends BaseService
                 }
             })->find();
 
-        # 查询所有用户
-        $user = (new UserMapper())->all("id, name");
-        $user = array_combine(array_column($user, "id"), array_column($user, "name"));
-
         $data["create_time"] = date("Y-m-d H:i:s", $data["create_time"]);
         $data["delivery_time"] = date("Y-m-d H:i:s", $data["delivery_time"]);
         $data["commission_ratio"] = $data["commission_ratio"]."%";
-        $data["customer_manager"] = $user[$data["customer_manager"]];
-        $data["market_maintain"] = $user[$data["market_maintain"]];
-        $data["market_manager"] = $user[$data["market_manager"]];
-        $data["customer_name"] = $user[$data["customer_id"]];
-        $data["market_user"] = $user[$data["market_user"]];
-        $data["biller"] = $data["biller"]==0?"暂未填写":$user[$data["biller"]];
+        $data["biller"] = is_null($data["biller"])?"暂未填写":$data["biller"];
         $data["status"] = $this->status[$data["status"]];
         $data["file"] = config("app.down_url").$data["file"];
         # 保留有效位数

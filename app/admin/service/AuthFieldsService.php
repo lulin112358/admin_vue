@@ -75,12 +75,29 @@ class AuthFieldsService extends BaseService
                 "title" => $v["field_name"],
                 "minWidth" => 100,
                 "showHeaderOverflow" => true,
-                "showOverflow" => true
+                "showOverflow" => true,
             ];
+            if ($v["field"] == "deposit_account") {
+                $field["cellRender"] = [
+                    "name" => "depositRender",
+                    "events" => [
+                        "click" => "depositCheck"
+                    ]
+                ];
+            }
+            if ($v["field"] == "final_payment_account") {
+                $field["cellRender"] = [
+                    "name" => "finalPaymentRender",
+                    "events" => [
+                        "click" => "finalPaymentCheck"
+                    ]
+                ];
+            }
             if ($v["is_edit"]) {
                 if ($v["edit_type"] == '$input') {
                     $field["editRender"] = [
                         "name" => '$input',
+                        "autoselect" => true,
                         "attrs" => [
                             "type" => "text"
                         ]
