@@ -42,6 +42,7 @@ class UserService extends BaseService
         $data = (new UserMapper())->allGroupUsers();
         $tmp = [];
         foreach ($data as $k => $v) {
+            $v["id"] = $this->map[$v["role_name"]]."/".$v["id"];
             $tmp[$v["role_name"]][] = $v;
         }
         $retData = [];

@@ -75,15 +75,27 @@ class OrdersService extends BaseService
         $authRow = [];
         if (request()->uid != 1) {
             $authRow = row_auth();
-            $authRowUser = $authRow["user_id"]??[];
-            array_push($authRowUser, request()->uid);
-            foreach ($authRow as $k => $v) {
-                $whereRow[] = ["account_id", "in", ($authRow["account_id"]??[])];
-                $whereRow[] = ["origin_id", "in", ($authRow["origin_id"]??[])];
-                $whereRow[] = ["wechat_id", "in", ($authRow["wechat_id"]??[])];
-                $whereRow[] = ["customer_id", "in", $authRowUser];
-                $whereRow[] = ["deposit_amount_account_id", "in", ($authRow["amount_account_id"]??[])];
-            }
+            $authRowUserCustomer = $authRow["user_customer_id"]??[];
+            array_push($authRowUserCustomer, request()->uid);
+            $authRowUserBiller = $authRow["user_biller_id"]??[];
+            array_push($authRowUserBiller, request()->uid);
+            $authRowUserAlmighty = $authRow["user_almighty_id"]??[];
+            array_push($authRowUserAlmighty, request()->uid);
+            $authRowUserCommissioner = $authRow["user_commissioner_id"]??[];
+            array_push($authRowUserCommissioner, request()->uid);
+            $authRowUserMaintain = $authRow["user_maintain_id"]??[];
+            array_push($authRowUserMaintain, request()->uid);
+            $authRowUserManager = $authRow["user_manager_id"]??[];
+            array_push($authRowUserManager, request()->uid);
+            $whereRow[] = ["account_id", "in", ($authRow["account_id"]??[])];
+            $whereRow[] = ["origin_id", "in", ($authRow["origin_id"]??[])];
+            $whereRow[] = ["wechat_id", "in", ($authRow["wechat_id"]??[])];
+            $whereRow[] = ["customer_id", "in", $authRowUserCustomer];
+            $whereRow[] = ["customer_manager_id", "in", $authRowUserAlmighty];
+            $whereRow[] = ["market_user_id", "in", $authRowUserCommissioner];
+            $whereRow[] = ["market_maintain_id", "in", $authRowUserMaintain];
+            $whereRow[] = ["market_manager_id", "in", $authRowUserManager];
+            $whereRow[] = ["deposit_amount_account_id", "in", ($authRow["amount_account_id"]??[])];
         }
         # 构造字段查询条件
         $where = [];
@@ -140,6 +152,12 @@ class OrdersService extends BaseService
                         ->whereOr("final_payment_amount_account_id", null);
                     }
                 })
+                ->where(function ($query) use ($authRow) {
+                    if (request()->uid != 1) {
+                        $query->where(["biller_id" => ($authRow["biller_id"]??[])])
+                            ->whereOr("biller_id", 0);
+                    }
+                })
                 # 模糊匹配查询条件
                 ->where("manuscript_fee|biller|cate_name|check_fee|commission_ratio|customer_manager|customer_name|market_maintain|market_manager|market_user|order_sn|total_amount|customer_contact|deposit|final_payment|require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|note", "like", "%$searchKey%")
                 ->where($where)->order($params["search_order"])->order("order_id desc")->paginate(100, true)->items();
@@ -171,6 +189,12 @@ class OrdersService extends BaseService
                             ->whereOr("final_payment_amount_account_id", null);
                     }
                 })
+                ->where(function ($query) use ($authRow) {
+                    if (request()->uid != 1) {
+                        $query->where(["biller_id" => ($authRow["biller_id"]??[])])
+                            ->whereOr("biller_id", 0);
+                    }
+                })
                 # 模糊匹配查询条件
                 ->where("manuscript_fee|biller|cate_name|check_fee|commission_ratio|customer_manager|customer_name|market_maintain|market_manager|market_user|order_sn|total_amount|customer_contact|deposit|final_payment|require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|note", "like", "%$searchKey%")
                 ->where($where)->order($params["search_order"])->order("order_id desc")->select()->toArray();
@@ -186,6 +210,7 @@ class OrdersService extends BaseService
             $data[$k]["total_amount"] = floatval($v["total_amount"]);
             $data[$k]["total_fee"] = floatval($v["total_amount"]);
             $data[$k]["deposit"] = floatval($v["deposit"]);
+            $data[$k]["refund_amount"] = is_null($v["refund_amount"])?"未退款":floatval($v["refund_amount"]);
             $data[$k]["final_payment"] = floatval($v["final_payment"]);
             $data[$k]["manuscript_fee"] = floatval($v["manuscript_fee"]);
             $data[$k]["check_fee"] = floatval($v["check_fee"]);
@@ -259,16 +284,27 @@ class OrdersService extends BaseService
         $authRow = [];
         if (request()->uid != 1) {
             $authRow = row_auth();
-            array_push($authRowUser, request()->uid);
-            foreach ($authRow as $k => $v) {
-                $whereRow[] = ["account_id", "in", ($authRow["account_id"]??[])];
-                $whereRow[] = ["origin_id", "in", ($authRow["origin_id"]??[])];
-                $whereRow[] = ["wechat_id", "in", ($authRow["wechat_id"]??[])];
-                $whereRow[] = ["customer_id", "in", ($authRow["user_customer_id"]??[])];
-                $whereRow[] = ["biller", "in", ($authRow["user_biller_id"]??[])];
-                $whereRow[] = ["customer_manager", "in", ($authRow["user_almighty_id"]??[])];
-                $whereRow[] = ["deposit_amount_account_id", "in", ($authRow["amount_account_id"]??[])];
-            }
+            $authRowUserCustomer = $authRow["user_customer_id"]??[];
+            array_push($authRowUserCustomer, request()->uid);
+            $authRowUserBiller = $authRow["user_biller_id"]??[];
+            array_push($authRowUserBiller, request()->uid);
+            $authRowUserAlmighty = $authRow["user_almighty_id"]??[];
+            array_push($authRowUserAlmighty, request()->uid);
+            $authRowUserCommissioner = $authRow["user_commissioner_id"]??[];
+            array_push($authRowUserCommissioner, request()->uid);
+            $authRowUserMaintain = $authRow["user_maintain_id"]??[];
+            array_push($authRowUserMaintain, request()->uid);
+            $authRowUserManager = $authRow["user_manager_id"]??[];
+            array_push($authRowUserManager, request()->uid);
+            $whereRow[] = ["account_id", "in", ($authRow["account_id"]??[])];
+            $whereRow[] = ["origin_id", "in", ($authRow["origin_id"]??[])];
+            $whereRow[] = ["wechat_id", "in", ($authRow["wechat_id"]??[])];
+            $whereRow[] = ["customer_id", "in", $authRowUserCustomer];
+            $whereRow[] = ["customer_manager_id", "in", $authRowUserAlmighty];
+            $whereRow[] = ["market_user_id", "in", $authRowUserCommissioner];
+            $whereRow[] = ["market_maintain_id", "in", $authRowUserMaintain];
+            $whereRow[] = ["market_manager_id", "in", $authRowUserManager];
+            $whereRow[] = ["deposit_amount_account_id", "in", ($authRow["amount_account_id"]??[])];
         }
 
         $data = Db::table("orders_view")
@@ -283,6 +319,12 @@ class OrdersService extends BaseService
                 if (request()->uid != 1) {
                     $query->where(["engineer_id" => ($authRow["engineer_id"]??[])])
                         ->whereOr("engineer_id", null);
+                }
+            })
+            ->where(function ($query) use ($authRow) {
+                if (request()->uid != 1) {
+                    $query->where(["biller_id" => ($authRow["biller_id"]??[])])
+                        ->whereOr("biller_id", 0);
                 }
             })
             ->where(function ($query) use ($authRow) {
@@ -328,7 +370,7 @@ class OrdersService extends BaseService
                 $data["color"] = "red";
             }else{
                 if ($data["status"] == 2 || $data["status"] == 1)
-                    $data[$k]["color"] = "blue";
+                    $data["color"] = "blue";
             }
         }else{
             $diff = $diffHour."时";

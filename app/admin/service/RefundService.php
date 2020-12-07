@@ -33,7 +33,7 @@ class RefundService extends BaseService
             $res = $this->add($param);
             if (!$res)
                 throw new \Exception("操作失败");
-            $res = (new OrdersMapper())->updateWhere(["id" => $param["order_id"]], ["status" => 4]);
+            $res = (new OrdersMapper())->updateWhere(["main_order_id" => $param["order_main_id"]], ["status" => 4]);
             if ($res === false)
                 throw new \Exception("操作失败啦");
             Db::commit();

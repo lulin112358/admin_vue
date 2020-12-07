@@ -47,6 +47,9 @@ class OrdersMainMapper extends BaseMapper
 
         return Db::table("orders_main")->alias("om")
             ->join(["orders_deposit" => "od"], "om.id=od.main_order_id")
+            ->join(["origin" => "o"], "o.id=om.origin_id")
+            ->join(["orders_account" => "oa"], "oa.id=om.order_account_id")
+            ->where([["o.status", "<>", 0], ["oa.status", "<>", 0], ["od.status", "<>", 0]])
             ->where(["om.customer_id" => request()->uid])
             ->where($map)
             ->where($where)
