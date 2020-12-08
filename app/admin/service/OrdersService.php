@@ -81,20 +81,20 @@ class OrdersService extends BaseService
             array_push($authRowUserBiller, request()->uid);
             $authRowUserAlmighty = $authRow["user_almighty_id"]??[];
             array_push($authRowUserAlmighty, request()->uid);
-            $authRowUserCommissioner = $authRow["user_commissioner_id"]??[];
-            array_push($authRowUserCommissioner, request()->uid);
-            $authRowUserMaintain = $authRow["user_maintain_id"]??[];
-            array_push($authRowUserMaintain, request()->uid);
-            $authRowUserManager = $authRow["user_manager_id"]??[];
-            array_push($authRowUserManager, request()->uid);
+//            $authRowUserCommissioner = $authRow["user_commissioner_id"]??[];
+//            array_push($authRowUserCommissioner, request()->uid);
+//            $authRowUserMaintain = $authRow["user_maintain_id"]??[];
+//            array_push($authRowUserMaintain, request()->uid);
+//            $authRowUserManager = $authRow["user_manager_id"]??[];
+//            array_push($authRowUserManager, request()->uid);
             $whereRow[] = ["account_id", "in", ($authRow["account_id"]??[])];
             $whereRow[] = ["origin_id", "in", ($authRow["origin_id"]??[])];
             $whereRow[] = ["wechat_id", "in", ($authRow["wechat_id"]??[])];
             $whereRow[] = ["customer_id", "in", $authRowUserCustomer];
             $whereRow[] = ["customer_manager_id", "in", $authRowUserAlmighty];
-            $whereRow[] = ["market_user_id", "in", $authRowUserCommissioner];
-            $whereRow[] = ["market_maintain_id", "in", $authRowUserMaintain];
-            $whereRow[] = ["market_manager_id", "in", $authRowUserManager];
+//            $whereRow[] = ["market_user_id", "in", $authRowUserCommissioner];
+//            $whereRow[] = ["market_maintain_id", "in", $authRowUserMaintain];
+//            $whereRow[] = ["market_manager_id", "in", $authRowUserManager];
             $whereRow[] = ["deposit_amount_account_id", "in", ($authRow["amount_account_id"]??[])];
         }
         # 构造字段查询条件
@@ -290,20 +290,20 @@ class OrdersService extends BaseService
             array_push($authRowUserBiller, request()->uid);
             $authRowUserAlmighty = $authRow["user_almighty_id"]??[];
             array_push($authRowUserAlmighty, request()->uid);
-            $authRowUserCommissioner = $authRow["user_commissioner_id"]??[];
-            array_push($authRowUserCommissioner, request()->uid);
-            $authRowUserMaintain = $authRow["user_maintain_id"]??[];
-            array_push($authRowUserMaintain, request()->uid);
-            $authRowUserManager = $authRow["user_manager_id"]??[];
-            array_push($authRowUserManager, request()->uid);
+//            $authRowUserCommissioner = $authRow["user_commissioner_id"]??[];
+//            array_push($authRowUserCommissioner, request()->uid);
+//            $authRowUserMaintain = $authRow["user_maintain_id"]??[];
+//            array_push($authRowUserMaintain, request()->uid);
+//            $authRowUserManager = $authRow["user_manager_id"]??[];
+//            array_push($authRowUserManager, request()->uid);
             $whereRow[] = ["account_id", "in", ($authRow["account_id"]??[])];
             $whereRow[] = ["origin_id", "in", ($authRow["origin_id"]??[])];
             $whereRow[] = ["wechat_id", "in", ($authRow["wechat_id"]??[])];
             $whereRow[] = ["customer_id", "in", $authRowUserCustomer];
             $whereRow[] = ["customer_manager_id", "in", $authRowUserAlmighty];
-            $whereRow[] = ["market_user_id", "in", $authRowUserCommissioner];
-            $whereRow[] = ["market_maintain_id", "in", $authRowUserMaintain];
-            $whereRow[] = ["market_manager_id", "in", $authRowUserManager];
+//            $whereRow[] = ["market_user_id", "in", $authRowUserCommissioner];
+//            $whereRow[] = ["market_maintain_id", "in", $authRowUserMaintain];
+//            $whereRow[] = ["market_manager_id", "in", $authRowUserManager];
             $whereRow[] = ["deposit_amount_account_id", "in", ($authRow["amount_account_id"]??[])];
         }
 

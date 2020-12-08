@@ -104,6 +104,11 @@ class RefundService extends BaseService
             $res = (new RefundLogMapper())->add($addData);
             if (!$res)
                 throw new \Exception("操作失败啦");
+
+            # 修改订单状态为已退款
+            $res = (new OrdersMapper())->updateWhere(["main_order_id" => $info["order_main_id"]], ["status" => 5]);
+            if ($res === false)
+                throw new \Exception("操作失败!");
             Db::commit();
             return true;
         }catch (\Exception $exception) {

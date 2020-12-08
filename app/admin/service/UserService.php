@@ -5,6 +5,7 @@ namespace app\admin\service;
 
 
 use app\mapper\UserMapper;
+use app\mapper\UserRoleMapper;
 
 class UserService extends BaseService
 {
@@ -38,12 +39,29 @@ class UserService extends BaseService
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function allGroupUsers() {
+    public function allGroupUsers($param) {
         $data = (new UserMapper())->allGroupUsers();
         $tmp = [];
         foreach ($data as $k => $v) {
             $v["id"] = $this->map[$v["role_name"]]."/".$v["id"];
             $tmp[$v["role_name"]][] = $v;
+        }
+        # 去除不必要的组
+        if (isset($param["user_id"]) && !empty($param["user_id"])) {
+            # 获取用户所属权限组
+            $roles = (new UserRoleMapper())->columnBy(["user_id" => $param["user_id"]], "role_id");
+            if (!in_array(1, $roles)) {
+                unset($tmp["市场专员"]);
+                unset($tmp["市场维护"]);
+                unset($tmp["市场经理"]);
+            }
+        }
+        if (isset($param["role_id"]) && !empty($param["role_id"])) {
+            if ($param["role_id"] != 1) {
+                unset($tmp["市场专员"]);
+                unset($tmp["市场维护"]);
+                unset($tmp["市场经理"]);
+            }
         }
         $retData = [];
         foreach ($tmp as $k => $v) {

@@ -270,8 +270,9 @@ class User extends Base
      * @param UserService $service
      */
     public function allGroupUsers(UserService $service) {
+        $param = input("param.");
         try {
-            $data = $service->allGroupUsers();
+            $data = $service->allGroupUsers($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
