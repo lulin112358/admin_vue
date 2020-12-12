@@ -8,6 +8,7 @@ use app\mapper\AccountCateMapper;
 use app\mapper\AccountMapper;
 use app\mapper\OrdersAccountMapper;
 use app\mapper\UserAuthRowMapper;
+use app\mapper\WechatMapper;
 use think\facade\Db;
 
 class AccountService extends BaseService
@@ -27,7 +28,7 @@ class AccountService extends BaseService
             ->join(["account" => "a"], "a.id=oa.account_id", "left")
             ->join(["account_cate" => "ac"], "ac.id=a.account_cate", "left")
             ->where(["oa.status" => 1])
-            ->field("oa.account_id, a.account, oa.id, ac.cate_name, oa.nickname")
+            ->field("oa.account_id, a.account, oa.id, ac.cate_name, oa.nickname, oa.is_wechat")
             ->order("oa.id desc")
             ->select()->toArray();
         return $list;
@@ -47,7 +48,7 @@ class AccountService extends BaseService
             ->join(["account" => "a"], "a.id=oa.account_id")
             ->join(["account_cate" => "ac"], "ac.id=a.account_cate")
             ->where(["oa.id" => $data])
-            ->field("oa.account_id, a.account, oa.id, ac.cate_name, oa.nickname, a.account_cate")
+            ->field("oa.account_id, a.account, oa.id, ac.cate_name, oa.nickname, a.account_cate, oa.is_wechat")
             ->find();
         return $info;
     }
@@ -91,6 +92,7 @@ class AccountService extends BaseService
             $ordersAccountData = [
                 "account_id" => $res->id,
                 "nickname" => $data["nickname"],
+                "is_wechat" => $data["is_wechat"],
                 "create_time" => time(),
                 "update_time" => time()
             ];
@@ -150,6 +152,7 @@ class AccountService extends BaseService
             $ordersAccountData = [
                 "account_id" => $account_id,
                 "nickname" => $data["nickname"],
+                "is_wechat" => $data["is_wechat"],
                 "create_time" => time(),
                 "update_time" => time()
             ];
@@ -198,5 +201,15 @@ class AccountService extends BaseService
             Db::rollback();
             return $exception->getMessage();
         }
+    }
+
+
+    /**
+     * 更新是否是沉淀微信
+     * @param $param
+     * @return mixed
+     */
+    public function updateIsWechat($param) {
+        return (new OrdersAccountMapper())->updateWhere(["id" => $param["id"]], ["is_wechat" => $param["is_wechat"]]);
     }
 }

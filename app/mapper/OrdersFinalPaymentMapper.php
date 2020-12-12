@@ -23,6 +23,6 @@ class OrdersFinalPaymentMapper extends BaseMapper
         return OrdersFinalPayment::with(["amountAccounts" => function($query) {
             return $query->field("account, id");
         }])->where(["main_order_id" => $data["main_order_id"]])
-            ->field("id, amount_account_id, change_amount, final_payment, create_time")->select()->toArray();
+            ->field("id, amount_account_id, change_amount, final_payment as payment, create_time")->select()->toArray();
     }
 }

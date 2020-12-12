@@ -33,6 +33,21 @@ class UserService extends BaseService
     }
 
     /**
+     * 修改密码
+     *
+     * @param $param
+     * @return mixed|string
+     */
+    public function updatePwd($param) {
+        # 查询原密码是否正确
+        $old = $this->findBy(["id" => request()->uid], "password")["password"];
+        if (!password_verify($param["old_pwd"], $old))
+            return "原密码错误";
+        # 修改密码
+        return $this->updateWhere(["id" => request()->uid], ["password" => password_hash($param["pwd"], PASSWORD_DEFAULT)]);
+    }
+
+    /**
      * 获取所有分组用户数据
      * @return array
      * @throws \think\db\exception\DataNotFoundException

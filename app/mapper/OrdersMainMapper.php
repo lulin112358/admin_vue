@@ -40,16 +40,19 @@ class OrdersMainMapper extends BaseMapper
         $map = [];
         if (request()->uid != 1) {
             $rowAuth = row_auth();
-            $map = ["om.order_account_id" => $rowAuth["account_id"],
-                "om.origin_id" => $rowAuth["origin_id"],
-                "od.amount_account_id" => $rowAuth["amount_account_id"]];
+            $map = ["om.order_account_id" => ($rowAuth["account_id"]??[]),
+                "om.origin_id" => ($rowAuth["origin_id"]??[]),
+                "od.amount_account_id" => ($rowAuth["amount_account_id"]??[])];
         }
 
         return Db::table("orders_main")->alias("om")
             ->join(["orders_deposit" => "od"], "om.id=od.main_order_id")
             ->join(["origin" => "o"], "o.id=om.origin_id")
             ->join(["orders_account" => "oa"], "oa.id=om.order_account_id")
-            ->where([["o.status", "<>", 0], ["oa.status", "<>", 0], ["od.status", "<>", 0]])
+            ->join(["orders_account" => "oa1"], "oa1.id=om.wechat_id")
+            ->join(["user" => "u"], "u.id=om.customer_manager")
+            ->join(["category" => "c"], "c.id=om.category_id")
+            ->where([["o.status", "<>", 0], ["oa.status", "<>", 0], ["od.status", "<>", 0], ["oa1.is_wechat", "=", 1], ["u.status", "=", 1]])
             ->where(["om.customer_id" => request()->uid])
             ->where($map)
             ->where($where)

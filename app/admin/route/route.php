@@ -69,6 +69,7 @@ Route::group('admin', function () {
     Route::delete('user', User::class.'@delUser');
     Route::get('user/one', User::class.'@getUser');
     Route::put('user/status', User::class.'@updateStatus');
+    Route::put('user/update_pwd', User::class.'@updatePwd');
     # 获取市场来源人员选择信息
     Route::get('user/commissioner', User::class.'@commissioner');
     Route::get('user/manager', User::class.'@manager');
@@ -95,6 +96,7 @@ Route::group('admin', function () {
     Route::get('account/info', Account::class."@accountInfo");
     Route::post('account', Account::class."@addAccount");
     Route::put('account', Account::class."@updateAccount");
+    Route::put('account/is_wechat', Account::class."@updateIsWechat");
     Route::delete('account', Account::class."@delAccount");
 
     # 收款账户
@@ -156,6 +158,7 @@ Route::group('admin', function () {
 
     # 工程师
     Route::get("engineer", Engineer::class."@engineer");
+    Route::get("engineer/search", Engineer::class."@engineerSearch");
     Route::get("engineers_base", Engineer::class."@engineerBaseInfo");
     Route::post("engineer", Engineer::class."@addEngineer");
     Route::delete("engineer", Engineer::class."@delEngineer");
@@ -176,6 +179,9 @@ Route::group('admin', function () {
 
     # 尾款
     Route::get("final_payment", OrdersFinalPayment::class."@finalPayment");
+
+    # 收款记录
+    Route::get("payment_log", OrdersDeposit::class."@orderPaymentLog");
 
     # 权限列管理
     Route::get("auth_field", AuthFields::class."@authFields");

@@ -14,7 +14,7 @@ class AuthFieldsService extends BaseService
     # 订单状态
     private $status = [
         ["value" => 1, "label" => "未发出"],
-        ["value" => 2, "label" => "已发出"],
+//        ["value" => 2, "label" => "已发出"],
         ["value" => 3, "label" => "已交稿"],
         ["value" => 4, "label" => "准备退款"],
 //        ["value" => 5, "label" => "已退款"],
@@ -77,19 +77,11 @@ class AuthFieldsService extends BaseService
                 "showHeaderOverflow" => true,
                 "showOverflow" => true,
             ];
-            if ($v["field"] == "deposit_account") {
+            if ($v["field"] == "payment_log") {
                 $field["cellRender"] = [
-                    "name" => "depositRender",
+                    "name" => "paymentRender",
                     "events" => [
-                        "click" => "depositCheck"
-                    ]
-                ];
-            }
-            if ($v["field"] == "final_payment_account") {
-                $field["cellRender"] = [
-                    "name" => "finalPaymentRender",
-                    "events" => [
-                        "click" => "finalPaymentCheck"
+                        "click" => "paymentLogs"
                     ]
                 ];
             }

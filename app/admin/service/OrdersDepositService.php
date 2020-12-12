@@ -5,6 +5,7 @@ namespace app\admin\service;
 
 
 use app\mapper\OrdersDepositMapper;
+use app\mapper\OrdersFinalPaymentMapper;
 use think\facade\Db;
 
 class OrdersDepositService extends BaseService
@@ -20,6 +21,26 @@ class OrdersDepositService extends BaseService
      */
     public function deposit($data) {
         return (new OrdersDepositMapper())->deposit($data);
+    }
+
+    /**
+     * 获取收款记录
+     * @param $data
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function paymentLog($data) {
+        $deposit = (new OrdersDepositMapper())->deposit($data);
+        $finalPayment = (new OrdersFinalPaymentMapper())->finalPayment($data);
+        foreach ($deposit as $k => $v) {
+            $deposit[$k]["type"] = "定金";
+        }
+        foreach ($finalPayment as $k => $v) {
+            $finalPayment[$k]["type"] = "尾款";
+        }
+        return array_merge($deposit, $finalPayment);
     }
 
     /**

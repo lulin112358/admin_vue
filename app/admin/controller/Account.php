@@ -106,4 +106,24 @@ class Account extends Base
             $this->ajaxReturn(Code::ERROR, $res);
         $this->ajaxReturn(Code::SUCCESS, "删除成功");
     }
+
+
+    /**
+     * 更新是否是沉淀微信
+     * @param AccountService $service
+     * @param AccountValidate $validate
+     */
+    public function updateIsWechat(AccountService $service, AccountValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("update_is_wechat")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $res = $service->updateIsWechat($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        if (!$res)
+            $this->ajaxReturn(Code::ERROR, "操作失败");
+        $this->ajaxReturn("操作成功");
+    }
 }

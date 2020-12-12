@@ -8,6 +8,7 @@ use app\admin\service\UserRoleService;
 use app\admin\service\UserService;
 use app\Code;
 use app\validate\UserRoleValidate;
+use app\validate\UserValidate;
 use think\facade\Validate;
 
 class User extends Base
@@ -67,6 +68,27 @@ class User extends Base
             $this->ajaxReturn(Code::ERROR, "添加失败");
 
         $this->ajaxReturn(Code::SUCCESS, "添加成功");
+    }
+
+    /**
+     * 修改密码
+     * @param UserService $service
+     * @param UserValidate $validate
+     */
+    public function updatePwd(UserService $service, UserValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("update_pwd")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $res = $service->updatePwd($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        if (is_string($res))
+            $this->ajaxReturn(Code::ERROR, $res);
+        if ($res === false)
+            $this->ajaxReturn(Code::ERROR, "修改失败");
+        $this->ajaxReturn("修改成功");
     }
 
     /**

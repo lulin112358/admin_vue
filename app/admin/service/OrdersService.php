@@ -29,6 +29,16 @@ class OrdersService extends BaseService
         6 => "已发全能"
     ];
 
+    # 订单状态颜色
+    private $statusColor = [
+        1 => "red",
+        2 => "yellow",
+        3 => "green",
+        4 => "black",
+        5 => "black",
+        6 => "yellow"
+    ];
+
     # 修改orders_main表的字段
     private $orderMain = [
         "origin_name",
@@ -73,14 +83,18 @@ class OrdersService extends BaseService
         # 行权限过滤
         $whereRow = [];
         $authRow = [];
+        # 发单人权限
+//        $billerUser = [];
         if (request()->uid != 1) {
             $authRow = row_auth();
             $authRowUserCustomer = $authRow["user_customer_id"]??[];
             array_push($authRowUserCustomer, request()->uid);
-            $authRowUserBiller = $authRow["user_biller_id"]??[];
-            array_push($authRowUserBiller, request()->uid);
+//            $authRowUserBiller = $authRow["user_biller_id"]??[];
+//            array_push($authRowUserBiller, request()->uid);
             $authRowUserAlmighty = $authRow["user_almighty_id"]??[];
             array_push($authRowUserAlmighty, request()->uid);
+//            $billerUser = $authRow["user_biller_id"]??[];
+//            array_push($billerUser, request()->uid);
 //            $authRowUserCommissioner = $authRow["user_commissioner_id"]??[];
 //            array_push($authRowUserCommissioner, request()->uid);
 //            $authRowUserMaintain = $authRow["user_maintain_id"]??[];
@@ -140,27 +154,32 @@ class OrdersService extends BaseService
                 })
                 # 行权限控制
                 ->where($whereRow)
-                ->where(function ($query) use ($authRow) {
-                    if (request()->uid != 1) {
-                        $query->where(["engineer_id" => ($authRow["engineer_id"]??[])])
-                        ->whereOr("engineer_id", null);
-                    }
-                })
+//                ->where(function ($query) use ($authRow) {
+//                    if (request()->uid != 1) {
+//                        $query->where(["engineer_id" => ($authRow["engineer_id"]??[])])
+//                        ->whereOr("engineer_id", null);
+//                    }
+//                })
                 ->where(function ($query) use ($authRow) {
                     if (request()->uid != 1) {
                         $query->where(["final_payment_amount_account_id" => ($authRow["amount_account_id"]??[])])
                         ->whereOr("final_payment_amount_account_id", null);
                     }
                 })
-                ->where(function ($query) use ($authRow) {
-                    if (request()->uid != 1) {
-                        $query->where(["biller_id" => ($authRow["biller_id"]??[])])
-                            ->whereOr("biller_id", 0);
-                    }
-                })
+                # 发单人权限验证
+//                ->where(function ($query) use ($billerUser) {
+//                    if (request()->uid != 1) {
+//                        $query->where(["biller_id" => $billerUser])
+//                            ->whereOr("biller_id", 0);
+//                    }
+//                })
                 # 模糊匹配查询条件
                 ->where("manuscript_fee|biller|cate_name|check_fee|commission_ratio|customer_manager|customer_name|market_maintain|market_manager|market_user|order_sn|total_amount|customer_contact|deposit|final_payment|require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|note", "like", "%$searchKey%")
-                ->where($where)->order($params["search_order"])->order("order_id desc")->paginate(100, true)->items();
+                ->where($where)
+                ->orderRaw("if(status=3, 1, 0)")
+                ->order($params["search_order"])
+                ->order("order_id asc")
+                ->paginate(100, true)->items();
         }else {         # 导出excel不需要分页
             $data = Db::table("orders_view")
                 # 查询目前可用的记录
@@ -177,33 +196,37 @@ class OrdersService extends BaseService
                 })
                 # 行权限控制
                 ->where($whereRow)
-                ->where(function ($query) use ($authRow) {
-                    if (request()->uid != 1) {
-                        $query->where(["engineer_id" => $authRow["engineer_id"]??[]])
-                            ->whereOr("engineer_id", null);
-                    }
-                })
+//                ->where(function ($query) use ($authRow) {
+//                    if (request()->uid != 1) {
+//                        $query->where(["engineer_id" => $authRow["engineer_id"]??[]])
+//                            ->whereOr("engineer_id", null);
+//                    }
+//                })
                 ->where(function ($query) use ($authRow) {
                     if (request()->uid != 1) {
                         $query->where(["final_payment_amount_account_id" => $authRow["amount_account_id"]??[]])
                             ->whereOr("final_payment_amount_account_id", null);
                     }
                 })
-                ->where(function ($query) use ($authRow) {
-                    if (request()->uid != 1) {
-                        $query->where(["biller_id" => ($authRow["biller_id"]??[])])
-                            ->whereOr("biller_id", 0);
-                    }
-                })
+                # 发单人权限验证
+//                ->where(function ($query) use ($billerUser) {
+//                    if (request()->uid != 1) {
+//                        $query->where(["biller_id" => $billerUser])
+//                            ->whereOr("biller_id", 0);
+//                    }
+//                })
                 # 模糊匹配查询条件
                 ->where("manuscript_fee|biller|cate_name|check_fee|commission_ratio|customer_manager|customer_name|market_maintain|market_manager|market_user|order_sn|total_amount|customer_contact|deposit|final_payment|require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|note", "like", "%$searchKey%")
-                ->where($where)->order($params["search_order"])->order("order_id desc")->select()->toArray();
+                ->where($where)
+                ->orderRaw("if(status=3, 1, 0)")
+                ->order($params["search_order"])
+                ->order("order_id asc")->select()->toArray();
         }
 
         foreach ($data as $k => $v) {
             $data[$k]["create_time"] = date("Y-m-d H:i:s", $v["create_time"]);
-            $data[$k]["delivery_time"] = date("Y-m-d H:i:s", $v["delivery_time"]);
-            $data[$k]["commission_ratio"] = $v["commission_ratio"]."%";
+            $data[$k]["delivery_time"] = date("Y-m-d H", $v["delivery_time"]);
+            $data[$k]["commission_ratio"] = $v["commission_ratio"]<=1?($v["commission_ratio"] * 100)."%":$v["commission_ratio"]."元";
             $data[$k]["biller"] = is_null($v["biller"])?"暂未填写":$v["biller"];
             $data[$k]["status"] = $this->status[$v["status"]];
             # 保留有效位数
@@ -232,36 +255,29 @@ class OrdersService extends BaseService
             $diffHour = (new Carbon())->diffInHours($time);
             if ($diffHour > 24) {
                 $diff = $diffDay."天".($diffHour - $diffDay * 24)."时";
-                if (!$time->gt(Carbon::now())) {
-                    $diff = "超".$diff;
-                    $data[$k]["color"] = "red";
-                }else{
-                    if ($v["status"] == 2 || $v["status"] == 1)
-                        $data[$k]["color"] = "blue";
-                }
             }else{
                 $diff = $diffHour."时";
-                if (!$time->gt(Carbon::now())) {
-                    $diff = "超".$diff;
-                    $data[$k]["color"] = "red";
-                }else{
-                    if ($diffHour > 0 && $diffHour <= 6 && ($v["status"] == 1 || $v["status"] == 2)) {
-                        $data[$k]["color"] = "red";
-                    }
-                    if ($diffHour > 6 && $diffHour <= 12 && ($v["status"] == 1 || $v["status"] == 2)) {
-                        $data[$k]["color"] = "yellow";
-                    }
-                    if ($diffHour > 12 && ($v["status"] == 1 || $v["status"] == 2)) {
-                        $data[$k]["color"] = "blue";
-                    }
-                }
             }
+            if (!$time->gt(Carbon::now())) {
+                $diff = "超".$diff;
+                $data[$k]["color"] = "red";
+            }else{
+                $rate = ($v["delivery_time"] - time()) / ($v["delivery_time"] - $v["create_time"]);
+                if ($rate <= 0.3)
+                    $data[$k]["color"] = "red";
+                if ($rate <= 0.5 && $rate > 0.3)
+                    $data[$k]["color"] = "yellow";
+                if ($rate > 0.5)
+                    $data[$k]["color"] = "green";
+            }
+            $data[$k]["status_color"] = $this->statusColor[$v["status"]];
             if ($v["status"] == 3) {
                 $diff = "已交稿";
-                $data[$k]["color"] = "green";
+                $data[$k]["color"] = "black";
             }
             $data[$k]["countdown"] = $diff;
         }
+
         return $data;
     }
 
@@ -282,14 +298,18 @@ class OrdersService extends BaseService
         # 行权限过滤
         $whereRow = [];
         $authRow = [];
+        # 发单人权限
+//        $billerUser = [];
         if (request()->uid != 1) {
             $authRow = row_auth();
             $authRowUserCustomer = $authRow["user_customer_id"]??[];
             array_push($authRowUserCustomer, request()->uid);
-            $authRowUserBiller = $authRow["user_biller_id"]??[];
-            array_push($authRowUserBiller, request()->uid);
+//            $authRowUserBiller = $authRow["user_biller_id"]??[];
+//            array_push($authRowUserBiller, request()->uid);
             $authRowUserAlmighty = $authRow["user_almighty_id"]??[];
             array_push($authRowUserAlmighty, request()->uid);
+//            $billerUser = $authRow["user_biller_id"]??[];
+//            array_push($billerUser, request()->uid);
 //            $authRowUserCommissioner = $authRow["user_commissioner_id"]??[];
 //            array_push($authRowUserCommissioner, request()->uid);
 //            $authRowUserMaintain = $authRow["user_maintain_id"]??[];
@@ -315,18 +335,19 @@ class OrdersService extends BaseService
             })
             # 行权限控制
             ->where($whereRow)
-            ->where(function ($query) use ($authRow) {
-                if (request()->uid != 1) {
-                    $query->where(["engineer_id" => ($authRow["engineer_id"]??[])])
-                        ->whereOr("engineer_id", null);
-                }
-            })
-            ->where(function ($query) use ($authRow) {
-                if (request()->uid != 1) {
-                    $query->where(["biller_id" => ($authRow["biller_id"]??[])])
-                        ->whereOr("biller_id", 0);
-                }
-            })
+//            ->where(function ($query) use ($authRow) {
+//                if (request()->uid != 1) {
+//                    $query->where(["engineer_id" => ($authRow["engineer_id"]??[])])
+//                        ->whereOr("engineer_id", null);
+//                }
+//            })
+                # 发单人权限
+//            ->where(function ($query) use ($billerUser) {
+//                if (request()->uid != 1) {
+//                    $query->where(["biller_id" => $billerUser])
+//                        ->whereOr("biller_id", 0);
+//                }
+//            })
             ->where(function ($query) use ($authRow) {
                 if (request()->uid != 1) {
                     $query->where(["final_payment_amount_account_id" => ($authRow["amount_account_id"]??[])])
@@ -334,8 +355,11 @@ class OrdersService extends BaseService
                 }
             })->find();
 
+        $status = $data["status"];
+        $delivery_time = $data["delivery_time"];
+        $create_time = $data["create_time"];
         $data["create_time"] = date("Y-m-d H:i:s", $data["create_time"]);
-        $data["delivery_time"] = date("Y-m-d H:i:s", $data["delivery_time"]);
+        $data["delivery_time"] = date("Y-m-d H", $data["delivery_time"]);
         $data["commission_ratio"] = $data["commission_ratio"]."%";
         $data["biller"] = is_null($data["biller"])?"暂未填写":$data["biller"];
         $data["status"] = $this->status[$data["status"]];
@@ -358,40 +382,32 @@ class OrdersService extends BaseService
         }
 
         # TODO 此处待优化
-        $time = Carbon::parse($data["delivery_time"]);
+        $time = Carbon::parse($data["delivery_time"].":00:00");
         # 天数差
         $diffDay = (new Carbon())->diffInDays($time);
         # 小时差
         $diffHour = (new Carbon())->diffInHours($time);
         if ($diffHour > 24) {
             $diff = $diffDay."天".($diffHour - $diffDay * 24)."时";
-            if (!$time->gt(Carbon::now())) {
-                $diff = "超".$diff;
-                $data["color"] = "red";
-            }else{
-                if ($data["status"] == 2 || $data["status"] == 1)
-                    $data["color"] = "blue";
-            }
         }else{
             $diff = $diffHour."时";
-            if (!$time->gt(Carbon::now())) {
-                $diff = "超".$diff;
-                $data["color"] = "red";
-            }else{
-                if ($diffHour > 0 && $diffHour <= 6 && ($data["status"] == 1 || $data["status"] == 2)) {
-                    $data["color"] = "red";
-                }
-                if ($diffHour > 6 && $diffHour <= 12 && ($data["status"] == 1 || $data["status"] == 2)) {
-                    $data["color"] = "yellow";
-                }
-                if ($diffHour > 12 && ($data["status"] == 1 || $data["status"] == 2)) {
-                    $data["color"] = "blue";
-                }
-            }
         }
-        if ($data["status"] == "已交稿") {
+        if (!$time->gt(Carbon::now())) {
+            $diff = "超".$diff;
+            $data["color"] = "red";
+        }else{
+            $rate = ($delivery_time - time()) / ($delivery_time - $create_time);
+            if ($rate <= 0.3)
+                $data["color"] = "red";
+            if ($rate <= 0.5 && $rate > 0.3)
+                $data["color"] = "yellow";
+            if ($rate > 0.5)
+                $data["color"] = "green";
+        }
+        $data["status_color"] = $this->statusColor[$status];
+        if ($data["status"] == 3) {
             $diff = "已交稿";
-            $data["color"] = "green";
+            $data["color"] = "black";
         }
         $data["countdown"] = $diff;
         return $data;
@@ -422,7 +438,7 @@ class OrdersService extends BaseService
                 "total_amount" => $data["total_amount"],
                 "customer_contact" => $data["customer_contact"],
                 "customer_manager" => $data["customer_manager"],
-                "category_id" => $data["cate_id"][1],
+                "category_id" => count($data["cate_id"])==2?$data["cate_id"][1]:$data["cate_id"][0],
                 "wechat_id" => $data["wechat_id"],
                 "file" => $data["file"]??"",
                 "create_time" => time(),
@@ -514,9 +530,42 @@ class OrdersService extends BaseService
             }
             # 如果更新订单状态为已交稿则更新实际交稿时间
             if ($data["field"] == "status" && $data["value"] == 3) {
+                $engineer_id = $this->findBy(["id" => $data["order_id"]], "engineer_id")["engineer_id"];
+                if ($engineer_id == 0)
+                    return "该订单暂未发单 不允许交稿";
                 $updateData["actual_delivery_time"] = time();
             }
             return (new OrdersMapper())->updateBy($updateData);
+        }
+    }
+
+
+    /**
+     * 删除订单
+     * @param $param
+     * @return bool|\Exception
+     */
+    public function deleteOrder($param) {
+        Db::startTrans();
+        try {
+            $info = $this->findBy($param, "main_order_id, status");
+            if ($info["status"] != 1)
+                throw new \Exception("该订单不允许删除");
+            $order_main_id = $info["main_order_id"];
+            $res = $this->deleteBy($param);
+            if ($res === false)
+                throw new \Exception("操作失败");
+            $exits = $this->countBy(["main_order_id" => $order_main_id]);
+            if ($exits <= 0) {
+                $res = (new OrdersMainMapper())->deleteBy(["id" => $order_main_id]);
+                if ($res === false)
+                    throw new \Exception("操作失败!");
+            }
+            Db::commit();
+            return true;
+        }catch (\Exception $exception) {
+            Db::rollback();
+            return $exception->getMessage();
         }
     }
 
@@ -571,6 +620,8 @@ class OrdersService extends BaseService
      * @return bool
      */
     public function splitOrder($data) {
+        # 查询主订单创建时间
+        $create_time = strtotime((new OrdersMainMapper())->findBy(["id" => $data["main_order_id"]], "create_time")["create_time"]);
         # 查看现有单数
         $count = $this->countBy(["main_order_id" => $data["main_order_id"]]);
         Db::startTrans();
@@ -590,8 +641,8 @@ class OrdersService extends BaseService
                     "manuscript_fee" => $data["manuscript_fee"]??0,
                     "check_fee" => $data["split_check_fee"]??0,
                     "delivery_time" => $info["delivery_time"],
-                    "create_time" => time(),
-                    "update_time" => time()
+                    "create_time" => $create_time,
+                    "update_time" => $create_time
                 ];
                 $res = $this->add($insertData);
                 if (!$res)
@@ -606,8 +657,8 @@ class OrdersService extends BaseService
                         "manuscript_fee" => $data["manuscript_fee"]??0,
                         "check_fee" => $data["split_check_fee"]??0,
                         "delivery_time" => $info["delivery_time"],
-                        "create_time" => time(),
-                        "update_time" => time()
+                        "create_time" => $create_time,
+                        "update_time" => $create_time
                     ];
                 }
                 $res = $this->addAll($insertData);

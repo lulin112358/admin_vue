@@ -27,4 +27,21 @@ class OrdersDeposit extends Base
         }
         $this->ajaxReturn($list);
     }
+
+    /**
+     * 获取收款记录
+     * @param OrdersDepositService $service
+     * @param OrdersDepositValidate $validate
+     */
+    public function orderPaymentLog(OrdersDepositService $service, OrdersDepositValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("list")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $list = $service->paymentLog($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($list);
+    }
 }

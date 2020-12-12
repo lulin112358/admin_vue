@@ -17,7 +17,7 @@ class Wechat extends Base
      */
     public function wechat(WechatService $service) {
         try {
-            $data = $service->selectBy(["status" => 1], "id, wechat, wechat_id, create_time, update_time", "id desc");
+            $data = $service->wechats();
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }

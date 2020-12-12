@@ -19,6 +19,25 @@ class Engineer extends Base
         $this->ajaxReturn($data);
     }
 
+
+    /**
+     * 搜索工程师
+     * @param EngineerService $service
+     * @param EngineerValidate $validate
+     */
+    public function engineerSearch(EngineerService $service, EngineerValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("query")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $list = $service->engineerSearch($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($list);
+    }
+
+
     /**
      * 工程师列表
      *
@@ -29,7 +48,7 @@ class Engineer extends Base
         try {
             $list = $service->engineer($param);
         }catch (\Exception $exception) {
-            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+            $this->ajaxReturn(Code::ERROR, $exception->getTrace());
         }
         $this->ajaxReturn($list);
     }

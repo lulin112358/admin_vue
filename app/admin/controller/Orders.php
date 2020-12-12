@@ -105,6 +105,8 @@ class Orders extends Base
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
+        if (is_string($res))
+            $this->ajaxReturn(Code::ERROR, $res);
         if ($res === false)
             $this->ajaxReturn(Code::ERROR, "修改失败");
 
@@ -139,12 +141,12 @@ class Orders extends Base
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
         try {
-            $res = $service->deleteBy(["id" => $param["order_id"]]);
+            $res = $service->deleteOrder(["id" => $param["order_id"]]);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
-        if ($res === false)
-            $this->ajaxReturn(Code::ERROR, "删除失败");
+        if (is_string($res))
+            $this->ajaxReturn(Code::ERROR, $res);
         $this->ajaxReturn("删除成功");
     }
 

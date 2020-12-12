@@ -31,9 +31,9 @@ class UserRoleService extends BaseService
         foreach ($data as $k => $v) {
             $roles = "";
             foreach ($v["roles"] as $idx => $item) {
-                $roles .= $item["role_name"].",";
+                $roles .= $item["role_name"]."、";
             }
-            $data[$k]["roles"] = trim($roles, ",");
+            $data[$k]["roles"] = trim($roles, "、");
         }
         return $data;
     }

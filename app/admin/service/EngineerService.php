@@ -17,6 +17,20 @@ class EngineerService extends BaseService
     protected $mapper = EngineerMapper::class;
 
     /**
+     * 搜索工程师
+     * @param $param
+     * @return mixed
+     */
+    public function engineerSearch($param) {
+        $data = $this->selectBy([["contact_qq", "like", "{$param['query']}%"], ["status", "=", 1], ["is_delete", "=", 0]],
+            "id, qq_nickname, contact_qq");
+        foreach ($data as $k => $v)
+            $data[$k]["qqinfo"] = $v["qq_nickname"]." / ".$v["contact_qq"];
+
+        return $data;
+    }
+
+    /**
      * 获取所有工程师(基本信息)
      * @return mixed
      */
@@ -141,8 +155,8 @@ class EngineerService extends BaseService
         $user = array_combine(array_column($user, "id"), array_column($user, "name"));
         foreach ($list as $k => $v) {
             $list[$k]["create_time"] = date("Y-m-d H:i:s", $v["create_time"]);
-            $list[$k]["personnel_name"] = $user[$v["personnel_id"]];
-            $list[$k]["personnel_manager_name"] = $user[$v["personnel_manager_id"]];
+            $list[$k]["personnel_name"] = $user[$v["personnel_id"]]??"数据未同步";
+            $list[$k]["personnel_manager_name"] = $user[$v["personnel_manager_id"]]??"数据未同步";
 //            $list[$k]["personnel_train_name"] = $user[$v["personnel_train_id"]];
             $list[$k]["join_days"] = ceil((time() - $v["create_time"]) / (3600 * 24));
             $list[$k]["today_receive"] = empty($today) ? 0 : ($todayValue[$v["id"]]??0);

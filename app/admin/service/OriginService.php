@@ -67,6 +67,7 @@ class OriginService extends BaseService
             $list[$k]["market_maintain"] = $users[$v["market_maintain"]];
             $list[$k]["market_manager"] = $users[$v["market_manager"]];
             $list[$k]["market_user"] = $users[$v["market_user"]];
+            $list[$k]["commission_ratio"] = $v["commission_ratio"] < 1 ? (($v["commission_ratio"] * 100)."%") : (floatval($v["commission_ratio"])."元");
         }
         return $list;
     }

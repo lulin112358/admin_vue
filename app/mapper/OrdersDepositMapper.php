@@ -24,6 +24,6 @@ class OrdersDepositMapper extends BaseMapper
         return OrdersDeposit::with(["amountAccounts" => function($query) {
             return $query->field("account, id");
         }])->where(["main_order_id" => $data["main_order_id"]])
-            ->field("id, amount_account_id, change_deposit, deposit, create_time")->select()->toArray();
+            ->field("id, amount_account_id, change_deposit as change_amount, deposit as payment, create_time")->select()->toArray();
     }
 }

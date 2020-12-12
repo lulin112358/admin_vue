@@ -12,14 +12,17 @@ class UserValidate extends Validate
      * 格式：'字段名'	=>	['规则1','规则2'...]
      *
      * @var array
-     */	
+     */
 	protected $rule = [
 	    'user_name|用户名' => 'require',
-        'password|密码' => 'require'
+        'password|密码' => 'require',
+        "old_pwd|原密码" => "require",
+        "pwd|新密码" => "require"
     ];
 
 
 	protected $scene = [
-	    'login' => ['user_name', 'password']
+	    'login' => ['user_name', 'password'],
+        "update_pwd" => ['old_pwd', 'pwd']
     ];
 }

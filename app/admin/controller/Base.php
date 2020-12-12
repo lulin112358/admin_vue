@@ -46,7 +46,7 @@ class Base
         "/admin/account" => "account_id",
         "/admin/amount_account" => "amount_account_id",
         "/admin/engineer" => "engineer_id",
-        "/admin/user" => "user_id",
+//        "/admin/user" => "user_id",
         "/admin/user/user_manager" => "user_user_manager_id",
         "/admin/user/customer_user" => "user_customer_id",
         "/admin/user/biller_user" => "user_biller_id",

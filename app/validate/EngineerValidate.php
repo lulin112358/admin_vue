@@ -24,13 +24,15 @@ class EngineerValidate extends Validate
         "tendency_id|倾向类型" => "require",
         "top_degree_id|最高学历" => "require",
         "wechat|微信号" => "require",
-        "wechat_nickname|微信昵称" => "require"
+        "wechat_nickname|微信昵称" => "require",
+        "query|查询条件" => "require"
     ];
 
     protected $scene = [
         "updateStatus" => ["id", "status"],
         "add" => ["alipay", "contact_phone", "contact_qq", "good_at_software_id", "personnel_id",
             "personnel_manager_id", "profession_id", "qq_nickname", "school_id", "tendency_id", "top_degree_id"],
-        "del" => ["id"]
+        "del" => ["id"],
+        "query" => ["query"]
     ];
 }
