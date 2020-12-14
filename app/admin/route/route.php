@@ -2,8 +2,10 @@
 
 use app\admin\controller\Account;
 use app\admin\controller\AmountAccount;
+use app\admin\controller\Attendance;
 use app\admin\controller\AuthFields;
 use app\admin\controller\Category;
+use app\admin\controller\CustomerBi;
 use app\admin\controller\Degree;
 use app\admin\controller\Engineer;
 use app\admin\controller\Evaluation;
@@ -24,6 +26,7 @@ use app\admin\controller\Tendency;
 use app\admin\controller\Upload;
 use app\admin\controller\UserAuthFields;
 use app\admin\controller\UserAuthRow;
+use app\admin\controller\UserExtend;
 use app\admin\controller\Wechat;
 use think\facade\Route;
 use app\admin\controller\Menu;
@@ -57,6 +60,7 @@ Route::group('admin', function () {
 
     # 用户路由
     Route::get('user', User::class.'@userList');
+    Route::get('user/extend', UserExtend::class.'@userExtendInfo');
     Route::get('user/user_manager', User::class.'@managerUser');
     Route::get('user/customer_user', User::class.'@customerUser');
     Route::get('user/biller_user', User::class.'@billerUser');
@@ -66,6 +70,7 @@ Route::group('admin', function () {
     Route::get('user/all_group', User::class.'@allGroupUsers');
     Route::post('user', User::class.'@addUser');
     Route::put('user', User::class.'@updateUser');
+    Route::put('user/extend', UserExtend::class.'@updateUserExtendInfo');
     Route::delete('user', User::class.'@delUser');
     Route::get('user/one', User::class.'@getUser');
     Route::put('user/status', User::class.'@updateStatus');
@@ -77,10 +82,10 @@ Route::group('admin', function () {
 
     # 账号类型路由
     Route::get('account_cate', AccountCate::class."@cateList");
-//    Route::post('account_cate', AccountCate::class."@addCate");
-//    Route::get('account_cate/one', AccountCate::class."@cateOne");
-//    Route::put('account_cate', AccountCate::class."@updateCate");
-//    Route::delete('account_cate', AccountCate::class."@delCate");
+    Route::post('account_cate', AccountCate::class."@addCate");
+    Route::get('account_cate/one', AccountCate::class."@cateOne");
+    Route::put('account_cate', AccountCate::class."@updateCate");
+    Route::delete('account_cate', AccountCate::class."@delCate");
 
     # 来源管理
     Route::post('origin', Origin::class."@addOrigin");
@@ -220,6 +225,14 @@ Route::group('admin', function () {
     Route::get("refund_log", Refund::class."@refundLogList");
     Route::post("refund", Refund::class."@refund");
     Route::post("refund_handle", Refund::class."@refundHandle");
+
+    # 考勤
+    Route::get("attendance", Attendance::class."@attendances");
+    Route::get("attendance/user", Attendance::class."@userAttendances");
+
+    # BI
+    Route::get("customer_bi", CustomerBi::class."@customerBiCount");
+    // Route::get("customer_bi/cols", CustomerBi::class."@customerBiCols");
 })->allowCrossDomain()->middleware([JwtMiddleware::class]);
 
 # 后台路由组   不需要jwt登录验证

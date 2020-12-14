@@ -435,8 +435,8 @@ class OrdersService extends BaseService
                 "customer_id" => request()->uid,
                 "origin_id" => $data["origin_id"],
                 "order_account_id" => $data["account_id"],
-                "total_amount" => $data["total_amount"],
-                "customer_contact" => $data["customer_contact"],
+                "total_amount" => $data["total_amount"]??0,
+                "customer_contact" => $data["customer_contact"]??'',
                 "customer_manager" => $data["customer_manager"],
                 "category_id" => count($data["cate_id"])==2?$data["cate_id"][1]:$data["cate_id"][0],
                 "wechat_id" => $data["wechat_id"],
@@ -451,7 +451,7 @@ class OrdersService extends BaseService
             $orderData = [
                 "main_order_id" => $mainRes->id,
                 "order_sn" => $codename.substr(date("ymd"), 1).str_pad($count, 2, "0", STR_PAD_LEFT),
-                "require" => $data["require"],
+                "require" => $data["require"]??'',
                 "note" => $data["note"]??"",
                 "delivery_time" => strtotime($data["delivery_time"].":00:00"),
                 "create_time" => time(),
@@ -467,7 +467,7 @@ class OrdersService extends BaseService
             $orderDepositData = [
                 "main_order_id" => $mainRes->id,
                 "change_deposit" => $data["deposit_amount"],
-                "deposit" => $data["deposit_amount"],
+                "deposit" => $data["deposit_amount"]??0,
                 "amount_account_id" => $data["amount_account_id"],
                 "create_time" => time(),
                 "update_time" => time()

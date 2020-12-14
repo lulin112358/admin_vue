@@ -12,6 +12,42 @@ class OrdersMainMapper extends BaseMapper
     protected $model = OrdersMain::class;
 
     /**
+     * 来源数量排序
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function accountSortData($where) {
+        return Db::table("orders_main")->alias("om")
+            ->join(["orders_account" => "oa"], "oa.id=om.order_account_id")
+            ->join(["account" => "a"], "a.id=oa.account_id")
+            ->where($where)
+            ->field("count(a.id) as account_id_count, a.id as account_id")
+            ->group("a.id")
+            ->order("account_id_count desc")
+            ->select()->toArray();
+    }
+
+    /**
+     * 客服接单BI统计数据
+     * @param $where
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function customerData($where) {
+        return Db::table("orders_main")->alias("om")
+            ->join(["orders_account" => "oa"], "oa.id=om.order_account_id")
+            ->join(["account" => "a"], "a.id=oa.account_id")
+            ->join(["user" => "u"], "u.id=om.customer_id", "right")
+            ->where($where)
+            ->field("om.customer_id, a.id as account_id, om.total_amount, u.name")
+            ->select()->toArray();
+    }
+
+    /**
      * 填写主订单的主要信息
      *
      * @return array

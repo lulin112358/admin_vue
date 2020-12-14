@@ -28,7 +28,8 @@ class AccountService extends BaseService
             ->join(["account" => "a"], "a.id=oa.account_id", "left")
             ->join(["account_cate" => "ac"], "ac.id=a.account_cate", "left")
             ->where(["oa.status" => 1])
-            ->field("oa.account_id, a.account, oa.id, ac.cate_name, oa.nickname, oa.is_wechat")
+            ->field("oa.account_id, a.account, oa.id, ac.cate_name, oa.nickname, oa.is_wechat, a.simple_name")
+            ->order("ac.cate_name desc")
             ->order("oa.id desc")
             ->select()->toArray();
         return $list;
@@ -82,6 +83,7 @@ class AccountService extends BaseService
             # 添加接单账号
             $accountData = [
                 "account" => $data["account"],
+                "simple_name" => $data["simple_name"],
                 "account_cate" => $data["account_cate"],
                 "create_time" => time(),
                 "update_time" => time()
@@ -142,7 +144,7 @@ class AccountService extends BaseService
                 $data["account_cate"] = $res->id;
             }
             # 修改接单账号
-            $res = $this->updateWhere(["account" => $data["account"]], ["account_cate" => $data["account_cate"]]);
+            $res = $this->updateWhere(["account" => $data["account"]], ["account_cate" => $data["account_cate"], "simple_name" => $data["simple_name"]]);
             if ($res === false)
                 throw new \Exception("修改失败!");
             $account_id = Db::table("orders_account")->where(["id" => $data["account_id"]])->value("account_id");
