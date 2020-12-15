@@ -4,10 +4,12 @@
 namespace app\admin\service;
 
 
+use app\mapper\AccountMapper;
 use app\mapper\CategoryMapper;
 use app\mapper\OrdersDepositMapper;
 use app\mapper\OrdersMainMapper;
 use app\mapper\OrdersMapper;
+use app\mapper\OriginMapper;
 use app\mapper\SchoolMapper;
 use app\mapper\UserMapper;
 use Carbon\Carbon;
@@ -415,9 +417,8 @@ class OrdersService extends BaseService
 
     /**
      * 添加订单
-     *
      * @param $data
-     * @return bool|string
+     * @return string|string[]
      */
     public function addOrder($data) {
         Db::startTrans();
@@ -466,7 +467,7 @@ class OrdersService extends BaseService
                 throw new \Exception("添加失败");
             $orderDepositData = [
                 "main_order_id" => $mainRes->id,
-                "change_deposit" => $data["deposit_amount"],
+                "change_deposit" => $data["deposit_amount"]??0,
                 "deposit" => $data["deposit_amount"]??0,
                 "amount_account_id" => $data["amount_account_id"],
                 "create_time" => time(),
@@ -476,7 +477,22 @@ class OrdersService extends BaseService
             if (!$res)
                 throw new \Exception("添加失败!");
             Db::commit();
-            return true;
+            # 构造剪贴板内容
+            if ($data["account_id"] == $data["wechat_id"]) {
+                $returnData = [
+                    "content" => "麻烦您核实并填写下表单内容"
+                ];
+            }else {
+                # 获取沉淀微信
+                $wechat = (new AccountMapper())->accountInfo($data["account_id"])["account"];
+                # 获取来源
+                $origin = (new OriginMapper())->findBy(["id" => $data["origin_id"]], "origin_name")["origin_name"];
+                $returnData = [
+                    "content" => "http://customer.tperp.io/customer/order?oid={$mainRes->id}
+                    麻烦您核实并填写下表单内容，并添加我微信: {$wechat}，验证信息为: {$origin}-{$orderData['order_sn']}，将文件及检测报告发给我微信。"
+                ];
+            }
+            return $returnData;
         }catch (\Exception $exception) {
             Db::rollback();
             return $exception->getMessage();

@@ -129,4 +129,12 @@ class Engineer extends Base
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
     }
+
+    /**
+     * 获取邀请链接
+     */
+    public function affLink() {
+        $link = "http://customer.erp2020.top/customer/index?id=".request()->uid;
+        $this->ajaxReturn(Code::SUCCESS, "success", $link);
+    }
 }

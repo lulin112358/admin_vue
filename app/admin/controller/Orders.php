@@ -84,7 +84,7 @@ class Orders extends Base
         if (is_string($res))
             $this->ajaxReturn(Code::ERROR, $res);
 
-        $this->ajaxReturn("添加成功");
+        $this->ajaxReturn(Code::SUCCESS, "添加成功", $res);
     }
 
 

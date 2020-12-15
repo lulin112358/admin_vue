@@ -165,6 +165,7 @@ Route::group('admin', function () {
     Route::get("engineer", Engineer::class."@engineer");
     Route::get("engineer/search", Engineer::class."@engineerSearch");
     Route::get("engineers_base", Engineer::class."@engineerBaseInfo");
+    Route::get("engineer/aff_link", Engineer::class."@affLink");
     Route::post("engineer", Engineer::class."@addEngineer");
     Route::delete("engineer", Engineer::class."@delEngineer");
     Route::put("engineer", Engineer::class."@updateEngineer");

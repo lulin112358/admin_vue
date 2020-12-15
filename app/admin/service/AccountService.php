@@ -45,13 +45,7 @@ class AccountService extends BaseService
      * @throws \think\db\exception\ModelNotFoundException
      */
     public function accountInfo($data) {
-        $info = Db::table("orders_account")->alias("oa")
-            ->join(["account" => "a"], "a.id=oa.account_id")
-            ->join(["account_cate" => "ac"], "ac.id=a.account_cate")
-            ->where(["oa.id" => $data])
-            ->field("oa.account_id, a.account, oa.id, ac.cate_name, oa.nickname, a.account_cate, oa.is_wechat")
-            ->find();
-        return $info;
+        return (new AccountMapper())->accountInfo($data);
     }
 
     /**

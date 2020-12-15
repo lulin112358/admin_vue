@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>工程师统计表</title>
+  <link rel="stylesheet" href="https://unpkg.com/element-ui@2.14.1/lib/theme-chalk/index.css">
+</head>
+<style>
+  #app{
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: flex-start;
+      background: url("/static/images/zhuceback.jpg");
+  }
+  .container{
+      width: 100%;
+      height: auto;
+      margin-top: 20px;
+      background: white;
+  }
+  ._input, .el-select, .el-cascader{
+      width: 95%;
+  }
+  body{
+      margin: 0;
+      padding: 0;
+  }
+
+  .avatar-uploader .el-upload {
+      border: 1px dashed #d9d9d9;
+      border-radius: 6px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+  }
+  .avatar-uploader .el-upload:hover {
+      border-color: #409EFF;
+  }
+  .avatar-uploader-icon {
+      font-size: 28px;
+      color: #8c939d;
+      width: 178px;
+      height: 178px;
+      line-height: 178px;
+      text-align: center;
+  }
+  .avatar {
+      width: 178px;
+      height: 178px;
+      display: block;
+  }
+</style>
+<body>
+  <div id="app">
+    <el-row :gutter="10">
+      <el-col class="nothing" :xs="1" :sm="1" :md="6" :lg="6" :xl="6"><span style="visibility: hidden;font-size: 12px;">11</span></el-col>
+      <el-col :xs="24" :sm="24" :md="10" :lg="10" :xl="10">
+        <div class="container">
+          <div class="title-img">
+            <img style="width: 100%;" src="/static/images/xiu99top.jpg" alt="">
+          </div>
+          <h1 style="color: rgb(13, 141, 219);text-align: center;">工程师统计表</h1>
+          <el-form :model="addParam" :rules="rules" ref="ruleForm">
+
+            <el-form-item label="QQ" :label-width="formLabelWidth" prop="contact_qq">
+              <el-input class="_input" v-model="addParam.contact_qq" autocomplete="off" placeholder="请输入QQ"></el-input>
+            </el-form-item>
+
+            <el-form-item label="QQ昵称" :label-width="formLabelWidth" prop="qq_nickname">
+              <el-input class="_input" v-model="addParam.qq_nickname" autocomplete="off" placeholder="请输入工程师QQ昵称"></el-input>
+            </el-form-item>
+
+            <el-form-item label="电话号码" :label-width="formLabelWidth" prop="contact_phone">
+              <el-input class="_input" v-model="addParam.contact_phone" autocomplete="off" placeholder="请输入工程师联系电话"></el-input>
+            </el-form-item>
+
+            <el-form-item label="最高学历" :label-width="formLabelWidth" prop="top_degree_id">
+              <el-select filterable v-model="addParam.top_degree_id">
+                <el-option v-for="(item, index) in degreeData" :key="index" :label="item.degree_name" :value="item.id"></el-option>
+              </el-select>
+            </el-form-item>
+
+            <el-form-item label="学校" :label-width="formLabelWidth" prop="school_id">
+              <el-cascader
+                  v-model="addParam.school_id"
+                  :props="schoolProps"
+                  collapse-tags></el-cascader>
+            </el-form-item>
+
+            <el-form-item label="专业类型" :label-width="formLabelWidth" prop="profession_id">
+              <el-cascader
+                  v-model="addParam.profession_id"
+                  :props="professionAddProps"
+                  collapse-tags></el-cascader>
+            </el-form-item>
+
+            <el-form-item label="擅长软件" :label-width="formLabelWidth" prop="good_at_software_id">
+              <el-select filterable v-model="addParam.good_at_software_id">
+                <el-option v-for="(item, index) in softwareData" :key="index" :label="item.software_name" :value="item.id"></el-option>
+              </el-select>
+            </el-form-item>
+
+            <el-form-item label="倾向类型" :label-width="formLabelWidth" prop="tendency_id">
+              <el-select filterable v-model="addParam.tendency_id">
+                <el-option v-for="(item, index) in tendencyData" :key="index" :label="item.tendency_name" :value="item.id"></el-option>
+              </el-select>
+            </el-form-item>
+
+            <el-form-item label="支付宝号" :label-width="formLabelWidth" prop="alipay">
+              <el-input class="_input" v-model="addParam.alipay" autocomplete="off" placeholder="请输入工程师支付宝"></el-input>
+            </el-form-item>
+
+            <el-form-item label="收款码" :label-width="formLabelWidth" prop="collection_code">
+              <el-upload
+                  class="avatar-uploader"
+                  action="http://customer.erp2020.top/customer/upload"
+                  :show-file-list="false"
+                  :on-success="uploadSuccess"
+                  :before-upload="beforeUpload">
+                <img v-if="imageUrl" :src="imageUrl" class="avatar">
+                <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+              </el-upload>
+            </el-form-item>
+
+            <el-form-item>
+              <el-button type="primary" @click="submit('ruleForm')" style="width: 95%;margin-left: 2.5%;margin-bottom: 20px;">提交</el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+      </el-col>
+    </el-row>
+  </div>
+</body>
+</html>
+<script src="/static/js/jquery.min.js"></script>
+<script src="/static/js/request.js"></script>
+<script src="/static/js/vue.js"></script>
+<script src="https://unpkg.com/element-ui@2.14.1/lib/index.js"></script>
+<script>
+  var app = new Vue({
+    el: "#app",
+      data() {
+        const that = this
+        return {
+            imageUrl: "",
+            personnel_id: 0,
+            formLabelWidth: "90px",
+            param: {},
+            addParam: {},
+            rules: {
+                contact_qq: [
+                    {required: true, message: '请填写QQ', trigger: 'blur'}
+                ],
+                qq_nickname: [
+                    {required: true, message: '请填写QQ昵称', trigger: 'blur'}
+                ],
+                contact_phone: [
+                    {required: true, message: '请输入电话', trigger: 'blur'}
+                ],
+                top_degree_id: [
+                    {required: true, message: '请选择最高学历', trigger: 'blur'}
+                ],
+                profession_id: [
+                    {required: true, message: '请选择专业', trigger: 'blur'}
+                ],
+                school_id: [
+                    {required: true, message: '请选择毕业或就读院校', trigger: 'blur'}
+                ],
+                good_at_software_id: [
+                    {required: true, message: '请选择擅长软件', trigger: 'blur'}
+                ],
+                tendency_id: [
+                    {required: true, message: '请选择倾向订单类型', trigger: 'blur'}
+                ],
+                alipay: [
+                    {required: true, message: '请输入支付宝', trigger: 'blur'}
+                ],
+            },
+            degreeData: [],
+            softwareData: [],
+            tendencyData: [],
+            schoolProps: {
+                lazy: true,
+                value: 'id',
+                label: 'name',
+                lazyLoad (node, resolve) {
+                    let pid = 0
+                    let level = 1
+                    if (node.hasOwnProperty("data")) {
+                        pid = node.data.id
+                        level = node.level+1
+                    }
+                    that.schoolChildren({pid, level}).then(res => {
+                        resolve(res.data)
+                    })
+                }
+            },
+            professionAddProps: {                //专业筛选框--属性
+                lazy: true,
+                value: 'id',
+                label: 'profession_name',
+                lazyLoad (node, resolve) {
+                    let pid = 0
+                    if (node.hasOwnProperty("data")) {
+                        pid = node.data.id
+                    }
+                    that.professionChildren({pid}).then(res => {
+                        resolve(res.data)
+                    })
+                }
+            },
+        }
+      },
+
+      created() {
+        this.degree()
+        this.software()
+        this.tendency()
+      },
+
+      mounted() {
+        window.onresize = () => {
+          const width = document.body.clientWidth
+          if (width < 767) {
+            $(".nothing").hide()
+            $(".container").css("marginTop", 0)
+          }else {
+            $(".nothing").show()
+            $(".container").css("marginTop", 20)
+          }
+        }
+
+        this.$nextTick(function () {
+            this.personnel_id = this.getParam("id")
+        })
+
+      },
+
+      methods: {
+        uploadSuccess(res, file) {
+            this.imageUrl = "/storage/" + res.data
+            this.addParam.collection_code = this.imageUrl
+        },
+        beforeUpload(file) {
+            const type = file.type
+            if (type.substr(0, 5) !== "image") {
+                this.$message.error('只能上传图片格式哦!');
+                return false
+            }
+        },
+        getParam(variable) {
+            var query = window.location.search.substring(1);
+            var vars = query.split("&");
+            for (var i=0;i<vars.length;i++) {
+                var pair = vars[i].split("=");
+                if(pair[0] === variable){return pair[1];}
+            }
+            return 0;
+        },
+        // 获取学历信息
+        degree() {
+            http.get("customer/degrees").then(res => {
+                this.degreeData = res.data
+            })
+        },
+
+        // 软件
+        software() {
+            http.get("customer/software").then(res => {
+                this.softwareData = res.data
+            })
+        },
+
+        // 倾向
+        tendency() {
+            http.get("customer/tendency").then(res => {
+                this.tendencyData = res.data
+            })
+        },
+
+          // 获取学校子集
+        schoolChildren(data = {}){
+            return http.get("customer/schools", data)
+        },
+
+        // 获取专业子集
+        professionChildren(data = {}) {
+            return http.get("customer/professions", data)
+        },
+
+        // 提交
+        submit(formName) {
+          this.$refs[formName].validate((valid) => {
+            if (valid) {
+              // 提交表单
+              this.addParam.profession_id = this.addParam.profession_id[this.addParam.profession_id.length - 1]
+              this.addParam.school_id = this.addParam.school_id[this.addParam.school_id.length - 1]
+              this.addParam.personnel_id = this.personnel_id
+              http.post("customer/engineer", this.addParam).then(res => {
+                if (res.code === 0) {
+                  this.$message.error(res.msg);
+                }else {
+                  this.$message({
+                    message: '提交成功',
+                    type: 'success'
+                  });
+                  setTimeout(function () {
+                      window.location.reload()
+                  }, 1500)
+                }
+              })
+              return false
+            }
+            // 提交错误
+            this.$message.error('请将信息补充完整');
+          });
+        }
+      }
+  })
+</script>

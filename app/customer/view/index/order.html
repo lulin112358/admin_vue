@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>订单信息确认表</title>
+  <link rel="stylesheet" href="https://unpkg.com/element-ui@2.14.1/lib/theme-chalk/index.css">
+</head>
+<style>
+    #app{
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: flex-start;
+        background: url("/static/images/zhuceback.jpg");
+    }
+    .container{
+        width: 100%;
+        height: auto;
+        margin-top: 20px;
+        background: white;
+    }
+    ._input, .el-select, .el-cascader{
+        width: 95%;
+    }
+    input{
+        color: #000!important;
+    }
+    body{
+        margin: 0;
+        padding: 0;
+    }
+</style>
+<body>
+<div id="app">
+  <el-row :gutter="10">
+    <el-col class="nothing" :xs="1" :sm="1" :md="6" :lg="6" :xl="6"><span style="visibility: hidden;font-size: 12px;">11</span></el-col>
+    <el-col :xs="24" :sm="24" :md="10" :lg="10" :xl="10">
+      <div class="container">
+        <div class="title-img">
+          <img style="width: 100%;" src="/static/images/xiu99top.jpg" alt="">
+        </div>
+        <h1 style="color: rgb(13, 141, 219);text-align: center;">订单确认表</h1>
+        <el-form :model="addParam" :rules="rules" ref="ruleForm">
+
+          <el-form-item label="订单编号" :label-width="formLabelWidth" prop="order_sn">
+            <el-input class="_input" v-model="addParam.order_sn" autocomplete="off" disabled></el-input>
+          </el-form-item>
+
+          <el-form-item label="来源" :label-width="formLabelWidth" prop="origin_name">
+            <el-input class="_input" v-model="addParam.origin_name" autocomplete="off" disabled></el-input>
+          </el-form-item>
+
+          <el-form-item label="接单账号" :label-width="formLabelWidth" prop="account">
+            <el-input class="_input" v-model="addParam.account" autocomplete="off" disabled></el-input>
+          </el-form-item>
+
+          <el-form-item label="收款账号" :label-width="formLabelWidth" prop="deposit_amount_account">
+            <el-input class="_input" v-model="addParam.deposit_amount_account" autocomplete="off" disabled></el-input>
+          </el-form-item>
+
+          <el-form-item label="交稿时间" :label-width="formLabelWidth" prop="delivery_time">
+            <el-input class="_input" v-model="addParam.delivery_time" autocomplete="off" disabled></el-input>
+          </el-form-item>
+
+          <el-form-item label="总价" :label-width="formLabelWidth" prop="total_amount">
+            <el-input class="_input" v-model="addParam.total_amount" autocomplete="off"></el-input>
+          </el-form-item>
+
+          <el-form-item label="定金" :label-width="formLabelWidth" prop="deposit">
+            <el-input class="_input" v-model="addParam.deposit" autocomplete="off"></el-input>
+          </el-form-item>
+
+          <el-form-item label="要求" :label-width="formLabelWidth" prop="require">
+            <el-input class="_input" v-model="addParam.require" autocomplete="off"></el-input>
+          </el-form-item>
+
+          <el-form-item label="联系电话" :label-width="formLabelWidth" prop="customer_contact">
+            <el-input class="_input" v-model="addParam.customer_contact" autocomplete="off"></el-input>
+          </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" @click="submit('ruleForm')" style="width: 95%;margin-left: 2.5%;margin-bottom: 20px;">确认并提交</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </el-col>
+  </el-row>
+</div>
+</body>
+</html>
+<script src="/static/js/jquery.min.js"></script>
+<script src="/static/js/request.js"></script>
+<script src="/static/js/vue.js"></script>
+<script src="https://unpkg.com/element-ui@2.14.1/lib/index.js"></script>
+<script>
+    var app = new Vue({
+        el: "#app",
+        data() {
+            const that = this
+            return {
+                order_id: 0,
+                formLabelWidth: "90px",
+                addParam: {},
+                rules: {
+                    total_amount: [
+                        {required: true, message: '请填写总价', trigger: 'blur'}
+                    ],
+                    deposit: [
+                        {required: true, message: '请填写定金', trigger: 'blur'}
+                    ],
+                    require: [
+                        {required: true, message: '请输入要求', trigger: 'blur'}
+                    ],
+                    customer_contact: [
+                        {required: true, message: '请输入联系方式', trigger: 'blur'}
+                    ]
+                },
+            }
+        },
+
+        created() {
+          this.$nextTick(function () {
+              this.order_id = this.getParam("oid")
+              this.getOrderInfo()
+          })
+        },
+
+        mounted() {
+            window.onresize = () => {
+                const width = document.body.clientWidth
+                if (width < 767) {
+                    $(".nothing").hide()
+                    $(".container").css("marginTop", 0)
+                }else {
+                    $(".nothing").show()
+                    $(".container").css("marginTop", 20)
+                }
+            }
+        },
+
+        methods: {
+            getParam(variable) {
+                var query = window.location.search.substring(1);
+                var vars = query.split("&");
+                for (var i=0;i<vars.length;i++) {
+                    var pair = vars[i].split("=");
+                    if(pair[0] === variable){return pair[1];}
+                }
+                return false;
+            },
+
+            // 获取订单信息
+            getOrderInfo() {
+                http.get("customer/order/info", {oid: this.order_id}).then(res => {
+                    this.addParam = res.data
+                })
+            },
+
+            // 提交
+            submit(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        // 提交表单
+                        const param = {
+                          total_amount: this.addParam.total_amount,
+                          deposit: this.addParam.deposit,
+                          require: this.addParam.require,
+                          customer_contact: this.addParam.customer_contact,
+                          main_order_id: this.order_id
+                        }
+                        http.post("customer/order/updateOrder", param).then(res => {
+                            if (res.code === 0) {
+                                this.$message.error(res.msg);
+                            }else {
+                                this.$message({
+                                    message: '提交成功',
+                                    type: 'success'
+                                });
+                                setTimeout(function () {
+                                    window.location.reload()
+                                }, 1500)
+                            }
+                        })
+                        return false
+                    }
+                    // 提交错误
+                    this.$message.error('请将信息补充完整');
+                });
+            }
+        }
+    })
+</script>
