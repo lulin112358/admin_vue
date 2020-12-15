@@ -104,10 +104,10 @@ class Engineer extends Base
      */
     public function updateEngineer(EngineerService $service, EngineerValidate $validate) {
         $param = input("param.");
-        if (!$validate->scene("updateStatus")->check($param))
+        if (!$validate->scene("update")->check($param))
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
         try {
-            $res = $service->updateBy($param);
+            $res = $service->updateEngineer($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }

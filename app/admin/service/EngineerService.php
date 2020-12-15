@@ -76,6 +76,19 @@ class EngineerService extends BaseService
     }
 
     /**
+     * 更新工程师信息
+     * @param $param
+     * @return mixed
+     */
+    public function updateEngineer($param) {
+        $updateData = [
+            "id" => $param["id"],
+            $param["field"] => $param["value"]
+        ];
+        return $this->updateBy($updateData);
+    }
+
+    /**
      * 查询所有工程师
      *
      * @return array

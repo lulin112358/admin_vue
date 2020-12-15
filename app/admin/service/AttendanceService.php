@@ -30,6 +30,16 @@ class AttendanceService extends BaseService
         7 => "red"
     ];
 
+    private $result = [
+        1 => 1,
+        2 => 1,
+        3 => 1,
+        4 => 0,
+        5 => 0,
+        6 => 1,
+        7 => 0.5
+    ];
+
     /**
      * 获取考勤数据
      * @param $param
@@ -105,11 +115,28 @@ class AttendanceService extends BaseService
             $where[] = ["create_time", ">=", strtotime(date("Y-m-1", time()))];
             $where[] = ["create_time", "<=", time()];
         }
-        $data = $this->selectBy($where, "id, type, result, late_time, note, reward, create_time");
+        $data = $this->selectBy($where, "id, type, result, late_time, note, reward, create_time", "create_time desc");
         foreach ($data as $k => $v) {
             $data[$k]["type"] = $this->type[$v["type"]];
             $data[$k]["color"] = $this->color[$v["type"]];
         }
         return $data;
+    }
+
+
+    /**
+     * 更新考勤信息
+     * @param $param
+     * @return mixed
+     */
+    public function updateAttendance($param) {
+        $updateData = [
+            "id" => $param["id"],
+            $param["field"] => $param["value"]
+        ];
+        if ($param["field"] == "type") {
+            $updateData["result"] = $this->result[$param["value"]];
+        }
+        return $this->updateBy($updateData);
     }
 }

@@ -30,6 +30,25 @@ class OrdersMainMapper extends BaseMapper
     }
 
     /**
+     * 来源金额排序
+     * @param $where
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function accountAmountSortData($where) {
+        return Db::table("orders_main")->alias("om")
+            ->join(["orders_account" => "oa"], "oa.id=om.order_account_id")
+            ->join(["account" => "a"], "a.id=oa.account_id")
+            ->where($where)
+            ->field("sum(om.total_amount) as total_amount, a.id as account_id")
+            ->group("a.id")
+            ->order("total_amount desc")
+            ->select()->toArray();
+    }
+
+    /**
      * 客服接单BI统计数据
      * @param $where
      * @return array

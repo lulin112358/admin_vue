@@ -230,6 +230,8 @@ Route::group('admin', function () {
     # 考勤
     Route::get("attendance", Attendance::class."@attendances");
     Route::get("attendance/user", Attendance::class."@userAttendances");
+    Route::get("attendance/info", Attendance::class."@attendanceInfo");
+    Route::put("attendance", Attendance::class."@updateAttendance");
 
     # BI
     Route::get("customer_bi", CustomerBi::class."@customerBiCount");

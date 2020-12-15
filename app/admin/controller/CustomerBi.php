@@ -14,8 +14,19 @@ class CustomerBi extends Base
      * @param CustomerBiService $service
      */
     public function customerBiCount(CustomerBiService $service) {
+        $param = input("param.");
         try {
-            $list = $service->customerBiCount();
+            $list = $service->customerBiCount($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($list);
+    }
+
+    public function customerBiAmount(CustomerBiService $service) {
+        $param = input("param.");
+        try {
+            $list = $service->customerBiAmount($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
