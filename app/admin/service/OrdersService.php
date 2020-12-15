@@ -480,7 +480,8 @@ class OrdersService extends BaseService
             # 构造剪贴板内容
             if ($data["account_id"] == $data["wechat_id"]) {
                 $returnData = [
-                    "content" => "麻烦您核实并填写下表单内容"
+                    "content" => "http://customer.erp2020.top/customer/order?oid=".base64_encode($mainRes->id)."
+                    麻烦您核实并填写下表单内容"
                 ];
             }else {
                 # 获取沉淀微信
@@ -488,7 +489,7 @@ class OrdersService extends BaseService
                 # 获取来源
                 $origin = (new OriginMapper())->findBy(["id" => $data["origin_id"]], "origin_name")["origin_name"];
                 $returnData = [
-                    "content" => "http://customer.tperp.io/customer/order?oid={$mainRes->id}
+                    "content" => "http://customer.erp2020.top/customer/order?oid=".base64_encode($mainRes->id)."
                     麻烦您核实并填写下表单内容，并添加我微信: {$wechat}，验证信息为: {$origin}-{$orderData['order_sn']}，将文件及检测报告发给我微信。"
                 ];
             }

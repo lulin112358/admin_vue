@@ -22,7 +22,8 @@ class OrderService extends BaseService
      * @throws \think\db\exception\ModelNotFoundException
      */
     public function orderInfo($param) {
-        $data = Db::table("orders_view")->where(["main_order_id" => $param["oid"]??0])
+        $main_order_id = isset($param["oid"]) ? base64_decode($param["oid"]) : 0;
+        $data = Db::table("orders_view")->where(["main_order_id" => $main_order_id])
             ->field("order_sn, origin_name, account, customer_contact, delivery_time, total_amount, deposit,
              deposit_amount_account_id, require, customer_contact, main_order_id")
             ->find();
@@ -46,14 +47,15 @@ class OrderService extends BaseService
                 "total_amount" => $param["total_amount"],
                 "customer_contact" => $param["customer_contact"]
             ];
-            $res = (new OrdersMainMapper())->updateWhere(["id" => $param["main_order_id"]], $data);
+            $main_order_id = base64_decode($param["main_order_id"]);
+            $res = (new OrdersMainMapper())->updateWhere(["id" => $main_order_id], $data);
             if ($res === false)
                 throw new \Exception("提交失败");
 
             $data = [
                 "require" => $param["require"]
             ];
-            $res = (new OrdersMapper())->updateWhere(["main_order_id" => $param["main_order_id"]], $data);
+            $res = (new OrdersMapper())->updateWhere(["main_order_id" => $main_order_id], $data);
             if ($res === false)
                 throw new \Exception("提交失败!");
 
@@ -61,7 +63,7 @@ class OrderService extends BaseService
                 "change_deposit" => $param["deposit"],
                 "deposit" => $param["deposit"]
             ];
-            $res = (new OrdersDepositMapper())->updateWhere(["main_order_id" => $param["main_order_id"]], $data);
+            $res = (new OrdersDepositMapper())->updateWhere(["main_order_id" => $main_order_id], $data);
             if ($res === false)
                 throw new \Exception("提交失败啦");
             Db::commit();

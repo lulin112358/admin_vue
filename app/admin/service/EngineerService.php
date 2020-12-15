@@ -99,7 +99,9 @@ class EngineerService extends BaseService
     public function engineer($param, $export = false) {
         Carbon::setLocale("zh");
         # 构建查询条件
-        $where = [];
+        $where = [
+            ["is_delete", "=", 0]
+        ];
         $engineer = null;
         $searchField = $param['search_field']??"";
         if (isset($param["profession_id"]) && !empty($param["profession_id"])) {

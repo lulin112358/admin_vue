@@ -32,7 +32,7 @@ class Base
         "/admin/origin/list",
         "/admin/account",
         "/admin/amount_account",
-        "/admin/engineer",
+//        "/admin/engineer",
         "/admin/user"
     ];
 
@@ -100,7 +100,7 @@ class Base
             }
         }
         # 列权限控制
-        if (in_array($url, array_keys($this->authColumnRequest))) {
+        if (in_array($url, array_keys($this->authColumnRequest)) && request()->method() == "GET") {
             $columns = column_auth($this->authColumnRequest[$url]);
             if ($url == "/admin/orders") {
                 # 添加必须字段

@@ -60,24 +60,27 @@ class UserAuthRowService extends BaseService
         $diff = array_merge($diff1, $diff2);
         $insertData = [];
         foreach ($diff as $k => $v) {
-            if (in_array($v, $rowData)) {       # 删除
-                $insertData[] = [
-                    "user_id" => $param["uid"],
-                    "type" => explode("/", $v)[0],
-                    "type_id" => explode("/", $v)[1],
-                    "status" => 0,
-                    "create_time" => time(),
-                    "update_time" => time()
-                ];
-            }else {
-                $insertData[] = [
-                    "user_id" => $param["uid"],
-                    "type" => explode("/", $v)[0],
-                    "type_id" => explode("/", $v)[1],
-                    "status" => 1,
-                    "create_time" => time(),
-                    "update_time" => time()
-                ];
+            $typeData = explode("/", $v);
+            if (count($typeData) == 2) {
+                if (in_array($v, $rowData)) {       # 删除
+                    $insertData[] = [
+                        "user_id" => $param["uid"],
+                        "type" => $typeData[0],
+                        "type_id" => $typeData[1],
+                        "status" => 0,
+                        "create_time" => time(),
+                        "update_time" => time()
+                    ];
+                }else {
+                    $insertData[] = [
+                        "user_id" => $param["uid"],
+                        "type" => $typeData[0],
+                        "type_id" => $typeData[1],
+                        "status" => 1,
+                        "create_time" => time(),
+                        "update_time" => time()
+                    ];
+                }
             }
         }
         # 写入数据
