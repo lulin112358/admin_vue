@@ -49,7 +49,7 @@ class OrdersMainMapper extends BaseMapper
     }
 
     /**
-     * 客服接单BI统计数据
+     * 客服兵力部署BI统计数据
      * @param $where
      * @return array
      * @throws \think\db\exception\DataNotFoundException
@@ -63,6 +63,37 @@ class OrdersMainMapper extends BaseMapper
             ->join(["user" => "u"], "u.id=om.customer_id", "right")
             ->where($where)
             ->field("om.customer_id, a.id as account_id, om.total_amount, u.name")
+            ->select()->toArray();
+    }
+
+    /**
+     * 客服接单BI统计数据
+     * @param $where
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function customerOrderData($where) {
+        return Db::table("orders_main")->alias("om")
+            ->join(["user" => "u"], "u.id=om.customer_id", "right")
+            ->where($where)
+            ->field("om.customer_id, om.total_amount, u.name")
+            ->select()->toArray();
+    }
+
+    /**
+     * 客服接单业绩BI统计数据
+     * @param $where
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function cusOrderPerfData($where) {
+        # orders_view视图
+        return Db::table("orders_view")->where($where)
+            ->field("customer_name, total_amount, category_id, deposit, final_payment, refund_amount, customer_id")
             ->select()->toArray();
     }
 

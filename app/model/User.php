@@ -21,4 +21,8 @@ class User extends Model
     public function roles() {
         return $this->belongsToMany(Role::class, UserRole::class, "role_id", "user_id");
     }
+
+    public function extend() {
+        return $this->hasOne(UserExtend::class, "user_id", "id");
+    }
 }

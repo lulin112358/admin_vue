@@ -6,6 +6,7 @@ namespace app\customer\service;
 
 use app\BaseService;
 use app\mapper\AmountAccountMapper;
+use app\mapper\CategoryMapper;
 use app\mapper\OrdersDepositMapper;
 use app\mapper\OrdersMainMapper;
 use app\mapper\OrdersMapper;
@@ -13,6 +14,12 @@ use think\facade\Db;
 
 class OrderService extends BaseService
 {
+    private $logoMap = [
+        41 => "/static/images/paperok.png",
+        42 => "/static/images/lx.png",
+        43 => "/static/images/lwg.png",
+    ];
+
     /**
      * 订单信息
      * @param $param
@@ -25,12 +32,16 @@ class OrderService extends BaseService
         $main_order_id = isset($param["oid"]) ? base64_decode($param["oid"]) : 0;
         $data = Db::table("orders_view")->where(["main_order_id" => $main_order_id])
             ->field("order_sn, origin_name, account, customer_contact, delivery_time, total_amount, deposit,
-             deposit_amount_account_id, require, customer_contact, main_order_id")
+             deposit_amount_account_id, require, customer_contact, main_order_id, category_id, origin_id")
             ->find();
         $data["delivery_time"] = date("Y-m-d H", $data["delivery_time"]);
         # 查询收款账号
         $amountAccount = (new AmountAccountMapper())->findBy(["id" => $data["deposit_amount_account_id"]], "account")["account"];
+        # 查询分类提示语
+        $placeholder = (new CategoryMapper())->placeholder(["id" => $data["category_id"]]);
+        $data["placeholder"] = $placeholder;
         $data["deposit_amount_account"] = $amountAccount;
+        $data["logo"] = $this->logoMap[$data["origin_id"]]??"";
         return $data;
     }
 

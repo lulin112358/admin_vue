@@ -26,7 +26,7 @@
     ._input, .el-select, .el-cascader{
         width: 95%;
     }
-    input{
+    input, textarea{
         color: #000!important;
     }
     body{
@@ -41,17 +41,15 @@
     <el-col :xs="24" :sm="24" :md="10" :lg="10" :xl="10">
       <div class="container">
         <div class="title-img">
-          <img style="width: 100%;" src="/static/images/xiu99top.jpg" alt="">
+          <img style="width: 100%;" src="/static/images/order_confirm.jpg" alt="">
         </div>
-        <h1 style="color: rgb(13, 141, 219);text-align: center;">订单确认表</h1>
+        <div style="display: flex;flex-direction: row;justify-content: center;align-items: center;margin-bottom: 5px;" v-if="addParam.logo !== ''">
+          <img :src="addParam.logo" alt="">
+        </div>
         <el-form :model="addParam" :rules="rules" ref="ruleForm">
 
           <el-form-item label="订单编号" :label-width="formLabelWidth" prop="order_sn">
             <el-input class="_input" v-model="addParam.order_sn" autocomplete="off" disabled></el-input>
-          </el-form-item>
-
-          <el-form-item label="来源" :label-width="formLabelWidth" prop="origin_name">
-            <el-input class="_input" v-model="addParam.origin_name" autocomplete="off" disabled></el-input>
           </el-form-item>
 
           <el-form-item label="接单账号" :label-width="formLabelWidth" prop="account">
@@ -66,20 +64,20 @@
             <el-input class="_input" v-model="addParam.delivery_time" autocomplete="off" disabled></el-input>
           </el-form-item>
 
-          <el-form-item label="总价" :label-width="formLabelWidth" prop="total_amount">
-            <el-input class="_input" v-model="addParam.total_amount" autocomplete="off"></el-input>
+          <el-form-item label="总价" :label-width="formLabelWidth" prop="total_amount" v-if="addParam.total_amount===addParam.deposit">
+            <el-input class="_input" v-model="addParam.total_amount" autocomplete="off" disabled></el-input>
           </el-form-item>
 
-          <el-form-item label="定金" :label-width="formLabelWidth" prop="deposit">
-            <el-input class="_input" v-model="addParam.deposit" autocomplete="off"></el-input>
+          <el-form-item label="定金" :label-width="formLabelWidth" prop="deposit" v-else>
+            <el-input class="_input" v-model="addParam.deposit" autocomplete="off" disabled></el-input>
           </el-form-item>
 
           <el-form-item label="要求" :label-width="formLabelWidth" prop="require">
-            <el-input class="_input" v-model="addParam.require" autocomplete="off"></el-input>
+            <el-input class="_input" type="textarea" :rows="5" v-model="addParam.require" autocomplete="off" :placeholder="addParam.placeholder"></el-input>
           </el-form-item>
 
           <el-form-item label="联系电话" :label-width="formLabelWidth" prop="customer_contact">
-            <el-input class="_input" v-model="addParam.customer_contact" autocomplete="off"></el-input>
+            <el-input class="_input" v-model="addParam.customer_contact" autocomplete="off" placeholder="请填写您的联系电话"></el-input>
           </el-form-item>
 
           <el-form-item>
@@ -106,12 +104,6 @@
                 formLabelWidth: "90px",
                 addParam: {},
                 rules: {
-                    total_amount: [
-                        {required: true, message: '请填写总价', trigger: 'blur'}
-                    ],
-                    deposit: [
-                        {required: true, message: '请填写定金', trigger: 'blur'}
-                    ],
                     require: [
                         {required: true, message: '请输入要求', trigger: 'blur'}
                     ],
@@ -130,19 +122,31 @@
         },
 
         mounted() {
+            this.resizeHandle()
             window.onresize = () => {
-                const width = document.body.clientWidth
-                if (width < 767) {
-                    $(".nothing").hide()
-                    $(".container").css("marginTop", 0)
-                }else {
-                    $(".nothing").show()
-                    $(".container").css("marginTop", 20)
-                }
+                this.resizeHandle()
             }
         },
 
         methods: {
+            // 调整屏幕尺寸自适应
+            resizeHandle() {
+                const height = window.innerHeight
+                const width = document.body.clientWidth
+                const bodyHeight = document.body.offsetHeight
+                const container = $(".container")
+                $('#app').css("height", `${height}px`)
+                if (width < 767) {
+                    $(".nothing").hide()
+                    container.css("marginTop", 0)
+                    container.css("height", '100vh')
+                }else {
+                    $(".nothing").show()
+                    container.css("marginTop", 20)
+                    container.css("height", `auto`)
+                }
+            },
+            // 获取参数
             getParam(variable) {
                 var query = window.location.search.substring(1);
                 var vars = query.split("&");

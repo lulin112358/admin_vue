@@ -142,11 +142,6 @@ class OrdersService extends BaseService
         # orders_view试图
         if (!$export) {
             $data = Db::table("orders_view")
-                # 查询目前可用的记录
-                ->where(["deposit_status" => 1])
-                ->where(function ($query) {
-                    $query->where(["final_payment_status" => 1])->whereOr("final_payment_status", null);
-                })
                 # 收款账号查询条件
                 ->where(function ($query)use ($amountAccountId) {
                     if (!empty($amountAccountId)) {
@@ -156,25 +151,12 @@ class OrdersService extends BaseService
                 })
                 # 行权限控制
                 ->where($whereRow)
-//                ->where(function ($query) use ($authRow) {
-//                    if (request()->uid != 1) {
-//                        $query->where(["engineer_id" => ($authRow["engineer_id"]??[])])
-//                        ->whereOr("engineer_id", null);
-//                    }
-//                })
                 ->where(function ($query) use ($authRow) {
                     if (request()->uid != 1) {
                         $query->where(["final_payment_amount_account_id" => ($authRow["amount_account_id"]??[])])
                         ->whereOr("final_payment_amount_account_id", null);
                     }
                 })
-                # 发单人权限验证
-//                ->where(function ($query) use ($billerUser) {
-//                    if (request()->uid != 1) {
-//                        $query->where(["biller_id" => $billerUser])
-//                            ->whereOr("biller_id", 0);
-//                    }
-//                })
                 # 模糊匹配查询条件
                 ->where("manuscript_fee|biller|cate_name|check_fee|commission_ratio|customer_manager|customer_name|market_maintain|market_manager|market_user|order_sn|total_amount|customer_contact|deposit|final_payment|require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|note", "like", "%$searchKey%")
                 ->where($where)
@@ -184,11 +166,6 @@ class OrdersService extends BaseService
                 ->paginate(100, true)->items();
         }else {         # 导出excel不需要分页
             $data = Db::table("orders_view")
-                # 查询目前可用的记录
-                ->where(["deposit_status" => 1])
-                ->where(function ($query) {
-                    $query->where(["final_payment_status" => 1])->whereOr("final_payment_status", null);
-                })
                 # 收款账号查询条件
                 ->where(function ($query)use ($amountAccountId) {
                     if (!empty($amountAccountId)) {
@@ -331,25 +308,9 @@ class OrdersService extends BaseService
 
         $data = Db::table("orders_view")
             # 查询目前可用的记录
-            ->where(["deposit_status" => 1, "order_id" => $param["order_id"]])
-            ->where(function ($query) {
-                $query->where(["final_payment_status" => 1])->whereOr("final_payment_status", null);
-            })
+            ->where(["order_id" => $param["order_id"]])
             # 行权限控制
             ->where($whereRow)
-//            ->where(function ($query) use ($authRow) {
-//                if (request()->uid != 1) {
-//                    $query->where(["engineer_id" => ($authRow["engineer_id"]??[])])
-//                        ->whereOr("engineer_id", null);
-//                }
-//            })
-                # 发单人权限
-//            ->where(function ($query) use ($billerUser) {
-//                if (request()->uid != 1) {
-//                    $query->where(["biller_id" => $billerUser])
-//                        ->whereOr("biller_id", 0);
-//                }
-//            })
             ->where(function ($query) use ($authRow) {
                 if (request()->uid != 1) {
                     $query->where(["final_payment_amount_account_id" => ($authRow["amount_account_id"]??[])])

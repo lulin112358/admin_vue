@@ -23,10 +23,14 @@ class CustomerBi extends Base
         $this->ajaxReturn($list);
     }
 
-    public function customerBiAmount(CustomerBiService $service) {
+    /**
+     * 获取客服BI账号列数据
+     * @param CustomerBiService $service
+     */
+    public function customerBiCols(CustomerBiService $service) {
         $param = input("param.");
         try {
-            $list = $service->customerBiAmount($param);
+            $list = $service->accountColSort($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -34,12 +38,27 @@ class CustomerBi extends Base
     }
 
     /**
-     * 获取客服BI账号列数据
+     * 客服接单BI数据
      * @param CustomerBiService $service
      */
-    public function customerBiCols(CustomerBiService $service) {
+    public function customerOrderBi(CustomerBiService $service) {
+        $param = input("param.");
         try {
-            $list = $service->accountColSort();
+            $list = $service->customerOrderBi($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($list);
+    }
+
+    /**
+     * 客服接单业绩BI数据
+     * @param CustomerBiService $service
+     */
+    public function cusOrderPerfBi(CustomerBiService $service) {
+        $param = input("param.");
+        try {
+            $list = $service->cusOrderPerfBi($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }

@@ -40,4 +40,18 @@ class UserMapper extends BaseMapper
             ->field("u.id, u.name, r.role_name")
             ->select()->toArray();
     }
+
+    /**
+     * 获取用户数据
+     * @param array $where
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function userData($where = []) {
+        return User::with(["extend" => function($query) {
+            $query->field("*");
+        }])->where($where)->field("*")->select()->toArray();
+    }
 }

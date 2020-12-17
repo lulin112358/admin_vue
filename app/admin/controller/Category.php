@@ -16,7 +16,7 @@ class Category extends Base
      */
     public function list(CategoryService $service) {
         try {
-            $list = $service->all("id, pid, cate_name");
+            $list = $service->all("id, pid, cate_name, placeholder");
             $list = generateTree($list);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());

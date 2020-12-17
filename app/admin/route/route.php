@@ -235,6 +235,8 @@ Route::group('admin', function () {
 
     # BI
     Route::get("customer_bi", CustomerBi::class."@customerBiCount");
+    Route::get("customer_order", CustomerBi::class."@customerOrderBi");
+    Route::get("cus_order_perf", CustomerBi::class."@cusOrderPerfBi");
     // Route::get("customer_bi/cols", CustomerBi::class."@customerBiCols");
 })->allowCrossDomain()->middleware([JwtMiddleware::class]);
 

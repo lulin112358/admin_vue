@@ -30,7 +30,7 @@ class OrdersValidate extends Validate
 
     protected $scene = [
         "add" => ["origin_id", "account_id", "amount_account_id", "customer_manager",
-            "cate_id", "wechat_id", "delivery_time"],
+            "cate_id", "wechat_id", "delivery_time", "total_amount", "deposit_amount"],
         "update" => ["field", "value", "main_order_id", "order_id"],
         "del" => ["order_id"],
         "split" => ["main_order_id"],
