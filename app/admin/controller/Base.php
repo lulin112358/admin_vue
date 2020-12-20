@@ -107,6 +107,7 @@ class Base
                 $columns[] = "main_order_id";
                 $columns[] = "order_id";
                 $columns[] = "color";
+                $columns[] = "status_color";
             }
             if (request()->uid != 1) {
                 if (is_array($data)) {

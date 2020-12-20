@@ -54,6 +54,26 @@
       height: 178px;
       display: block;
   }
+  @media only screen and (min-width: 768px){
+      .el-scrollbar.el-cascader-menu{
+          width: 200px;
+      }
+  }
+  @media only screen and (min-width: 1920px){
+      .el-scrollbar.el-cascader-menu{
+          width: auto;
+      }
+  }
+  @media only screen and (min-width: 1200px){
+      .el-scrollbar.el-cascader-menu{
+          width: auto;
+      }
+  }
+  @media only screen and (min-width: 992px){
+      .el-scrollbar.el-cascader-menu{
+          width: auto;
+      }
+  }
 </style>
 <body>
   <div id="app">
@@ -224,15 +244,9 @@
       },
 
       mounted() {
+        this.resizeHandle()
         window.onresize = () => {
-          const width = document.body.clientWidth
-          if (width < 767) {
-            $(".nothing").hide()
-            $(".container").css("marginTop", 0)
-          }else {
-            $(".nothing").show()
-            $(".container").css("marginTop", 20)
-          }
+            this.resizeHandle()
         }
 
         this.$nextTick(function () {
@@ -242,6 +256,23 @@
       },
 
       methods: {
+        // 调整屏幕尺寸自适应
+        resizeHandle() {
+            const height = window.innerHeight
+            const width = document.body.clientWidth
+            const bodyHeight = document.body.offsetHeight
+            const container = $(".container")
+            $('#app').css("height", `${height}px`)
+            if (width < 767) {
+                $(".nothing").hide()
+                container.css("marginTop", 0)
+                container.css("height", '100vh')
+            }else {
+                $(".nothing").show()
+                container.css("marginTop", 20)
+                container.css("height", `auto`)
+            }
+        },
         uploadSuccess(res, file) {
             this.imageUrl = "/storage/" + res.data
             this.addParam.collection_code = this.imageUrl

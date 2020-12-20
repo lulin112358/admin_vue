@@ -32,17 +32,6 @@ class ManuscriptFeeService extends BaseService
     public function manuscriptFees($param) {
         // 设置中文
         Carbon::setLocale("zh");
-        $now = Carbon::now();
-        $day = $now->day;
-        $month = $now->month;
-        $year = $now->year;
-        if ($day >=1 && $day <= 10) {
-            $day = 10;
-        } elseif ($day > 10 && $day <= 20) {
-            $day = 20;
-        }else {
-            $day = $now->daysInMonth;
-        }
         $where = [];
         if (isset($param["search_key"]) && !empty($param["search_key"])) {
             $where[] = ["e.qq_nickname|e.contact_qq|o.order_sn", "like", "%{$param["search_key"]}%"];
@@ -58,6 +47,18 @@ class ManuscriptFeeService extends BaseService
             $canSettlementData[$v["engineer_id"]] = floatval($v["manuscript_fee"] - $v["settlemented"] - $v["deduction"]);
         }
         foreach ($data as $k => $v) {
+            $carbonObj = Carbon::parse(date("Y-m-d H:i:s", $v["delivery_time"]));
+            $carbonObj = $carbonObj->addDays(10);
+            $year = $carbonObj->year;
+            $month = $carbonObj->month;
+            $day = $carbonObj->day;
+            if ($day >=1 && $day <= 10) {
+                $day = 10;
+            } elseif ($day > 10 && $day <= 20) {
+                $day = 20;
+            }else {
+                $day = $carbonObj->daysInMonth;
+            }
             $data[$k]["settlement_time"] = $year.'-'.$month.'-'.$day;
             $data[$k]["manuscript_fee"] = $canSettlementData[$v["engineer_id"]]??0;
             $data[$k]["deduction"] = floatval($v["deduction"]);

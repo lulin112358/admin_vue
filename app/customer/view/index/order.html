@@ -60,17 +60,23 @@
             <el-input class="_input" v-model="addParam.deposit_amount_account" autocomplete="off" disabled></el-input>
           </el-form-item>
 
-          <el-form-item label="交稿时间" :label-width="formLabelWidth" prop="delivery_time">
-            <el-input class="_input" v-model="addParam.delivery_time" autocomplete="off" disabled></el-input>
-          </el-form-item>
-
-          <el-form-item label="总价" :label-width="formLabelWidth" prop="total_amount" v-if="addParam.total_amount===addParam.deposit">
-            <el-input class="_input" v-model="addParam.total_amount" autocomplete="off" disabled></el-input>
-          </el-form-item>
-
-          <el-form-item label="定金" :label-width="formLabelWidth" prop="deposit" v-else>
-            <el-input class="_input" v-model="addParam.deposit" autocomplete="off" disabled></el-input>
-          </el-form-item>
+          <el-row>
+            <el-col :span="15">
+              <el-form-item label="交稿时间" :label-width="formLabelWidth" prop="delivery_time">
+                <el-input class="_input" v-model="addParam.delivery_time" autocomplete="off" disabled></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="9" v-if="addParam.total_amount===addParam.deposit">
+              <el-form-item label="总价" label-width="40px" prop="total_amount">
+                <el-input style="width: 85%" class="_input" v-model="addParam.total_amount" autocomplete="off" disabled></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :span="9" v-else>
+              <el-form-item label="定金" label-width="40px" prop="deposit">
+                <el-input style="width: 85%" class="_input" v-model="addParam.deposit" autocomplete="off" disabled></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
 
           <el-form-item label="要求" :label-width="formLabelWidth" prop="require">
             <el-input class="_input" type="textarea" :rows="5" v-model="addParam.require" autocomplete="off" :placeholder="addParam.placeholder"></el-input>
@@ -170,8 +176,8 @@
                     if (valid) {
                         // 提交表单
                         const param = {
-                          total_amount: this.addParam.total_amount,
-                          deposit: this.addParam.deposit,
+                          // total_amount: this.addParam.total_amount,
+                          // deposit: this.addParam.deposit,
                           require: this.addParam.require,
                           customer_contact: this.addParam.customer_contact,
                           main_order_id: this.order_id

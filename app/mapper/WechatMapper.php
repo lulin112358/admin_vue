@@ -19,10 +19,10 @@ class WechatMapper extends BaseMapper
      * @throws \think\db\exception\ModelNotFoundException
      */
     public function wechats() {
-        return Db::table("orders_account")->alias("oa")
-            ->join(["account" => "a"], "oa.account_id=a.id")
-            ->where(["oa.status" => 1, "oa.is_wechat" => 1])
-            ->field("oa.id, oa.nickname as wechat, a.account as wechat_id, oa.create_time, oa.update_time")
-            ->order("oa.id desc")->select()->toArray();
+        return Db::table("account")->alias("a")
+            ->join(["orders_account" => "oa"], "oa.account_id=a.id")
+            ->where(["oa.status" => 1, "a.is_wechat" => 1, "a.status" => 1])
+            ->field("a.id, oa.nickname as wechat, a.account as wechat_id, oa.create_time, oa.update_time")
+            ->order("a.id desc")->select()->toArray();
     }
 }

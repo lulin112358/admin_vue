@@ -53,29 +53,21 @@ class AmountAccountService extends BaseService
     public function updateAccount($data) {
         Db::startTrans();
         try {
-            $res = $this->updateWhere(["id" => $data["id"]], ["status" => 0]);
+            $res = $this->updateWhere(["id" => $data["id"]], ["account" => $data["account"], "update_time" => time()]);
             if ($res === false)
                 throw new \Exception("修改失败");
-            $amountAccountData = [
-                "account" => $data["account"],
-                "create_time" => time(),
-                "update_time" => time()
-            ];
-            $res = $this->add($amountAccountData);
-            if (!$res)
-                throw new \Exception("修改失败啦");
             # 添加账号可见权限
-            $userAuthRowData = [
-                "type" => "amount_account_id",
-                "type_id" => $res->id,
-                "user_id" => request()->uid,
-                "status" => 1,
-                "create_time" => time(),
-                "update_time" => time()
-            ];
-            $res = (new UserAuthRowMapper())->add($userAuthRowData);
-            if (!$res)
-                throw new \Exception("添加失败啦");
+//            $userAuthRowData = [
+//                "type" => "amount_account_id",
+//                "type_id" => $res->id,
+//                "user_id" => request()->uid,
+//                "status" => 1,
+//                "create_time" => time(),
+//                "update_time" => time()
+//            ];
+//            $res = (new UserAuthRowMapper())->add($userAuthRowData);
+//            if (!$res)
+//                throw new \Exception("添加失败啦");
             Db::commit();
             return true;
         }catch (\Exception $exception) {

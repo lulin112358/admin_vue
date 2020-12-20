@@ -52,3 +52,18 @@ function generateTreeText($cate , $lefthtml = '— — ' , $pid=0 , $lvl=0, $lef
     }
     return $arr;
 }
+
+/**
+ * 处理入账数据
+ * @param $data
+ * @param $type
+ * @return array
+ */
+function processAmount($data, $type) {
+    $retData = [];
+    foreach ($data as $k => $v) {
+        $retData[$v["name"]] = $retData[$v["name"]]??0;
+        $retData[$v["name"]] += $v[$type];
+    }
+    return $retData;
+}

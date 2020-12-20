@@ -114,7 +114,7 @@ class OrdersService extends BaseService
             $whereRow[] = ["deposit_amount_account_id", "in", ($authRow["amount_account_id"]??[])];
         }
         # 构造字段查询条件
-        $where = [];
+        $map = [];
         if (isset($params["search_fields"])) {
             foreach ($params["search_fields"] as $k => $v) {
                 if (!$export) {
@@ -122,10 +122,11 @@ class OrdersService extends BaseService
                 }else {
                     $val = explode(",", $v);
                 }
-                $where[$val[0]][] = $val[1];
+                $map[$val[0]][] = $val[1];
             }
         }
         # 构造时间段查询条件
+        $where = [];
         if (isset($params["date_time"])) {
             if (strstr($params["search_order"], "create_time")) {
                 $where[] = ["create_time", ">=", strtotime($params["date_time"][0])];
@@ -136,9 +137,12 @@ class OrdersService extends BaseService
             }
         }
         # 构造收款账号查询条件
-        $amountAccountId = $where["amount_account_id"]??[];
+        $amountAccountId = $map["amount_account_id"]??[];
         $searchKey = $params["search_key"]??"";
-        unset($where["amount_account_id"]);
+        unset($map["amount_account_id"]);
+        foreach ($map as $k => $v) {
+            $where[] = [$k, "in", $v];
+        }
         # orders_view试图
         if (!$export) {
             $data = Db::table("orders_view")
@@ -612,7 +616,7 @@ class OrdersService extends BaseService
                     throw new \Exception("操作失败");
             }
             $splitCount = $data["split_count"]??1;
-            if ($splitCount == 1) {
+            if ($splitCount == 1 && $count == 1) {
                 $insertData = [
                     "main_order_id" => $data["main_order_id"],
                     "order_sn" => $orderSn."-2",
@@ -620,14 +624,15 @@ class OrdersService extends BaseService
                     "check_fee" => $data["split_check_fee"]??0,
                     "delivery_time" => $info["delivery_time"],
                     "create_time" => $create_time,
-                    "update_time" => $create_time
+                    "update_time" => $create_time,
+                    "is_split" => 1
                 ];
                 $res = $this->add($insertData);
                 if (!$res)
                     throw new \Exception("操作失败！！");
             }else {
                 $insertData = [];
-                $all = $count + ($data["split_count"]??1);
+                $all = $count + ($data["split_count"]??1)+1;
                 for ($i = $count + 1; $i < $all; $i++) {
                     $insertData[] = [
                         "main_order_id" => $data["main_order_id"],
@@ -636,7 +641,8 @@ class OrdersService extends BaseService
                         "check_fee" => $data["split_check_fee"]??0,
                         "delivery_time" => $info["delivery_time"],
                         "create_time" => $create_time,
-                        "update_time" => $create_time
+                        "update_time" => $create_time,
+                        "is_split" => 1
                     ];
                 }
                 $res = $this->addAll($insertData);

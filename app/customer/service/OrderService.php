@@ -55,7 +55,7 @@ class OrderService extends BaseService
         Db::startTrans();
         try {
             $data = [
-                "total_amount" => $param["total_amount"],
+//                "total_amount" => $param["total_amount"],
                 "customer_contact" => $param["customer_contact"]
             ];
             $main_order_id = base64_decode($param["main_order_id"]);
@@ -70,13 +70,13 @@ class OrderService extends BaseService
             if ($res === false)
                 throw new \Exception("提交失败!");
 
-            $data = [
-                "change_deposit" => $param["deposit"],
-                "deposit" => $param["deposit"]
-            ];
-            $res = (new OrdersDepositMapper())->updateWhere(["main_order_id" => $main_order_id], $data);
-            if ($res === false)
-                throw new \Exception("提交失败啦");
+//            $data = [
+//                "change_deposit" => $param["deposit"],
+//                "deposit" => $param["deposit"]
+//            ];
+//            $res = (new OrdersDepositMapper())->updateWhere(["main_order_id" => $main_order_id], $data);
+//            if ($res === false)
+//                throw new \Exception("提交失败啦");
             Db::commit();
             return true;
         }catch (\Exception $exception) {

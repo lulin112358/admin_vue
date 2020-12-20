@@ -28,7 +28,7 @@ class AccountService extends BaseService
             ->join(["account" => "a"], "a.id=oa.account_id", "left")
             ->join(["account_cate" => "ac"], "ac.id=a.account_cate", "left")
             ->where(["oa.status" => 1])
-            ->field("oa.account_id, a.account, oa.id, ac.cate_name, oa.nickname, oa.is_wechat, a.simple_name")
+            ->field("oa.id as order_account_id, a.account, a.id, ac.cate_name, oa.nickname, a.is_wechat, a.simple_name")
             ->order("ac.cate_name desc")
             ->order("oa.id desc")
             ->select()->toArray();
@@ -78,6 +78,7 @@ class AccountService extends BaseService
             $accountData = [
                 "account" => $data["account"],
                 "simple_name" => $data["simple_name"],
+                "is_wechat" => $data["is_wechat"],
                 "account_cate" => $data["account_cate"],
                 "create_time" => time(),
                 "update_time" => time()
@@ -88,7 +89,6 @@ class AccountService extends BaseService
             $ordersAccountData = [
                 "account_id" => $res->id,
                 "nickname" => $data["nickname"],
-                "is_wechat" => $data["is_wechat"],
                 "create_time" => time(),
                 "update_time" => time()
             ];
@@ -138,35 +138,37 @@ class AccountService extends BaseService
                 $data["account_cate"] = $res->id;
             }
             # 修改接单账号
-            $res = $this->updateWhere(["account" => $data["account"]], ["account_cate" => $data["account_cate"], "simple_name" => $data["simple_name"]]);
+            $res = $this->updateWhere(["account" => $data["account"]], ["account_cate" => $data["account_cate"], "is_wechat" => $data["is_wechat"], "simple_name" => $data["simple_name"]]);
             if ($res === false)
                 throw new \Exception("修改失败!");
-            $account_id = Db::table("orders_account")->where(["id" => $data["account_id"]])->value("account_id");
-            $res = (new OrdersAccountMapper())->updateWhere(["account_id" => $account_id], ["status" => 0]);
-            if ($res === false)
-                throw new \Exception("修改失败啦");
-            $ordersAccountData = [
-                "account_id" => $account_id,
-                "nickname" => $data["nickname"],
-                "is_wechat" => $data["is_wechat"],
-                "create_time" => time(),
-                "update_time" => time()
-            ];
-            $res = (new OrdersAccountMapper())->add($ordersAccountData);
-            if (!$res)
-                throw new \Exception("修改失败啦!");
-            # 添加该账号可见权限
-            $userAuthRowData = [
-                "type" => "account_id",
-                "type_id" => $res->id,
-                "user_id" => request()->uid,
-                "status" => 1,
-                "create_time" => time(),
-                "update_time" => time()
-            ];
-            $res = (new UserAuthRowMapper())->add($userAuthRowData);
-            if (!$res)
-                throw new \Exception("添加失败！！");
+            $nickname = Db::table("orders_account")->where(["id" => $data["account_id"]])->value("nickname");
+            if ($nickname != $data["nickname"]) {
+                $res = (new OrdersAccountMapper())->updateWhere(["account_id" => $data["account_id"]], ["status" => 0]);
+                if ($res === false)
+                    throw new \Exception("修改失败啦");
+                $ordersAccountData = [
+                    "account_id" => $data["account_id"],
+                    "nickname" => $data["nickname"],
+                    "create_time" => time(),
+                    "update_time" => time()
+                ];
+                $res = (new OrdersAccountMapper())->add($ordersAccountData);
+                if (!$res)
+                    throw new \Exception("修改失败啦!");
+                # 添加该账号可见权限
+                $userAuthRowData = [
+                    "type" => "account_id",
+                    "type_id" => $res->id,
+                    "user_id" => request()->uid,
+                    "status" => 1,
+                    "create_time" => time(),
+                    "update_time" => time()
+                ];
+                $res = (new UserAuthRowMapper())->add($userAuthRowData);
+                if (!$res)
+                    throw new \Exception("添加失败！！");
+            }
+
             Db::commit();
             return true;
         }catch (\Exception $exception) {

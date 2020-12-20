@@ -10,11 +10,14 @@ use app\admin\controller\Degree;
 use app\admin\controller\Engineer;
 use app\admin\controller\Evaluation;
 use app\admin\controller\GroupChat;
+use app\admin\controller\IpWhite;
 use app\admin\controller\ManuscriptFee;
+use app\admin\controller\MarketBi;
 use app\admin\controller\Orders;
 use app\admin\controller\OrdersDeposit;
 use app\admin\controller\OrdersFinalPayment;
 use app\admin\controller\Origin;
+use app\admin\controller\OriginBi;
 use app\admin\controller\Profession;
 use app\admin\controller\Refund;
 use app\admin\controller\RoleAuthFields;
@@ -28,6 +31,7 @@ use app\admin\controller\UserAuthFields;
 use app\admin\controller\UserAuthRow;
 use app\admin\controller\UserExtend;
 use app\admin\controller\Wechat;
+use app\middleware\admin\IpFilter;
 use think\facade\Route;
 use app\admin\controller\Menu;
 use app\admin\controller\Role;
@@ -233,12 +237,22 @@ Route::group('admin', function () {
     Route::get("attendance/info", Attendance::class."@attendanceInfo");
     Route::put("attendance", Attendance::class."@updateAttendance");
 
+    # IP
+    Route::get("ip_white", IpWhite::class."@ipWhites");
+    Route::get("ip_white/info", IpWhite::class."@ipInfo");
+    Route::post("ip_white", IpWhite::class."@addIp");
+    Route::put("ip_white", IpWhite::class."@updateIp");
+    Route::delete("ip_white", IpWhite::class."@delIp");
+
     # BI
     Route::get("customer_bi", CustomerBi::class."@customerBiCount");
     Route::get("customer_order", CustomerBi::class."@customerOrderBi");
     Route::get("cus_order_perf", CustomerBi::class."@cusOrderPerfBi");
+    Route::get("market_bi", MarketBi::class."@marketUserBi");
+    Route::get("market_bi/detail", MarketBi::class."@marketUserOriginBi");
+    Route::get("origin_bi", OriginBi::class."@originBi");
     // Route::get("customer_bi/cols", CustomerBi::class."@customerBiCols");
-})->allowCrossDomain()->middleware([JwtMiddleware::class]);
+})->allowCrossDomain()->middleware([JwtMiddleware::class, IpFilter::class]);
 
 # 后台路由组   不需要jwt登录验证
 Route::group('admin', function () {
@@ -252,4 +266,4 @@ Route::group('admin', function () {
     Route::post("refund_log/export", Refund::class."@exportRefundLog");
     # 文件上传
     Route::post("upload", Upload::class."@upload");
-})->allowCrossDomain();
+})->allowCrossDomain()->middleware([IpFilter::class]);

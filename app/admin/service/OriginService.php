@@ -81,27 +81,38 @@ class OriginService extends BaseService
     public function updateOrigin($data) {
         Db::startTrans();
         try {
-            $res = $this->updateWhere(["id" => $data["id"]], ["status" => 0]);
-            if ($res === false)
-                throw new \Exception("修改失败");
-            unset($data["id"]);
-            $data["create_time"] = time();
-            $data["update_time"] = time();
-            $res = $this->add($data);
-            if (!$res)
-                throw new \Exception("修改失败啦");
-            # 添加来源可见权限
-            $userAuthRowData = [
-                "type" => "origin_id",
-                "type_id" => $res->id,
-                "user_id" => request()->uid,
-                "status" => 1,
-                "create_time" => time(),
-                "update_time" => time()
-            ];
-            $res = (new UserAuthRowMapper())->add($userAuthRowData);
-            if (!$res)
-                throw new \Exception("添加失败啦");
+            if ($data["is_update"] == 0) {
+                $res = $this->updateWhere(["id" => $data["id"]], ["status" => 0]);
+                if ($res === false)
+                    throw new \Exception("修改失败");
+                unset($data["id"]);
+                unset($data["is_update"]);
+                $data["create_time"] = time();
+                $data["update_time"] = time();
+                $res = $this->add($data);
+                if (!$res)
+                    throw new \Exception("修改失败啦");
+                # 添加来源可见权限
+                $userAuthRowData = [
+                    "type" => "origin_id",
+                    "type_id" => $res->id,
+                    "user_id" => request()->uid,
+                    "status" => 1,
+                    "create_time" => time(),
+                    "update_time" => time()
+                ];
+                $res = (new UserAuthRowMapper())->add($userAuthRowData);
+                if (!$res)
+                    throw new \Exception("添加失败啦");
+            }else {
+                $id = $data["id"];
+                unset($data["id"]);
+                unset($data["is_update"]);
+                $data["update_time"] = time();
+                $res = $this->updateWhere(["id" => $id], $data);
+                if ($res === false)
+                    throw new \Exception("修改失败");
+            }
             Db::commit();
             return true;
         }catch (\Exception $exception) {

@@ -23,8 +23,8 @@ class AccountMapper extends BaseMapper
         return Db::table("orders_account")->alias("oa")
             ->join(["account" => "a"], "a.id=oa.account_id")
             ->join(["account_cate" => "ac"], "ac.id=a.account_cate")
-            ->where(["oa.id" => $data])
-            ->field("oa.account_id, a.account, oa.id, ac.cate_name, oa.nickname, a.simple_name, a.account_cate, oa.is_wechat")
+            ->where(["oa.account_id" => $data, "oa.status" => 1])
+            ->field("oa.account_id, a.account, oa.id, ac.cate_name, oa.nickname, a.simple_name, a.account_cate, a.is_wechat")
             ->find();
     }
 }
