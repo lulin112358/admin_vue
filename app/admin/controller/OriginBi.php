@@ -32,4 +32,30 @@ class OriginBi extends Base
         }
         $this->ajaxReturn($list);
     }
+
+    /**
+     * 导出
+     * @param OriginBiService $service
+     */
+    public function export(OriginBiService $service) {
+        $param = input("param.");
+        try {
+            $service->export($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+    }
+
+    /**
+     * 详情导出
+     * @param OriginBiService $service
+     */
+    public function exportDetail(OriginBiService $service) {
+        $param = input("param.");
+        try {
+            $service->exportDetail($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+    }
 }

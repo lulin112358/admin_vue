@@ -7,6 +7,7 @@ namespace app\admin\service;
 use app\mapper\EngineerMapper;
 use app\mapper\OrdersMapper;
 use app\mapper\UserAuthRowMapper;
+use app\mapper\UserEngineersMapper;
 use app\mapper\UserMapper;
 use Carbon\Carbon;
 use excel\Excel;
@@ -54,6 +55,18 @@ class EngineerService extends BaseService
             $res = $this->add($param);
             if (!$res)
                 throw new \Exception("添加失败");
+            # 添加工程师登录信息
+            $accountData = [
+                "engineer_id" => $res->id,
+                "qq" => $param["contact_qq"],
+                "phone" => $param["contact_phone"],
+                "password" => password_hash("123456", PASSWORD_DEFAULT),
+                "create_time" => time(),
+                "update_time" => time()
+            ];
+            $res = (new UserEngineersMapper())->add($accountData);
+            if (!$res)
+                throw new \Exception("添加失败啦!");
             # 添加该行可见权限
             $addData = [
                 "type" => "engineer_id",

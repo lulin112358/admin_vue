@@ -86,7 +86,7 @@ class OrdersService extends BaseService
         $whereRow = [];
         $authRow = [];
         # 发单人权限
-//        $billerUser = [];
+        $billerUser = [];
         if (request()->uid != 1) {
             $authRow = row_auth();
             $authRowUserCustomer = $authRow["user_customer_id"]??[];
@@ -95,8 +95,8 @@ class OrdersService extends BaseService
 //            array_push($authRowUserBiller, request()->uid);
             $authRowUserAlmighty = $authRow["user_almighty_id"]??[];
             array_push($authRowUserAlmighty, request()->uid);
-//            $billerUser = $authRow["user_biller_id"]??[];
-//            array_push($billerUser, request()->uid);
+            $billerUser = $authRow["user_biller_id"]??[];
+            array_push($billerUser, request()->uid);
 //            $authRowUserCommissioner = $authRow["user_commissioner_id"]??[];
 //            array_push($authRowUserCommissioner, request()->uid);
 //            $authRowUserMaintain = $authRow["user_maintain_id"]??[];
@@ -127,7 +127,7 @@ class OrdersService extends BaseService
         }
         # 构造时间段查询条件
         $where = [];
-        if (isset($params["date_time"])) {
+        if (isset($params["date_time"]) && !empty($params["date_time"])) {
             if (strstr($params["search_order"], "create_time")) {
                 $where[] = ["create_time", ">=", strtotime($params["date_time"][0])];
                 $where[] = ["create_time", "<=", strtotime($params["date_time"][1])];
@@ -161,10 +161,16 @@ class OrdersService extends BaseService
                         ->whereOr("final_payment_amount_account_id", null);
                     }
                 })
+                # 发单人权限验证
+                ->where(function ($query) use ($billerUser) {
+                    if (request()->uid != 1) {
+                        $query->where(["biller_id" => $billerUser]);
+                    }
+                })
                 # 模糊匹配查询条件
                 ->where("manuscript_fee|biller|cate_name|check_fee|commission_ratio|customer_manager|customer_name|market_maintain|market_manager|market_user|order_sn|total_amount|customer_contact|deposit|final_payment|require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|note", "like", "%$searchKey%")
                 ->where($where)
-                ->orderRaw("if(status=3, 1, 0)")
+                ->orderRaw("if(status=3, 1, 0), if(status=5, 1, 0)")
                 ->order($params["search_order"])
                 ->order("order_id asc")
                 ->paginate(100, true)->items();
@@ -192,16 +198,15 @@ class OrdersService extends BaseService
                     }
                 })
                 # 发单人权限验证
-//                ->where(function ($query) use ($billerUser) {
-//                    if (request()->uid != 1) {
-//                        $query->where(["biller_id" => $billerUser])
-//                            ->whereOr("biller_id", 0);
-//                    }
-//                })
+                ->where(function ($query) use ($billerUser) {
+                    if (request()->uid != 1) {
+                        $query->where(["biller_id" => $billerUser]);
+                    }
+                })
                 # 模糊匹配查询条件
                 ->where("manuscript_fee|biller|cate_name|check_fee|commission_ratio|customer_manager|customer_name|market_maintain|market_manager|market_user|order_sn|total_amount|customer_contact|deposit|final_payment|require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|note", "like", "%$searchKey%")
                 ->where($where)
-                ->orderRaw("if(status=3, 1, 0)")
+                ->orderRaw("if(status=3, 1, 0), if(status=5, 1, 0)")
                 ->order($params["search_order"])
                 ->order("order_id asc")->select()->toArray();
         }
@@ -254,9 +259,17 @@ class OrdersService extends BaseService
                     $data[$k]["color"] = "green";
             }
             $data[$k]["status_color"] = $this->statusColor[$v["status"]];
-            if ($v["status"] == 3) {
-                $diff = "已交稿";
-                $data[$k]["color"] = "black";
+            switch ($v["status"]) {
+                case 3:
+                    $diff = "已交稿";
+                    $data[$k]["color"] = "black";
+                    break;
+                case 5:
+                    $diff = "已退款";
+                    $data[$k]["color"] = "black";
+                    break;
+                default:
+                    break;
             }
             $data[$k]["countdown"] = $diff;
         }

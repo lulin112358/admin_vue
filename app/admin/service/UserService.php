@@ -55,12 +55,18 @@ class UserService extends BaseService
      * @throws \think\db\exception\ModelNotFoundException
      */
     public function allGroupUsers($param) {
-        $data = (new UserMapper())->allGroupUsers();
+        $data = (new UserMapper())->allGroupUsers(["r.role_name" => array_keys($this->map)]);
         $tmp = [];
         foreach ($data as $k => $v) {
             $v["id"] = $this->map[$v["role_name"]]."/".$v["id"];
             $tmp[$v["role_name"]][] = $v;
         }
+        # 未发订单权限控制
+        $tmp["发单人事"][] = [
+            "id" => 'user_biller_id/0',
+            'name' => '未定',
+            'role_name' => '发单人事'
+        ];
         # 去除不必要的组
         if (isset($param["user_id"]) && !empty($param["user_id"])) {
             # 获取用户所属权限组

@@ -33,10 +33,11 @@ class UserMapper extends BaseMapper
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function allGroupUsers() {
+    public function allGroupUsers($where) {
         return Db::table("user_role")->alias("ur")
             ->join(["user" => "u"], "u.id=ur.user_id")
             ->join(["roles" => "r"], "r.id=ur.role_id")
+            ->where($where)
             ->field("u.id, u.name, r.role_name")
             ->select()->toArray();
     }

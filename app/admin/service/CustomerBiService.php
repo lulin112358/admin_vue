@@ -8,9 +8,30 @@ use app\mapper\AccountMapper;
 use app\mapper\OrdersMainMapper;
 use app\mapper\UserMapper;
 use Carbon\Carbon;
+use excel\Excel;
 
 class CustomerBiService
 {
+    private function process($data, $type) {
+        $data_ = [];
+        foreach ($data as $k => $v) {
+            $data_[$v["name"]][] = $v;
+        }
+        $_data = [];
+        foreach ($data_ as $k => $v) {
+            foreach ($v as $key => $val) {
+                $_data[$k][$val["account_id"]][] = $val;
+            }
+        }
+        $ret = [];
+        foreach ($_data as $k => $v) {
+            foreach ($v as $key => $val) {
+                $ret[$k][$key] = array_sum(array_column($val, $type));
+            }
+        }
+        return $ret;
+    }
+
     /**
      * 获取
      * @return array
@@ -26,7 +47,7 @@ class CustomerBiService
             ];
         }else {
             $where = [
-                ["om.create_time", ">=", strtotime(date("Y-m-1", time()))],
+                ["om.create_time", ">=", strtotime(date("Y-m-d", time()))],
                 ["om.create_time", "<=", time()],
             ];
         }
@@ -44,6 +65,15 @@ class CustomerBiService
                     });
             };
             $customerData = (new OrdersMainMapper())->customerAmountData($map);
+            # 定金
+            $_depositData = collect($customerData)->where("deposit_time", ">=", $where[0][2])
+                ->where("deposit_time", "<=", $where[1][2])->toArray();
+            $deposit = $this->process($_depositData, "deposit");
+
+            # 尾款
+            $_finalPayment = collect($customerData)->where("final_payment_time", ">=", $where[0][2])
+                ->where("final_payment_time", "<=", $where[1][2])->toArray();
+            $finalPayment = $this->process($_finalPayment, "final_payment");
         }
 
         $customerTmp = [];
@@ -76,15 +106,12 @@ class CustomerBiService
         }else {
             foreach ($accountTem as $k => $v) {
                 $item["customer_name"] = $k;
-                $total = 0;
                 foreach ($v as $idx => $val) {
                     if (!empty($idx) && in_array("account_".$idx, $fields)) {
-                        $amount = array_sum(array_column($val, "total_amount"));
-                        $item["account_".$idx] = $amount;
-                        $total += $amount;
+                        $item["account_".$idx] = ($deposit[$k][$idx]??0) + ($finalPayment[$k][$idx]??0);
                     }
                 }
-                $item["total_amount"] = $total;
+                $item["total_amount"] = (array_sum(array_values($deposit[$k]??[]))) + (array_sum(array_values($finalPayment[$k]??[])));
                 $retData[] = $item;
                 $item = [];
             }
@@ -111,12 +138,32 @@ class CustomerBiService
             $accountSort = (new OrdersMainMapper())->accountSortData($where);
         }else {
             $accountSort = (new OrdersMainMapper())->accountAmountSortData($where);
+            # 定金
+            $_depositData = collect($accountSort)->where("deposit_time", ">=", $where[0][2])
+                ->where("deposit_time", "<=", $where[1][2])->toArray();
+            $depositData = processAmount($_depositData, "deposit", "account_id");
+            # 尾款
+            $_finalPayment = collect($accountSort)->where("final_payment_time", ">=", $where[0][2])
+                ->where("final_payment_time", "<=", $where[1][2])->toArray();
+            $finalPaymentData = processAmount($_finalPayment, "final_payment", "account_id");
+            $accountSort = [];
+            foreach ($depositData as $k => $v) {
+                $accountSort[$k]["total_amount"] = $v;
+                $accountSort[$k]["account_id"] = $k;
+            }
+            foreach ($finalPaymentData as $k => $v) {
+                $accountSort[$k]["total_amount"] = $accountSort[$k]["total_amount"]??0;
+                $accountSort[$k]["total_amount"] += $v;
+                $accountSort[$k]["account_id"] = $k;
+            }
+            $sort = array_column($accountSort, "total_amount");
+            array_multisort($sort, SORT_DESC, $accountSort);
         }
         $accountSort = array_column($accountSort, "account_id");
         $_accountData = [];
         foreach ($accountData as $k => $v) {
             if (!in_array($v["id"], $accountSort)) {
-                $accountSort[] = $v["id"];
+                array_push($accountSort, $v["id"]);
             }
             $id = $v["id"];
             unset($v["id"]);
@@ -161,10 +208,10 @@ class CustomerBiService
             $days = Carbon::parse($param["range_time"][0])->diffInDays(Carbon::parse($param["range_time"][1]));
         }else {
             $where = [
-                ["om.create_time", ">=", strtotime(date("Y-m-1", time()))],
+                ["om.create_time", ">=", strtotime(date("Y-m-d", time()))],
                 ["om.create_time", "<=", time()],
             ];
-            $days = (new Carbon())->diffInDays(Carbon::parse(date("Y-m-1", time())));
+            $days = (new Carbon())->diffInDays(Carbon::parse(date("Y-m-d", time())));
         }
         # 查找客服业绩单数
         $customerData = (new OrdersMainMapper())->customerOrderData($where);
@@ -257,7 +304,7 @@ class CustomerBiService
             ];
         }else {
             $where = [
-                ["om.create_time", ">=", strtotime(date("Y-m-1", time()))],
+                ["om.create_time", ">=", strtotime(date("Y-m-d", time()))],
                 ["om.create_time", "<=", time()],
             ];
         }
@@ -275,9 +322,12 @@ class CustomerBiService
         };
         $cusAmountData = (new OrdersMainMapper())->amountBiData($map);
         $amountTmp = [];
+        $customerMap = [];
         foreach ($cusAmountData as $k => $v) {
-            if (!in_array($v["name"], $amountTmp))
+            if (!in_array($v["name"], $amountTmp)) {
                 $amountTmp[] = $v["name"];
+                $customerMap[$v["name"]] = $v["customer_id"];
+            }
         }
 
         # 定金
@@ -315,6 +365,7 @@ class CustomerBiService
                 "deposit" => $depositData[$k]??0,
                 "final_payment" => $finalPaymentData[$k]??0,
                 "refund_amount" => $refundData[$k]??0,
+                "customer_id" => $v[0]["customer_id"],
             ];
             $retData[] = $item;
         }
@@ -333,6 +384,7 @@ class CustomerBiService
                     "deposit" => $depositData[$v]??0,
                     "final_payment" => $finalPaymentData[$v]??0,
                     "refund_amount" => $refundData[$v]??0,
+                    "customer_id" => $customerMap[$v],
                 ];
                 $retData[] = $item;
             }
@@ -344,5 +396,84 @@ class CustomerBiService
             $retData[$k]["rank"] = $k+1;
         }
         return $retData;
+    }
+
+
+    /**
+     * 客服订单业绩详情BI数据
+     * @param $param
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function cusOrderPerfDetailBi($param) {
+        if (isset($param["range_time"]) && !empty($param["range_time"])) {
+            $startTime = strtotime($param["range_time"][0]);
+            $endTime = strtotime($param["range_time"][1]);
+        }else {
+            $startTime = strtotime(date("Y-m-d", time()));
+            $endTime = time();
+        }
+        # 获取客服业绩金额
+        $map = function ($query) use ($startTime, $endTime, $param) {
+            $query->where([["bav.deposit_time", ">=", $startTime], ["bav.deposit_time", "<=", $endTime], ["bav.customer_id", "=", $param["customer_id"]]])
+                ->whereOr(function ($query) use ($startTime, $endTime, $param) {
+                    $query->where([["bav.final_payment_time", ">=", $startTime], ["bav.final_payment_time", "<=",$endTime], ["bav.customer_id", "=", $param["customer_id"]]]);
+                })
+                ->whereOr(function ($query) use ($startTime, $endTime, $param) {
+                    $query->where([["bav.refund_time", ">=", $startTime], ["bav.refund_time", "<=", $endTime], ["bav.customer_id", "=", $param["customer_id"]]]);
+                });
+        };
+        $cusAmountData = (new OrdersMainMapper())->amountBiDataWithOrderSn($map);
+
+        # 定金
+        $_depositData = collect($cusAmountData)->where("deposit_time", ">=", $startTime)
+            ->where("deposit_time", "<=", $endTime)->toArray();
+
+        # 尾款
+        $_finalPayment = collect($cusAmountData)->where("final_payment_time", ">=", $startTime)
+            ->where("final_payment_time", "<=", $endTime)->toArray();
+
+        # 退款
+        $_refund = collect($cusAmountData)->where("refund_time", ">=", $startTime)
+            ->where("refund_time", "<=", $endTime)->toArray();
+
+        $data = ["deposit" => $_depositData, "final_payment" => $_finalPayment, "refund" => $_refund];
+        $retData = [];
+        foreach ($data as $k => $v) {
+            foreach ($v as $key => $val) {
+                $item = [
+                    "origin_name" => $val["origin_name"],
+                    "deposit" => floatval($k=='deposit'?$val["deposit"]:0),
+                    "final_payment" => floatval($k=='final_payment'?$val["final_payment"]:0),
+                    "refund_amount" => floatval($k=='refund'?$val["refund_amount"]:0),
+                    "amount_time" => date("Y-m-d H", $val[$k.'_time']),
+                    "order_sn" => $val["order_sn"]
+                ];
+                $retData[] = $item;
+            }
+
+        }
+        return $retData;
+    }
+
+
+    public function cusOrderPerExport($param) {
+        $data = $this->cusOrderPerfBi($param);
+        $header = [
+            ["姓名", "name"],
+            ["排名", "rank"],
+            ["成交占比", "deal_rate"],
+            ["入账", "total_amount"],
+            ["成交单数", "total_count"],
+            ["写作", "write_count"],
+            ["降重", "reduce_repeat_count"],
+            ["其他", "other_count"],
+            ["定金", "deposit"],
+            ["尾款", "final_payment"],
+            ["退款", "refund_amount"],
+        ];
+        return Excel::exportData($data, $header, "客服订单业绩数据");
     }
 }

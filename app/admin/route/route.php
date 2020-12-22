@@ -247,10 +247,12 @@ Route::group('admin', function () {
     # BI
     Route::get("customer_bi", CustomerBi::class."@customerBiCount");
     Route::get("customer_order", CustomerBi::class."@customerOrderBi");
+    Route::get("customer_order/detail", CustomerBi::class."@cusOrderPerfDetailBi");
     Route::get("cus_order_perf", CustomerBi::class."@cusOrderPerfBi");
     Route::get("market_bi", MarketBi::class."@marketUserBi");
     Route::get("market_bi/detail", MarketBi::class."@marketUserOriginBi");
     Route::get("origin_bi", OriginBi::class."@originBi");
+    Route::get("origin_bi/detail", OriginBi::class."@originDetailBi");
     // Route::get("customer_bi/cols", CustomerBi::class."@customerBiCols");
 })->allowCrossDomain()->middleware([JwtMiddleware::class, IpFilter::class]);
 
@@ -264,6 +266,9 @@ Route::group('admin', function () {
     Route::post("settlement_log/export", SettlementLog::class."@export");
     Route::post("refund/export", Refund::class."@exportRefund");
     Route::post("refund_log/export", Refund::class."@exportRefundLog");
+    Route::post("cus_order_perf/export", CustomerBi::class."@export");
+    Route::post("origin_bi/export", OriginBi::class."@export");
+    Route::post("origin_detail_bi/export", OriginBi::class."@exportDetail");
     # 文件上传
     Route::post("upload", Upload::class."@upload");
 })->allowCrossDomain()->middleware([IpFilter::class]);

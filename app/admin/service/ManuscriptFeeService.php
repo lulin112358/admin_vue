@@ -41,13 +41,14 @@ class ManuscriptFeeService extends BaseService
             $where[] = ["o.delivery_time", "<=", strtotime($param["delivery_time"][1])];
         }
         $data = (new OrdersMapper())->manuscripts($where);
-        $canSettlement = collect($data)->where("delivery_time", "<=", time())->toArray();
+        $canSettlement = collect($data)->where("delivery_time|actual_delivery_time", "<=", time())->toArray();
         $canSettlementData = [];
         foreach ($canSettlement as $k => $v) {
             $canSettlementData[$v["engineer_id"]] = floatval($v["manuscript_fee"] - $v["settlemented"] - $v["deduction"]);
         }
         foreach ($data as $k => $v) {
-            $carbonObj = Carbon::parse(date("Y-m-d H:i:s", $v["delivery_time"]));
+            $time = ($v["delivery_time"] > $v["actual_delivery_time"]) ? $v["actual_delivery_time"] : $v["delivery_time"];
+            $carbonObj = Carbon::parse(date("Y-m-d H:i:s", $time));
             $carbonObj = $carbonObj->addDays(10);
             $year = $carbonObj->year;
             $month = $carbonObj->month;
@@ -96,7 +97,8 @@ class ManuscriptFeeService extends BaseService
             $data[$k]["settlemented"] = floatval($v["settlemented"]);
             $data[$k]["deduction"] = floatval($v["deduction"]);
             # 计算预计结算时间
-            $time = Carbon::parse(date("Y-m-d H:i:s", $v["delivery_time"]));
+            $time = ($v["delivery_time"] > $v["actual_delivery_time"]) ? $v["actual_delivery_time"] : $v["delivery_time"];
+            $time = Carbon::parse(date("Y-m-d H:i:s", $time));
             $time = $time->addDays(10);
             $day = $time->day;
             if ($day >= 1 && $day <= 10) {

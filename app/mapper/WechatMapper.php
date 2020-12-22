@@ -22,7 +22,7 @@ class WechatMapper extends BaseMapper
         return Db::table("account")->alias("a")
             ->join(["orders_account" => "oa"], "oa.account_id=a.id")
             ->where(["oa.status" => 1, "a.is_wechat" => 1, "a.status" => 1])
-            ->field("a.id, oa.nickname as wechat, a.account as wechat_id, oa.create_time, oa.update_time")
+            ->field("oa.id as wechat_account_id, a.id, oa.nickname as wechat, a.account as wechat_id, oa.create_time, oa.update_time")
             ->order("a.id desc")->select()->toArray();
     }
 }

@@ -23,7 +23,7 @@ class OrdersMapper extends BaseMapper
             ->join(["engineer" => "e"], "e.id=o.engineer_id")
             ->where([["o.status", "=", 3], ["o.engineer_id", "<>", 0]])
             ->where($where)
-            ->field("o.id, o.engineer_id, sum(o.manuscript_fee) as manuscript_fee, sum(o.settlemented) as settlemented, sum(o.deduction) as deduction, min(o.delivery_time) as delivery_time, e.qq_nickname, e.contact_qq, e.collection_code")
+            ->field("o.id, o.engineer_id, sum(o.manuscript_fee) as manuscript_fee, sum(o.settlemented) as settlemented, sum(o.deduction) as deduction, min(o.actual_delivery_time) as actual_delivery_time, min(o.delivery_time) as delivery_time, e.qq_nickname, e.contact_qq, e.collection_code")
             ->group("o.engineer_id")->select()->toArray();
     }
 

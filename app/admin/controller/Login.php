@@ -6,6 +6,7 @@ namespace app\admin\controller;
 
 use app\admin\service\UserService;
 use app\Code;
+use app\mapper\UserEngineersMapper;
 use app\mapper\UserRoleMapper;
 use app\model\OrdersMain;
 use app\validate\UserValidate;
@@ -42,5 +43,17 @@ class Login extends Base
         ];
         $jwt = Jwt::generateToken($data);
         $this->ajaxReturn(Code::SUCCESS, '登录成功', ["name" => $user["name"], "id" => $user["id"], "roles" => $roles], $jwt);
+    }
+
+    public function test() {
+        $data = Db::table("engineer")->field("id as engineer_id, contact_qq as qq, contact_phone as phone")->limit(500*(8-1), 500)->select()->toArray();
+        foreach ($data as $k => $v) {
+            $data[$k]["password"] = password_hash("123456", PASSWORD_DEFAULT);
+        }
+        $res = (new UserEngineersMapper())->addAll($data);
+        if (!$res)
+            echo "失败";
+        else
+            echo "成功";
     }
 }

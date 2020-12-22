@@ -59,11 +59,11 @@ function generateTreeText($cate , $lefthtml = '— — ' , $pid=0 , $lvl=0, $lef
  * @param $type
  * @return array
  */
-function processAmount($data, $type) {
+function processAmount($data, $type, $field = 'name') {
     $retData = [];
     foreach ($data as $k => $v) {
-        $retData[$v["name"]] = $retData[$v["name"]]??0;
-        $retData[$v["name"]] += $v[$type];
+        $retData[$v[$field]] = $retData[$v[$field]]??0;
+        $retData[$v[$field]] += $v[$type];
     }
     return $retData;
 }

@@ -24,40 +24,24 @@ class MarketBiService
             ];
         }else {
             $where = [
-                ["om.create_time", ">=", strtotime(date("Y-m-1", time()))],
+                ["om.create_time", ">=", strtotime(date("Y-m-d", time()))],
                 ["om.create_time", "<=", time()],
             ];
         }
         # 获取市场专员订单数量数据
         $marketUserData = (new OrdersMainMapper())->marketUserBiData($where);
-        # 获取市场专员订单金额数据
-        $map = function ($query) use ($where) {
-            $query->where([["deposit_time", ">=", $where[0][2]], ["deposit_time", "<=", $where[1][2]]])
-                ->whereOr(function ($query) use ($where) {
-                    $query->where([["final_payment_time", ">=", $where[0][2]], ["final_payment_time", "<=", $where[1][2]]]);
-                })
-                ->whereOr(function ($query) use ($where) {
-                    $query->where([["refund_time", ">=", $where[0][2]], ["refund_time", "<=", $where[1][2]]]);
-                });
-        };
-        $marketUserAmountData = (new OrdersMainMapper())->amountBiData($map);
-        $total = array_sum(array_column($marketUserAmountData, "deposit")) + array_sum(array_column($marketUserAmountData, "final_payment"));
+        $total = array_sum(array_column($marketUserData, "deposit")) + array_sum(array_column($marketUserData, "final_payment"));
+
         $tmp = [];
+        $_orderData = [];
+        foreach ($marketUserData as $k => $v) {
+            $tmp[$v["market_user"]][] = $v;
+            $_orderData[$v["id"]][] = $v;
+        }
         $orderData = [];
-        foreach ($marketUserAmountData as $k => $v) {
-            $tmp[$v["market_user"]][] = $v;
-            $orderData[$v["main_order_id"]] = $v["deposit"] + $v["final_payment"];
+        foreach ($_orderData as $k => $v) {
+            $orderData[$k] = array_sum(array_column($v, "deposit")) + array_sum(array_column($v, "final_payment"));
         }
-        $amountData = [];
-        foreach ($tmp as $k => $v) {
-            $amountData[$k]["deposit"] = array_sum(array_column($v, "deposit"));
-            $amountData[$k]["final_payment"] = array_sum(array_column($v, "final_payment"));
-            $amountData[$k]["total_amount"] = $amountData[$k]["deposit"] + $amountData[$k]["final_payment"];
-            $amountData[$k]["refund_amount"] = array_sum(array_column($v, "refund_amount"));
-        }
-        $tmp = [];
-        foreach ($marketUserData as $k => $v)
-            $tmp[$v["market_user"]][] = $v;
 
         $retData = [];
         foreach ($tmp as $k => $v) {
@@ -65,7 +49,7 @@ class MarketBiService
             foreach ($v as $idx => $val) {
                 $commission += ($val["commission_ratio"] < 1 ? (round($orderData[$val["id"]] * $val["commission_ratio"], 2)) : $val["commission_ratio"]);
             }
-            $totalAmount = $amountData[$v[0]["market_user_id"]]["total_amount"];
+            $totalAmount = array_sum(array_column($v, "deposit")) + array_sum(array_column($v, "final_payment"));
             $checkFee = array_sum(array_column($v, "check_fee"));
             $manuscriptFee = array_sum(array_column($v, "manuscript_fee"));
             $grossProfit = $totalAmount - $checkFee - $manuscriptFee - $commission;
@@ -73,7 +57,7 @@ class MarketBiService
                 "name" => $k,
                 "market_user_id" => $v[0]["market_user_id"],
                 "total_amount" => $totalAmount,
-                "refund_amount" => $amountData[$v[0]["market_user_id"]]["refund_amount"],
+                "refund_amount" => array_sum(array_column($v, "refund_amount")),
                 "total_count" => count($v),
                 "gross_profit" => floatval(round($grossProfit, 2)),
                 "gross_profit_rate" => $totalAmount==0?"0%":round(($grossProfit / $totalAmount)*100, 2)."%",
@@ -106,38 +90,31 @@ class MarketBiService
             ];
         }else {
             $where = [
-                ["om.create_time", ">=", strtotime(date("Y-m-1", time()))],
+                ["om.create_time", ">=", strtotime(date("Y-m-d", time()))],
                 ["om.create_time", "<=", time()],
             ];
         }
         $where[] = ["o.market_user", "=", $param["market_user_id"]];
         # 获取数据
         $marketUserOriginData = (new OrdersMainMapper())->marketUserOriginBiData($where);
-        $map = function ($query) use ($where) {
-            $query->where([["deposit_time", ">=", $where[0][2]], ["deposit_time", "<=", $where[1][2]]])
-                ->whereOr(function ($query) use ($where) {
-                    $query->where([["final_payment_time", ">=", $where[0][2]], ["final_payment_time", "<=", $where[1][2]]]);
-                })
-                ->whereOr(function ($query) use ($where) {
-                    $query->where([["refund_time", ">=", $where[0][2]], ["refund_time", "<=", $where[1][2]]]);
-                });
-        };
-        $marketUserOriginAmountData = (new OrdersMainMapper())->amountBiData($map);
-        $total = array_sum(array_column($marketUserOriginAmountData, "deposit")) + array_sum(array_column($marketUserOriginAmountData, "final_payment"));
+        $total = array_sum(array_column($marketUserOriginData, "deposit")) + array_sum(array_column($marketUserOriginData, "final_payment"));
         $tmp = [];
-        $orderData = [];
-        foreach ($marketUserOriginAmountData as $k => $v) {
-            $tmp[$v["origin_id"]][] = $v;
-            $orderData[$v["main_order_id"]] = $v["deposit"] + $v["final_payment"];
+        $_amountData = [];
+        $_orderData = [];
+        foreach ($marketUserOriginData as $k => $v) {
+            $tmp[$v["origin_name"]][] = $v;
+            $_amountData[$v["origin_id"]][] = $v;
+            $_orderData[$v["id"]][] = $v;
         }
         $amountData = [];
-        foreach ($tmp as $k => $v) {
+        foreach ($_amountData as $k => $v) {
             $amountData[$k]["total_amount"] = array_sum(array_column($v, "deposit")) + array_sum(array_column($v, "final_payment"));
             $amountData[$k]["refund_amount"] = array_sum(array_column($v, "refund_amount"));
         }
-        $tmp = [];
-        foreach ($marketUserOriginData as $k => $v)
-            $tmp[$v["origin_name"]][] = $v;
+        $orderData = [];
+        foreach ($_orderData as $k => $v) {
+            $orderData[$k] = array_sum(array_column($v, "deposit")) + array_sum(array_column($v, "final_payment"));
+        }
 
         $retData = [];
         foreach ($tmp as $k => $v) {
