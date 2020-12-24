@@ -44,4 +44,23 @@ class OrdersDeposit extends Base
         }
         $this->ajaxReturn($list);
     }
+
+    /**
+     * 修改收款账号
+     * @param OrdersDepositService $service
+     * @param OrdersDepositValidate $validate
+     */
+    public function updateDepositAccount(OrdersDepositService $service, OrdersDepositValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("update_account")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $res = $service->updateDepositAccount($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        if ($res === false)
+            $this->ajaxReturn(Code::ERROR, "修改失败");
+        $this->ajaxReturn("修改成功");
+    }
 }

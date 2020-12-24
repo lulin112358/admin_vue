@@ -192,6 +192,7 @@ Route::group('admin', function () {
 
     # 收款记录
     Route::get("payment_log", OrdersDeposit::class."@orderPaymentLog");
+    Route::put("update_amount_account", OrdersDeposit::class."@updateDepositAccount");
 
     # 权限列管理
     Route::get("auth_field", AuthFields::class."@authFields");
@@ -253,12 +254,14 @@ Route::group('admin', function () {
     Route::get("market_bi/detail", MarketBi::class."@marketUserOriginBi");
     Route::get("origin_bi", OriginBi::class."@originBi");
     Route::get("origin_bi/detail", OriginBi::class."@originDetailBi");
+    Route::get("origin_bi/reconciliation", OriginBi::class."@originReconciliation");
     // Route::get("customer_bi/cols", CustomerBi::class."@customerBiCols");
 })->allowCrossDomain()->middleware([JwtMiddleware::class, IpFilter::class]);
 
 # 后台路由组   不需要jwt登录验证
 Route::group('admin', function () {
     Route::post('login', Login::class."@login");
+//    Route::post('test', Login::class."@test");
     Route::post("orders/export", Orders::class."@export");
     Route::post("engineer/export", Engineer::class."@export");
     Route::post("manuscript_fee/export", ManuscriptFee::class."@export");
@@ -267,8 +270,10 @@ Route::group('admin', function () {
     Route::post("refund/export", Refund::class."@exportRefund");
     Route::post("refund_log/export", Refund::class."@exportRefundLog");
     Route::post("cus_order_perf/export", CustomerBi::class."@export");
+    Route::post("cus_order_perf_detail/export", CustomerBi::class."@exportDetail");
     Route::post("origin_bi/export", OriginBi::class."@export");
     Route::post("origin_detail_bi/export", OriginBi::class."@exportDetail");
+    Route::post("origin_rec/export", OriginBi::class."@exportRec");
     # 文件上传
     Route::post("upload", Upload::class."@upload");
 })->allowCrossDomain()->middleware([IpFilter::class]);

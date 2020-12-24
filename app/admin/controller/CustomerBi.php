@@ -92,4 +92,17 @@ class CustomerBi extends Base
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
     }
+
+    /**
+     * 导出详情
+     * @param CustomerBiService $service
+     */
+    public function exportDetail(CustomerBiService $service) {
+        $param = input("param.");
+        try {
+            $service->exportDetail($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+    }
 }

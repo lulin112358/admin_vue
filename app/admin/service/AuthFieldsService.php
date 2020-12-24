@@ -5,6 +5,8 @@ namespace app\admin\service;
 
 
 use app\mapper\AuthFieldsMapper;
+use app\mapper\CategoryMapper;
+use app\mapper\UserRoleMapper;
 use think\facade\Db;
 
 class AuthFieldsService extends BaseService
@@ -52,6 +54,8 @@ class AuthFieldsService extends BaseService
      * @return array
      */
     public function fields() {
+        $roles = (new UserRoleMapper())->columnBy(["user_id" => request()->uid], "role_id");
+        $flag = in_array(1, $roles);
         $fields = $this->all("field, field_name, is_edit, edit_type, data_source");
         $retFields = [
             [
@@ -83,6 +87,14 @@ class AuthFieldsService extends BaseService
                     "events" => [
                         "click" => "paymentLogs"
                     ]
+                ];
+            }
+            if ($flag && $v["field"] == "cate_name") {
+                $data = (new CategoryMapper())->all("id as value, pid, cate_name as label");
+                $data = generateTree($data, "children", "value");
+                $field["editRender"] = [
+                    "name" => 'cascader',
+                    "options" => $data
                 ];
             }
             if ($v["is_edit"]) {

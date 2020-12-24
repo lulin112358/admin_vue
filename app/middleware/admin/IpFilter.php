@@ -17,13 +17,13 @@ class IpFilter
      */
     public function handle($request, \Closure $next)
     {
-        # 获取真实IP
-        $ip = get_real_ip();
-        # 获取合法IP
-        $whiteIp = IpWhite::column("ip");
-        if (!in_array($ip, $whiteIp)) {
-            exit(json_encode(["code" => Code::ERROR, "msg" => "非法IP", "data" => null, "token" => ""]));
-        }
+//        # 获取真实IP
+//        $ip = get_real_ip();
+//        # 获取合法IP
+//        $whiteIp = IpWhite::column("ip");
+//        if (!in_array($ip, $whiteIp)) {
+//            exit(json_encode(["code" => Code::ERROR, "msg" => "非法IP", "data" => null, "token" => ""]));
+//        }
         return $next($request);
     }
 }

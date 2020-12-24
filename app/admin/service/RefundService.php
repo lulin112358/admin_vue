@@ -99,6 +99,7 @@ class RefundService extends BaseService
                 "refund_id" => $info["id"],
                 "actual_refund_amount" => $param["refund_amount"],
                 "refund_user" => request()->uid,
+                "refund_account" => $param["amount_account"]??"",
                 "create_time" => time()
             ];
             $res = (new RefundLogMapper())->add($addData);

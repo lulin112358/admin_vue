@@ -3,7 +3,7 @@ declare (strict_types = 1);
 
 namespace app\automation\controller;
 
-use app\automation\service\OrderService;
+use app\automation\service\EngineerService;
 use app\automation\service\UserService;
 use app\Code;
 
@@ -25,16 +25,16 @@ class Index extends Base
     }
 
     /**
-     * 获取订单详细信息
-     * @param OrderService $service
+     * 搜索工程师
+     * @param EngineerService $service
      */
-    public function getOrderInfo(OrderService $service) {
+    public function searchEngineer(EngineerService $service) {
         $param = input("param.");
         try {
-            $info = $service->findBy(["order_sn" => $param["order_no"]], "require, delivery_time");
+            $list = $service->selectBy([["contact_qq|contact_phone", "like", "%{$param['number']}%"]], "id, contact_qq as qq, contact_phone as phone, qq_nickname as nickname");
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
-        $this->ajaxReturn($info);
+        $this->ajaxReturn($list);
     }
 }

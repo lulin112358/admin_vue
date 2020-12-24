@@ -30,7 +30,8 @@ class Orders extends Base
         "delivery_time",
         "deposit",
         "final_payment",
-        "contact_qq"
+        "contact_qq",
+        "cate_name"
     ];
     /**
      * 获取所有订单

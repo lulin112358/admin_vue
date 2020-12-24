@@ -459,6 +459,16 @@ class CustomerBiService
     }
 
 
+    /**
+     * 导出客服订单业绩
+     * @param $param
+     * @return bool
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
     public function cusOrderPerExport($param) {
         $data = $this->cusOrderPerfBi($param);
         $header = [
@@ -475,5 +485,28 @@ class CustomerBiService
             ["退款", "refund_amount"],
         ];
         return Excel::exportData($data, $header, "客服订单业绩数据");
+    }
+
+    /**
+     * 导出客服订单业绩详情
+     * @param $param
+     * @return bool
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function exportDetail($param) {
+        $data = $this->cusOrderPerfDetailBi($param);
+        $header = [
+            ["来源", "origin_name"],
+            ["定金", "deposit"],
+            ["尾款", "final_payment"],
+            ["退款", "refund_amount"],
+            ["收款时间", "amount_time"],
+            ["订单编号", "order_sn"],
+        ];
+        return Excel::exportData($data, $header, "客服订单业绩详情数据");
     }
 }

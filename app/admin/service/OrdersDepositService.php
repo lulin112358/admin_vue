@@ -36,9 +36,11 @@ class OrdersDepositService extends BaseService
         $finalPayment = (new OrdersFinalPaymentMapper())->finalPayment($data);
         foreach ($deposit as $k => $v) {
             $deposit[$k]["type"] = "定金";
+            $deposit[$k]["type_id"] = 1;
         }
         foreach ($finalPayment as $k => $v) {
             $finalPayment[$k]["type"] = "尾款";
+            $finalPayment[$k]["type_id"] = 2;
         }
         return array_merge($deposit, $finalPayment);
     }
@@ -68,6 +70,7 @@ class OrdersDepositService extends BaseService
                 "change_deposit" => $change,
                 "deposit" => $deposit,
                 "amount_account_id" => $data["amount_account_id"],
+                "payee_id" => request()->uid,
                 "create_time" => time(),
                 "update_time" => time()
             ];
@@ -79,6 +82,19 @@ class OrdersDepositService extends BaseService
         }catch (\Exception $exception) {
             Db::rollback();
             return false;
+        }
+    }
+
+    /**
+     * 修改收款账号
+     * @param $param
+     * @return mixed
+     */
+    public function updateDepositAccount($param) {
+        if ($param["type_id"] == 1) {
+            return $this->updateWhere(["id" => $param["id"]], ["amount_account_id" => $param["amount_account_id"], "update_time" => time()]);
+        }else{
+            return (new OrdersFinalPaymentMapper())->updateWhere(["id" => $param["id"]], ["amount_account_id" => $param["amount_account_id"], "update_time" => time()]);
         }
     }
 }

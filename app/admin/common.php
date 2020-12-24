@@ -6,10 +6,10 @@
  * @param $data
  * @return array
  */
-function generateTree($data, $children_name = 'children'){
+function generateTree($data, $children_name = 'children', $id = "id"){
     $items = array();
     foreach($data as $v){
-        $items[$v['id']] = $v;
+        $items[$v[$id]] = $v;
     }
     $tree = array();
     foreach($items as $k => $item){

@@ -45,15 +45,32 @@ class Login extends Base
         $this->ajaxReturn(Code::SUCCESS, '登录成功', ["name" => $user["name"], "id" => $user["id"], "roles" => $roles], $jwt);
     }
 
-    public function test() {
-        $data = Db::table("engineer")->field("id as engineer_id, contact_qq as qq, contact_phone as phone")->limit(500*(8-1), 500)->select()->toArray();
-        foreach ($data as $k => $v) {
-            $data[$k]["password"] = password_hash("123456", PASSWORD_DEFAULT);
-        }
-        $res = (new UserEngineersMapper())->addAll($data);
-        if (!$res)
-            echo "失败";
-        else
-            echo "成功";
-    }
+//    public function test() {
+//        $map = [
+//            1 => 2,
+//            2 => 10,
+//            3 => 10,
+//            4 => 5,
+//            5 => 6,
+//            6 => 10,
+//            7 => 8,
+//            8 => 9,
+//            9 => 10
+//        ];
+//        $data = Db::connect("old")->table("cd_gongchengshi")
+//            ->where("gongchengshi_id", ">", 3711)
+//            ->field("major2 as profession_id, name as qq_nickname, school_id, xieshou as contact_qq, xieshouphone as contact_phone, level as top_degree_id, software as good_at_software_id, fb_wenzhang_nums as core_journal_count, qx_order_type as tendency_id,weixinhao as wechat, weixin_nicheng as wechat_nickname, zhifubao as alipay, xingming as name, user_id as personnel_id, p_renshi_id as personnel_manager_id, qun_id as group_chat_id")
+//            ->select()->toArray();
+//        foreach ($data as $k => $v) {
+//            $data[$k]["good_at_software_id"] = $map[$v["good_at_software_id"]];
+//            $data[$k]["create_time"] = time();
+//            $data[$k]["update_time"] = time();
+//        }
+//
+//        $res = Db::table("engineer")->insertAll($data);
+//        if (!$res)
+//            echo "失败";
+//        else
+//            echo "成功";
+//    }
 }

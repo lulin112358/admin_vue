@@ -24,7 +24,7 @@ class RefundLogMapper extends BaseMapper
             ->join(["refund_view" => "rv"], "rl.refund_id=rv.id")
             ->join(["user" => "u"], "u.id=rl.refund_user")
             ->where($where)
-            ->field("rl.create_time, rl.actual_refund_amount, u.name, rv.*")
+            ->field("rl.create_time, rl.refund_account, rl.actual_refund_amount, u.name, rv.*")
             ->select()->toArray();
     }
 }

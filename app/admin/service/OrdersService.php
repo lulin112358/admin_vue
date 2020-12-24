@@ -48,14 +48,16 @@ class OrdersService extends BaseService
         "total_amount",
         "customer_contact",
         "customer_manager",
-        "wechat"
+        "wechat",
+        "cate_name"
     ];
 
     # 定义orders_main表字段映射关系
     private $orderMainFieldMap = [
         "origin_name" => "origin_id",
         "account" => "order_account_id",
-        "wechat" => "wechat_id"
+        "wechat" => "wechat_id",
+        'cate_name' => "category_id"
     ];
 
     # 定义orders表字段映射关系
@@ -448,6 +450,7 @@ class OrdersService extends BaseService
                 "change_deposit" => $data["deposit_amount"]??0,
                 "deposit" => $data["deposit_amount"]??0,
                 "amount_account_id" => $data["amount_account_id"],
+                "payee_id" => request()->uid,
                 "create_time" => time(),
                 "update_time" => time()
             ];
@@ -585,7 +588,7 @@ class OrdersService extends BaseService
             $wechat = $this->maxAutoValue($data, "wechat_id");
             $category = $this->maxAutoValue($data, "category_id");
             $category_pid = (new CategoryMapper())->findBy(["id" => $category], "pid")["pid"];
-            $category = [$category_pid, $category];
+            $category = $category_pid==0?$category:[$category_pid, $category];
             $customer_manager = $this->maxAutoValue($data, "customer_manager");
             $auto = $this->maxAutoValue($data, "auto");
             $autoData = explode("-", $auto);

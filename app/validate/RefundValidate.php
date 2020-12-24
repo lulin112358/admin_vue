@@ -15,7 +15,8 @@ class RefundValidate extends Validate
         "refund_amount|退款金额" => "require",
         "refund_reason|退款原因" => "require",
         "order_main_id|订单id" => "require",
-        "id|退款订单id" => "require"
+        "id|退款订单id" => "require",
+        "amount_account|退款账号" => "require"
     ];
 
     protected $scene = [

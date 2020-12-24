@@ -4,6 +4,8 @@
 namespace app\admin\service;
 
 
+use app\mapper\OrdersDepositMapper;
+use app\mapper\OrdersFinalPaymentMapper;
 use app\mapper\OrdersMainMapper;
 use excel\Excel;
 
@@ -117,6 +119,14 @@ class OriginBiService
     }
 
 
+    /**
+     * 来源详情
+     * @param $param
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
     public function originDetailBi($param) {
         if (isset($param["range_time"]) && !empty($param["range_time"])) {
             $startTime = strtotime($param["range_time"][0]);
@@ -193,6 +203,43 @@ class OriginBiService
         return $retData;
     }
 
+
+    /**
+     * 对账信息
+     * @param $param
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function originReconciliation($param) {
+        $where = [
+            ["om.origin_id", "=", $param["origin_id"]],
+            ["od.create_time", ">=", strtotime($param["range_time"][0])],
+            ["od.create_time", "<=", strtotime($param["range_time"][1])],
+        ];
+        # 定金
+        $deposit = (new OrdersDepositMapper())->depositWithOrigin($where);
+        # 尾款
+        $finalPayment = (new OrdersFinalPaymentMapper())->finalPaymentWithOrigin($where);
+        $amountData = array_merge($deposit, $finalPayment);
+        $data = [];
+        foreach ($amountData as $k => $v)
+            $data[$v["amount_account_id"]][] = $v;
+
+        $retData = [];
+        foreach ($data as $k => $v) {
+            $item = [
+                "amount_account" => $v[0]["account"],
+                "total_amount" => array_sum(array_column($v, "change_amount")),
+                "amount_account_id" => $k
+            ];
+            $retData[] = $item;
+        }
+        return $retData;
+    }
+
+
     /**
      * 导出信息
      * @param $param
@@ -239,5 +286,40 @@ class OriginBiService
             ["订单编号", "order_sn"],
         ];
         return Excel::exportData($data, $header, "来源详情数据");
+    }
+
+    /**
+     * 对账详情导出
+     * @param $param
+     * @return bool
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function exportRec($param) {
+        $where = [
+            ["om.origin_id", "=", $param["origin_id"]],
+            ["od.amount_account_id", "=", $param["amount_account_id"]],
+            ["od.create_time", ">=", strtotime($param["range_time"][0])],
+            ["od.create_time", "<=", strtotime($param["range_time"][1])],
+        ];
+        # 定金
+        $deposit = (new OrdersDepositMapper())->depositRecWithOrderSn($where);
+        # 尾款
+        $finalPayment = (new OrdersFinalPaymentMapper())->finalPaymentRecWithOrderSn($where);
+        $data = array_merge($deposit, $finalPayment);
+        foreach ($data as $k => $v)
+            $data[$k]["create_time"] = date("Y-m-d H:i:s", $v["create_time"]);
+        $header = [
+            ["收款账户", "account"],
+            ["收款金额", "change_amount"],
+            ["收款时间", "create_time"],
+            ["收款人", "name"],
+            ["接单客服", "customer_name"],
+            ["订单编号", "order_sn"],
+        ];
+        return Excel::exportData($data, $header, "对账详情数据");
     }
 }

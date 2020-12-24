@@ -49,6 +49,7 @@ class OrdersFinalPaymentService extends BaseService
                 "change_amount" => $change,
                 "final_payment" => $final_payment,
                 "amount_account_id" => $data["amount_account_id"],
+                "payee_id" => request()->uid,
                 "create_time" => time(),
                 "update_time" => time()
             ];
