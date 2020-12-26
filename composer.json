@@ -29,7 +29,8 @@
         "nesbot/carbon": "^2.41",
         "phpoffice/phpspreadsheet": "^1.15",
         "topthink/think-view": "^1.0",
-        "phpseclib/phpseclib": "~2.0"
+        "phpseclib/phpseclib": "~2.0",
+        "ext-curl": "*"
     },
     "require-dev": {
         "symfony/var-dumper": "^4.2",

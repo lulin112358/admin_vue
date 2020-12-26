@@ -14,6 +14,7 @@ use app\mapper\OriginMapper;
 use app\mapper\OriginOrdersAccountMapper;
 use app\mapper\OriginUserMapper;
 use app\mapper\OriginWechatMapper;
+use app\mapper\RoleAuthRowMapper;
 use app\mapper\UserAuthRowMapper;
 use app\mapper\UserMapper;
 use app\mapper\WechatMapper;
@@ -31,13 +32,13 @@ class OriginService extends BaseService
     public function addOrigin($param) {
         Db::startTrans();
         try {
-            $res = $this->add($param);
-            if (!$res)
+            $res1 = $this->add($param);
+            if (!$res1)
                 throw new \Exception("添加失败");
             # 添加来源可见权限
             $userAuthRowData = [
                 "type" => "origin_id",
-                "type_id" => $res->id,
+                "type_id" => $res1->id,
                 "user_id" => request()->uid,
                 "status" => 1,
                 "create_time" => time(),
@@ -46,6 +47,17 @@ class OriginService extends BaseService
             $res = (new UserAuthRowMapper())->add($userAuthRowData);
             if (!$res)
                 throw new \Exception("添加失败啦");
+            # 管理层赋权
+            $insData = [
+                "type" => "origin_id",
+                "type_id" => $res1->id,
+                "role_id" => 1,
+                "create_time" => time(),
+                "update_time" => time()
+            ];
+            $res = (new RoleAuthRowMapper())->add($insData);
+            if (!$res)
+                throw new \Exception("添加失败!!");
             Db::commit();
             return true;
         }catch (\Exception $exception) {
@@ -89,13 +101,13 @@ class OriginService extends BaseService
                 unset($data["is_update"]);
                 $data["create_time"] = time();
                 $data["update_time"] = time();
-                $res = $this->add($data);
-                if (!$res)
+                $res1 = $this->add($data);
+                if (!$res1)
                     throw new \Exception("修改失败啦");
                 # 添加来源可见权限
                 $userAuthRowData = [
                     "type" => "origin_id",
-                    "type_id" => $res->id,
+                    "type_id" => $res1->id,
                     "user_id" => request()->uid,
                     "status" => 1,
                     "create_time" => time(),
@@ -103,7 +115,18 @@ class OriginService extends BaseService
                 ];
                 $res = (new UserAuthRowMapper())->add($userAuthRowData);
                 if (!$res)
-                    throw new \Exception("添加失败啦");
+                    throw new \Exception("修改失败啦");
+                # 管理层赋权
+                $insData = [
+                    "type" => "origin_id",
+                    "type_id" => $res1->id,
+                    "role_id" => 1,
+                    "create_time" => time(),
+                    "update_time" => time()
+                ];
+                $res = (new RoleAuthRowMapper())->add($insData);
+                if (!$res)
+                    throw new \Exception("修改失败啦!!");
             }else {
                 $id = $data["id"];
                 unset($data["id"]);

@@ -13,4 +13,5 @@ Route::group('automation', function () {
     Route::get("engineer", Index::class."@searchEngineer");
     Route::post("order/split", Order::class."@splitOrder");
     Route::put("order", Order::class."@updateOrder");
+    Route::get("orderid", Order::class."@getOrderIdByOrderSn");
 })->allowCrossDomain()->middleware([CheckSign::class]);

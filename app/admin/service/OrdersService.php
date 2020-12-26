@@ -419,7 +419,7 @@ class OrdersService extends BaseService
                 "total_amount" => $data["total_amount"]??0,
                 "customer_contact" => $data["customer_contact"]??'',
                 "customer_manager" => $data["customer_manager"],
-                "category_id" => count($data["cate_id"])==2?$data["cate_id"][1]:$data["cate_id"][0],
+                "category_id" => is_array($data["cate_id"])?(count($data["cate_id"])==2?$data["cate_id"][1]:$data["cate_id"][0]):$data["cate_id"],
                 "wechat_id" => $data["wechat_id"],
                 "file" => $data["file"]??"",
                 "create_time" => time(),

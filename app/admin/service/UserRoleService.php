@@ -4,6 +4,8 @@
 namespace app\admin\service;
 
 
+use app\mapper\RoleAuthRowMapper;
+use app\mapper\UserAuthRowMapper;
 use app\mapper\UserMapper;
 use app\mapper\UserRoleMapper;
 use think\Exception;
@@ -13,6 +15,18 @@ class UserRoleService extends BaseService
 {
     protected $mapper = UserRoleMapper::class;
     private $userMapper;
+
+    private $map = [
+        1 => "user_user_manager_id",
+        5 => "user_customer_id",
+        6 => "user_biller_id",
+        7 => "user_almighty_id",
+        8 => "user_partner_id",
+        9 => "user_part_time_editor_id",
+        10 => "user_commissioner_id",
+        11 => "user_maintain_id",
+        12 => "user_manager_id"
+    ];
 
     public function __construct()
     {
@@ -113,6 +127,43 @@ class UserRoleService extends BaseService
             $res = $this->userMapper->updateBy($data);
             if ($res === false)
                 throw new Exception("更新失败!!");
+
+            # 获取该用户之前的角色信息
+            $roles = (new UserRoleMapper())->columnBy(["user_id" => $data["user_id"]], "role_id");
+            $common = array_intersect($roles, $user_role);
+            # 新增的角色
+            $ins = array_diff($user_role, $common);
+            $insData = [];
+            foreach ($ins as $k => $v) {
+                if (in_array($v, array_keys($this->map))) {
+                    $item = [
+                        "type" => $this->map[$v],
+                        "type_id" => $data["user_id"],
+                        "role_id" => 1,
+                        "create_time" => time(),
+                        "update_time" => time()
+                    ];
+                    $insData[] = $item;
+                }
+            }
+            # 删除的角色
+            $del = array_diff($roles, $common);
+            $delType = [];
+            foreach ($del as $k => $v) {
+                $delType[] = $this->map[$v];
+            }
+            # 删除不必要的权限
+            $res = (new RoleAuthRowMapper())->deleteBy(["type" => $delType, "type_id" => $del]);
+            if ($res === false)
+                throw new \Exception("更新失败!!");
+            $res = (new UserAuthRowMapper())->deleteBy(["type" => $delType, "type_id" => $del]);
+            if ($res === false)
+                throw new \Exception("更新失败!!");
+            # 给管理层赋权
+            $res = (new RoleAuthRowMapper())->addAll($insData);
+            if (!$res)
+                throw new \Exception("更新失败啦!!");
+
 
             $user_role_data = [];
             foreach ($user_role as $item) {

@@ -21,7 +21,7 @@ class RoleAuthFields extends Base
         if (!$validate->scene("info")->check($param))
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
         try {
-            $info = $service->columnBy(["role_id" => $param["role_id"]], "field_id");
+            $info = $service->roleAuthFieldInfo($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }

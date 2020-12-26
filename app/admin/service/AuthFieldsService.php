@@ -6,6 +6,8 @@ namespace app\admin\service;
 
 use app\mapper\AuthFieldsMapper;
 use app\mapper\CategoryMapper;
+use app\mapper\RoleAuthFieldsEditMapper;
+use app\mapper\UserAuthFieldsEditMapper;
 use app\mapper\UserRoleMapper;
 use think\facade\Db;
 
@@ -31,8 +33,13 @@ class AuthFieldsService extends BaseService
     public function authFields() {
         $list = $this->all();
         $data = [];
+        $editData = [];
         foreach ($list as $k => $v) {
             $data[$v["page"]][] = $v;
+            if ($v["is_edit"] == 1) {
+                $v["id"] = "edit_".$v["id"];
+                $editData[$v["page"]][] = $v;
+            }
         }
         $retData = [];
         foreach ($data as $k => $v) {
@@ -44,7 +51,17 @@ class AuthFieldsService extends BaseService
                 "children" => $v
             ];
         }
-        return $retData;
+        $retEditData = [];
+        foreach ($editData as $k => $v) {
+            $retEditData[] = [
+                "field_name" => "(可编辑列)".$k,
+                "id" => -1,
+                "create_time" => $v[0]["create_time"],
+                "update_time" => $v[0]["update_time"],
+                "children" => $v
+            ];
+        }
+        return array_merge($retData, $retEditData);
     }
 
 
@@ -55,8 +72,22 @@ class AuthFieldsService extends BaseService
      */
     public function fields() {
         $roles = (new UserRoleMapper())->columnBy(["user_id" => request()->uid], "role_id");
+        # 获取角色可编辑列权限
+        $editFields = (new RoleAuthFieldsEditMapper())->columnBy(["role_id" => $roles], "field_id");
+        # 获取用户可编辑列权限
+        $userEditFields = (new UserAuthFieldsEditMapper())->selectBy(["user_id" => request()->uid], "field_id, type");
+        # 根据该用户独有编辑权限进行增删
+        foreach ($userEditFields as $k => $v) {
+            if ($v["type"] == 1) {
+                $editFields[] = $v["field_id"];
+            }else {
+                $key = array_search($v["field_id"], $editFields);
+                unset($editFields[$key]);
+            }
+        }
+        $editFields = array_values($editFields);
         $flag = in_array(1, $roles);
-        $fields = $this->all("field, field_name, is_edit, edit_type, data_source");
+        $fields = $this->all("id, field, field_name, is_edit, edit_type, data_source");
         $retFields = [
             [
                 "type" => "seq",
@@ -98,26 +129,28 @@ class AuthFieldsService extends BaseService
                 ];
             }
             if ($v["is_edit"]) {
-                if ($v["edit_type"] == '$input') {
-                    $field["editRender"] = [
-                        "name" => '$input',
-                        "autoselect" => true,
-                        "attrs" => [
-                            "type" => "text"
-                        ]
-                    ];
-                }else if ($v["edit_type"] == '$select') {
-                    if ($v["data_source"] != "") {
-                        $data = Db::query($v['data_source']);
+                if (in_array($v["id"], $editFields)) {
+                    if ($v["edit_type"] == '$input') {
+                        $field["editRender"] = [
+                            "name" => '$input',
+                            "autoselect" => true,
+                            "attrs" => [
+                                "type" => "text"
+                            ]
+                        ];
+                    }else if ($v["edit_type"] == '$select') {
+                        if ($v["data_source"] != "") {
+                            $data = Db::query($v['data_source']);
+                        }
+                        if ($v["field"] == "status") {
+                            $data = $this->status;
+                        }
+                        $field["editRender"] = [
+                            "name" => '$select',
+                            "options" => $data,
+                            "optionProps" => ["value" => "value", "label" => "label"]
+                        ];
                     }
-                    if ($v["field"] == "status") {
-                        $data = $this->status;
-                    }
-                    $field["editRender"] = [
-                        "name" => '$select',
-                        "options" => $data,
-                        "optionProps" => ["value" => "value", "label" => "label"]
-                    ];
                 }
             }
             $retFields[] = $field;

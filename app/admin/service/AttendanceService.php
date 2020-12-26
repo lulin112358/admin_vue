@@ -5,6 +5,7 @@ namespace app\admin\service;
 
 
 use app\mapper\AttendanceMapper;
+use app\mapper\UserMapper;
 
 class AttendanceService extends BaseService
 {
@@ -138,5 +139,26 @@ class AttendanceService extends BaseService
             $updateData["result"] = $this->result[$param["value"]];
         }
         return $this->updateBy($updateData);
+    }
+
+
+    /**
+     * 添加考勤记录
+     */
+    public function addData() {
+        # 查询所有在职用户
+        $userId = (new UserMapper())->columnBy(["status" => 1], "id");
+        # 添加考勤记录
+        $data = [];
+        foreach($userId as $k => $v) {
+            $item = [
+                "user_id" => $v,
+                "type" => 1,
+                "result" => 1,
+                "create_time" => strtotime(date("Y-m-d 09:00:00", time()))
+            ];
+            $data[] = $item;
+        }
+        (new AttendanceMapper())->addAll($data);
     }
 }

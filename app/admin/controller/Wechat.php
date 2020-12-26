@@ -53,7 +53,6 @@ class Wechat extends Base
         if (!$validate->scene("add")->check($param))
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
         try {
-            $res = $service->add($param);
             $res = $service->addWechat($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());

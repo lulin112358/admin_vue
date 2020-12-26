@@ -5,6 +5,7 @@ namespace app\admin\service;
 
 
 use app\mapper\AmountAccountMapper;
+use app\mapper\RoleAuthRowMapper;
 use app\mapper\UserAuthRowMapper;
 use think\facade\Db;
 
@@ -21,13 +22,13 @@ class AmountAccountService extends BaseService
     public function addAmountAccount($param) {
         Db::startTrans();
         try {
-            $res = $this->add($param);
-            if (!$res)
+            $res1 = $this->add($param);
+            if (!$res1)
                 throw new \Exception("添加失败");
             # 添加账号可见权限
             $userAuthRowData = [
                 "type" => "amount_account_id",
-                "type_id" => $res->id,
+                "type_id" => $res1->id,
                 "user_id" => request()->uid,
                 "status" => 1,
                 "create_time" => time(),
@@ -36,6 +37,17 @@ class AmountAccountService extends BaseService
             $res = (new UserAuthRowMapper())->add($userAuthRowData);
             if (!$res)
                 throw new \Exception("添加失败啦");
+            # 管理层赋权
+            $insData = [
+                "type" => "amount_account_id",
+                "type_id" => $res1->id,
+                "role_id" => 1,
+                "create_time" => time(),
+                "update_time" => time()
+            ];
+            $res = (new RoleAuthRowMapper())->add($insData);
+            if (!$res)
+                throw new \Exception("添加失败!!");
             Db::commit();
             return true;
         }catch (\Exception $exception) {

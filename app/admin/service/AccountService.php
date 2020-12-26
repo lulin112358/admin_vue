@@ -7,6 +7,7 @@ namespace app\admin\service;
 use app\mapper\AccountCateMapper;
 use app\mapper\AccountMapper;
 use app\mapper\OrdersAccountMapper;
+use app\mapper\RoleAuthRowMapper;
 use app\mapper\UserAuthRowMapper;
 use app\mapper\WechatMapper;
 use think\facade\Db;
@@ -83,11 +84,11 @@ class AccountService extends BaseService
                 "create_time" => time(),
                 "update_time" => time()
             ];
-            $res = $this->add($accountData);
-            if (!$res)
+            $account = $this->add($accountData);
+            if (!$account)
                 throw new \Exception("添加失败!");
             $ordersAccountData = [
-                "account_id" => $res->id,
+                "account_id" => $account->id,
                 "nickname" => $data["nickname"],
                 "create_time" => time(),
                 "update_time" => time()
@@ -98,7 +99,7 @@ class AccountService extends BaseService
             # 添加该账号可见权限
             $userAuthRowData = [
                 "type" => "account_id",
-                "type_id" => $re1->id,
+                "type_id" => $account->id,
                 "user_id" => request()->uid,
                 "status" => 1,
                 "create_time" => time(),
@@ -107,6 +108,45 @@ class AccountService extends BaseService
             $res = (new UserAuthRowMapper())->add($userAuthRowData);
             if (!$res)
                 throw new \Exception("添加失败！！");
+            # 管理层赋权
+            $insData = [
+                "type" => "account_id",
+                "type_id" => $account->id,
+                "role_id" => 1,
+                "create_time" => time(),
+                "update_time" => time()
+            ];
+            $res = (new RoleAuthRowMapper())->add($insData);
+            if (!$res)
+                throw new \Exception("添加失败啦！！！");
+
+            # 如果是沉淀微信添加沉淀微信权限
+            if ($data["is_wechat"] == 1) {
+                # 添加该账号可见权限
+                $userAuthRowData = [
+                    "type" => "wechat_id",
+                    "type_id" => $account->id,
+                    "user_id" => request()->uid,
+                    "status" => 1,
+                    "create_time" => time(),
+                    "update_time" => time()
+                ];
+                $res = (new UserAuthRowMapper())->add($userAuthRowData);
+                if (!$res)
+                    throw new \Exception("添加失败！！");
+                # 管理层赋权
+                $insData = [
+                    "type" => "wechat_id",
+                    "type_id" => $account->id,
+                    "role_id" => 1,
+                    "create_time" => time(),
+                    "update_time" => time()
+                ];
+                $res = (new RoleAuthRowMapper())->add($insData);
+                if (!$res)
+                    throw new \Exception("添加失败啦！！！");
+            }
+
             Db::commit();
             return true;
         }catch (\Exception $exception) {
@@ -152,21 +192,44 @@ class AccountService extends BaseService
                     "create_time" => time(),
                     "update_time" => time()
                 ];
-                $res = (new OrdersAccountMapper())->add($ordersAccountData);
-                if (!$res)
+                $res1 = (new OrdersAccountMapper())->add($ordersAccountData);
+                if (!$res1)
                     throw new \Exception("修改失败啦!");
-                # 添加该账号可见权限
-                $userAuthRowData = [
-                    "type" => "account_id",
-                    "type_id" => $res->id,
-                    "user_id" => request()->uid,
-                    "status" => 1,
-                    "create_time" => time(),
-                    "update_time" => time()
-                ];
-                $res = (new UserAuthRowMapper())->add($userAuthRowData);
-                if (!$res)
-                    throw new \Exception("添加失败！！");
+
+                # 如果是沉淀微信添加沉淀微信权限
+                if ($data["is_wechat"] == 1) {
+                    # 添加该账号可见权限
+                    $userAuthRowData = [
+                        "type" => "wechat_id",
+                        "type_id" => $data["account_id"],
+                        "user_id" => request()->uid,
+                        "status" => 1,
+                        "create_time" => time(),
+                        "update_time" => time()
+                    ];
+                    $res = (new UserAuthRowMapper())->add($userAuthRowData);
+                    if (!$res)
+                        throw new \Exception("添加失败！！");
+                    # 管理层赋权
+                    $insData = [
+                        "type" => "wechat_id",
+                        "type_id" => $data["account_id"],
+                        "role_id" => 1,
+                        "create_time" => time(),
+                        "update_time" => time()
+                    ];
+                    $res = (new RoleAuthRowMapper())->add($insData);
+                    if (!$res)
+                        throw new \Exception("添加失败啦！！！");
+                }else{
+                    # 删除不必要的权限
+                    $res = (new RoleAuthRowMapper())->deleteBy(["type" => "wechat_id", "type_id" => $data["account_id"]]);
+                    if ($res === false)
+                        throw new \Exception("更新失败！！");
+                    $res = (new UserAuthRowMapper())->deleteBy(["type" => "wechat_id", "type_id" => $data["account_id"]]);
+                    if ($res === false)
+                        throw new \Exception("更新失败啦");
+                }
             }
 
             Db::commit();
@@ -208,6 +271,37 @@ class AccountService extends BaseService
      * @return mixed
      */
     public function updateIsWechat($param) {
-        return (new OrdersAccountMapper())->updateWhere(["id" => $param["id"]], ["is_wechat" => $param["is_wechat"]]);
+        Db::startTrans();
+        try {
+            $res = (new AccountMapper())->updateWhere(["id" => $param["id"]], ["is_wechat" => $param["is_wechat"]]);
+            if ($res === false)
+                throw new \Exception("更新失败");
+            if ($param["is_wechat"] == 1) {
+                # 管理层赋权
+                $insData = [
+                    "type" => "wechat_id",
+                    "type_id" => $param["id"],
+                    "role_id" => 1,
+                    "create_time" => time(),
+                    "update_time" => time()
+                ];
+                $res = (new RoleAuthRowMapper())->add($insData);
+                if (!$res)
+                    throw new \Exception("更新失败啦！！！");
+            }else {
+                # 删除不必要的权限
+                $res = (new RoleAuthRowMapper())->deleteBy(["type" => "wechat_id", "type_id" => $param["id"]]);
+                if ($res === false)
+                    throw new \Exception("更新失败！！");
+                $res = (new UserAuthRowMapper())->deleteBy(["type" => "wechat_id", "type_id" => $param["id"]]);
+                if ($res === false)
+                    throw new \Exception("更新失败啦");
+            }
+            Db::commit();
+            return true;
+        }catch (\Exception $exception) {
+            Db::rollback();
+            return false;
+        }
     }
 }

@@ -5,6 +5,7 @@ use app\admin\controller\AmountAccount;
 use app\admin\controller\Attendance;
 use app\admin\controller\AuthFields;
 use app\admin\controller\Category;
+use app\admin\controller\Crontab;
 use app\admin\controller\CustomerBi;
 use app\admin\controller\Degree;
 use app\admin\controller\Engineer;
@@ -23,9 +24,11 @@ use app\admin\controller\Refund;
 use app\admin\controller\RoleAuthFields;
 use app\admin\controller\RoleAuthRow;
 use app\admin\controller\School;
+use app\admin\controller\Secrets;
 use app\admin\controller\SettlementLog;
 use app\admin\controller\Software;
 use app\admin\controller\Tendency;
+use app\admin\controller\Typesetting;
 use app\admin\controller\Upload;
 use app\admin\controller\UserAuthFields;
 use app\admin\controller\UserAuthRow;
@@ -245,6 +248,13 @@ Route::group('admin', function () {
     Route::put("ip_white", IpWhite::class."@updateIp");
     Route::delete("ip_white", IpWhite::class."@delIp");
 
+    # 密钥
+    Route::get("secrets", Secrets::class."@secrets");
+    Route::get("secrets/info", Secrets::class."@secretInfo");
+    Route::post("secrets", Secrets::class."@addSecret");
+    Route::put("secrets", Secrets::class."@updateSecret");
+    Route::delete("secrets", Secrets::class."@delSecret");
+
     # BI
     Route::get("customer_bi", CustomerBi::class."@customerBiCount");
     Route::get("customer_order", CustomerBi::class."@customerOrderBi");
@@ -256,6 +266,12 @@ Route::group('admin', function () {
     Route::get("origin_bi/detail", OriginBi::class."@originDetailBi");
     Route::get("origin_bi/reconciliation", OriginBi::class."@originReconciliation");
     // Route::get("customer_bi/cols", CustomerBi::class."@customerBiCols");
+
+    # 自动排版
+    Route::get("typesetting", Typesetting::class."@schemaIdList");
+    Route::post("typesetting", Typesetting::class."@uploadPaper");
+    Route::get("typesetting/list", Typesetting::class."@recordList");
+    Route::delete("typesetting", Typesetting::class."@delRecord");
 })->allowCrossDomain()->middleware([JwtMiddleware::class, IpFilter::class]);
 
 # 后台路由组   不需要jwt登录验证
@@ -277,3 +293,9 @@ Route::group('admin', function () {
     # 文件上传
     Route::post("upload", Upload::class."@upload");
 })->allowCrossDomain()->middleware([IpFilter::class]);
+
+# 定时任务
+Route::group("crontab", function () {
+    Route::get("attendance", Crontab::class."@attendance");
+    Route::get("typesetting/record", Typesetting::class."@recordFind");
+});
