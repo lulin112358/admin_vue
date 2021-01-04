@@ -7,6 +7,7 @@ namespace app\admin\service;
 use app\mapper\AccountCateMapper;
 use app\mapper\AccountMapper;
 use app\mapper\OrdersAccountMapper;
+use app\mapper\OrdersMainMapper;
 use app\mapper\RoleAuthRowMapper;
 use app\mapper\UserAuthRowMapper;
 use app\mapper\WechatMapper;
@@ -34,6 +35,34 @@ class AccountService extends BaseService
             ->order("oa.id desc")
             ->select()->toArray();
         return $list;
+    }
+
+    /**
+     * 接单账号排序列表
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function accountSort() {
+        $list = (new AccountMapper())->accounts();
+        $sort = array_count_values((new OrdersMainMapper())->columnBy(["customer_id" => request()->uid], "order_account_id"));
+        arsort($sort);
+        $retData = [];
+        foreach ($sort as $k => $v) {
+            foreach ($list as $key => $val) {
+                if ($val["order_account_id"] == $k) {
+                    $retData[] = $val;
+                }
+            }
+        }
+
+        foreach ($list as $k => $v) {
+            if (!in_array($v["order_account_id"], array_keys($sort))) {
+                $retData[] = $v;
+            }
+        }
+        return $retData;
     }
 
     /**

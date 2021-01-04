@@ -28,6 +28,19 @@ class Account extends Base
     }
 
     /**
+     * 接单账号排序列表
+     * @param AccountService $service
+     */
+    public function accountSort(AccountService $service) {
+        try {
+            $data = $service->accountSort();
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
+
+    /**
      * 获取接单账号信息
      *
      * @param OrdersAccountService $service

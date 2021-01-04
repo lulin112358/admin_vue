@@ -9,6 +9,7 @@ use app\mapper\AccountCateMapper;
 use app\mapper\AccountMapper;
 use app\mapper\AmountAccountMapper;
 use app\mapper\OrdersAccountMapper;
+use app\mapper\OrdersMainMapper;
 use app\mapper\OriginAmountAccountMapper;
 use app\mapper\OriginMapper;
 use app\mapper\OriginOrdersAccountMapper;
@@ -82,6 +83,32 @@ class OriginService extends BaseService
             $list[$k]["commission_ratio"] = $v["commission_ratio"] < 1 ? (($v["commission_ratio"] * 100)."%") : (floatval($v["commission_ratio"])."元");
         }
         return $list;
+    }
+
+
+    /**
+     * 排序来源列表
+     * @return array
+     */
+    public function originSort() {
+        $list = $this->selectBy(["status" => 1], "id, origin_name");
+        $sort = array_count_values((new OrdersMainMapper())->columnBy(["customer_id" => request()->uid], "origin_id"));
+        arsort($sort);
+        $retData = [];
+        foreach ($sort as $k => $v) {
+            foreach ($list as $key => $val) {
+                if ($val["id"] == $k) {
+                    $retData[] = $val;
+                }
+            }
+        }
+
+        foreach ($list as $k => $v) {
+            if (!in_array($v["id"], array_keys($sort))) {
+                $retData[] = $v;
+            }
+        }
+        return $retData;
     }
 
 

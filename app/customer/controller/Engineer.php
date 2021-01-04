@@ -29,4 +29,25 @@ class Engineer extends Base
             $this->ajaxReturn(Code::ERROR, "添加失败");
         $this->ajaxReturn("添加成功");
     }
+
+    /**
+     * 更新工程师收款码
+     * @param EngineerService $service
+     * @param EngineerValidate $validate
+     */
+    public function updateEngineer(EngineerService $service, EngineerValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("update")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $res = $service->updateEngineer($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        if (is_string($res))
+            $this->ajaxReturn(Code::ERROR, $res);
+        if ($res === false)
+            $this->ajaxReturn(Code::ERROR, "提交失败");
+        $this->ajaxReturn("提交成功");
+    }
 }

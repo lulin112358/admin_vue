@@ -45,6 +45,19 @@ class Origin extends Base
         $this->ajaxReturn($list);
     }
 
+    /**
+     * 来源排序列表
+     * @param OriginService $service
+     */
+    public function originSort(OriginService $service) {
+        try {
+            $list = $service->originSort();
+        } catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($list);
+    }
+
 
     /**
      * 来源数据

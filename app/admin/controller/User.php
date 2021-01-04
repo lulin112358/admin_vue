@@ -220,6 +220,19 @@ class User extends Base
     }
 
     /**
+     * 全能客服排序列表
+     * @param UserService $service
+     */
+    public function almightyUserSort(UserService $service) {
+        try {
+            $data = $service->almightyUserSort();
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
+
+    /**
      * 获取上游合作代理用户
      * @param UserService $service
      */

@@ -97,6 +97,24 @@ class UserRoleService extends BaseService
             if (!$res)
                 throw new Exception("添加失败!");
 
+            $insData = [];
+            foreach ($user_role as $k => $v) {
+                if (in_array($v, array_keys($this->map))) {
+                    $item = [
+                        "type" => $this->map[$v],
+                        "type_id" => $user->id,
+                        "role_id" => 1,
+                        "create_time" => time(),
+                        "update_time" => time()
+                    ];
+                    $insData[] = $item;
+                }
+            }
+            # 给管理层赋权
+            $res = (new RoleAuthRowMapper())->addAll($insData);
+            if (!$res)
+                throw new \Exception("添加失败啦!!");
+
             Db::commit();
         }catch (\Exception $exception) {
             Db::rollback();

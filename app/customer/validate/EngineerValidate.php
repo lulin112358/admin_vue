@@ -17,11 +17,13 @@ class EngineerValidate extends Validate
         "school_id|学校" => "require",
         "good_at_software_id|擅长软件" => "require",
         "tendency_id|倾向类型" => "require",
-        "alipay|支付宝" => "require"
+        "alipay|支付宝" => "require",
+        "collection_code|收款码" => "require"
     ];
 
     protected $scene = [
         "add" => ["contact_qq", "qq_nickname", "contact_phone", "top_degree_id", "profession_id", "school_id",
-            "good_at_software_id", "tendency_id", "alipay"]
+            "good_at_software_id", "tendency_id", "alipay", "collection_code"],
+        "update" => ["contact_qq", "collection_code"]
     ];
 }

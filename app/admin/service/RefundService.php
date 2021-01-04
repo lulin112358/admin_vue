@@ -4,6 +4,7 @@
 namespace app\admin\service;
 
 
+use app\mapper\AmountAccountMapper;
 use app\mapper\OrdersMapper;
 use app\mapper\RefundLogMapper;
 use app\mapper\RefundMapper;
@@ -52,14 +53,16 @@ class RefundService extends BaseService
     public function refundList($param) {
         $where = [];
         if (isset($param["search_key"]) && !empty($param["search_key"]))
-            $where[] = ["customer_name|origin_name|order_sn|client_alipay|client_name|refund_reason", "like", "%{$param['search_key']}%"];
+            $where[] = ["rv.customer_name|rv.origin_name|rv.order_sn|rv.client_alipay|rv.client_name|rv.refund_reason", "like", "%{$param['search_key']}%"];
 //        if (isset($param["status"]) && !empty($param["status"]))
 //            $where[] = ["status", "=", $param["status"]];
         if (isset($param["apply_time"]) && !empty($param["apply_time"])) {
-            $where[] = ["apply_time", ">=", strtotime($param["apply_time"][0])];
-            $where[] = ["apply_time", "<=", strtotime($param["apply_time"][1])];
+            $where[] = ["rv.apply_time", ">=", strtotime($param["apply_time"][0])];
+            $where[] = ["rv.apply_time", "<=", strtotime($param["apply_time"][1])];
         }
         $data = (new RefundMapper())->refundList($where);
+        $amountAccount = (new AmountAccountMapper())->all("id, account");
+        $amountAccount = array_combine(array_column($amountAccount, "id"), array_column($amountAccount, "account"));
         foreach ($data as $k => $v) {
             $data[$k]["refund_amount"] = floatval($v["refund_amount"]);
             $data[$k]["already_refund_amount"] = floatval($v["already_refund_amount"]);
@@ -67,6 +70,7 @@ class RefundService extends BaseService
             $data[$k]["refund_time"] = $v["refund_time"] == 0 ? "暂未退款" : date("Y-m-d H:i:s", $v["refund_time"]);
             $data[$k]["status"] = $this->status[$v["status"]];
             $data[$k]["color"] = $v["status"] == 0 ? "red" : ($v["status"] == 2 ? "yellow" : "green");
+            $data[$k]["amount_account"] = $v['final'] == null ? "定金: {$amountAccount[$v['deposit']]}" : "定金: {$amountAccount[$v['deposit']]} / 尾款：{$amountAccount[$v['final']]}";
         }
         return $data;
     }

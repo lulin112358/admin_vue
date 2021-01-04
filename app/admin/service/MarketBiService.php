@@ -20,7 +20,7 @@ class MarketBiService
         if (isset($param["range_time"]) && !empty($param["range_time"])) {
             $where = [
                 ["om.create_time", ">=", strtotime($param["range_time"][0])],
-                ["om.create_time", "<=", strtotime($param["range_time"][1])]
+                ["om.create_time", "<=", strtotime($param["range_time"][1])],
             ];
         }else {
             $where = [
@@ -29,41 +29,91 @@ class MarketBiService
             ];
         }
         # 获取市场专员订单数量数据
-        $marketUserData = (new OrdersMainMapper())->marketUserBiData($where);
-        $total = array_sum(array_column($marketUserData, "deposit")) + array_sum(array_column($marketUserData, "final_payment"));
-
+        $mapper = new OrdersMainMapper();
+        $marketUserData = $mapper->marketUserBiData($where);
         $tmp = [];
-        $_orderData = [];
+        $countMap = [];
         foreach ($marketUserData as $k => $v) {
-            $tmp[$v["market_user"]][] = $v;
-            $_orderData[$v["id"]][] = $v;
-        }
-        $orderData = [];
-        foreach ($_orderData as $k => $v) {
-            $orderData[$k] = array_sum(array_column($v, "deposit")) + array_sum(array_column($v, "final_payment"));
+            $tmp[$v["market_user_name"]][] = $v;
+            $countMap[$v["market_user_name"]] = ($countMap[$v["market_user_name"]]??0) + 1;
         }
 
+        # 定金
+        $map = [
+            ["od.create_time", ">=", $where[0][2]],
+            ["od.create_time", "<=", $where[1][2]],
+        ];
+        $_depositData = $mapper->marketDeposit($map);
+        $deposit = collect($_depositData)->where("is_split", "=", 0)->toArray();
+        $depositData = processAmount($deposit, "deposit", "market_user_name");
+
+        # 尾款
+        $_finalPayment = $mapper->marketFinal($map);
+        $finalPaymentData = processAmount($_finalPayment, "final_payment", "market_user_name");
+
+        # 退款
+        $map = [
+            ["od.refund_time", ">=", $where[0][2]],
+            ["od.refund_time", "<=", $where[1][2]],
+        ];
+        $_refund = $mapper->marketRefund($map);
+        $refundData = processAmount($_refund, "refund_amount", "market_user_name");
+
+        $marketBiAmountData = array_merge($_depositData, $_finalPayment, $_refund);
+        # 毛利润
+        $mainOrderIds = array_unique(array_merge(array_column($marketUserData, "main_order_id"), array_column($marketBiAmountData, "main_order_id")));
+        $grossProfitData = $mapper->marketGrossProfit(["om.id" => $mainOrderIds]);
+        $grossProfit = [];
+        $grossProfitMap = [];
+        foreach ($grossProfitData as $k => $v) {
+            $grossProfit[$v["market_user_name"]] = ($grossProfit[$v["market_user_name"]]??0) + ($v["deposit"] + $v["final_payment"]);
+            $grossProfitMap[$v["market_user_name"]] = ($grossProfitMap[$v["market_user_name"]]??0) + ($v["deposit"] + $v["final_payment"])*$v["commission_ratio"];
+        }
+
+        $checkFeeMap = [];
+        $manuscriptFeeMap = [];
+        # 检测费/稿费
+        $fee = $mapper->marketFee(["om.id" => $mainOrderIds]);
+        foreach ($fee as $k => $v) {
+            $checkFeeMap[$v["market_user_name"]] = ($checkFeeMap[$v["market_user_name"]]??0) + $v["check_fee"];
+            $manuscriptFeeMap[$v["market_user_name"]] = ($manuscriptFeeMap[$v["market_user_name"]]??0) + $v["manuscript_fee"];
+        }
+
+        $total = array_sum(array_values($depositData)) + array_sum(array_values($finalPaymentData));
         $retData = [];
         foreach ($tmp as $k => $v) {
-            $commission = 0;
-            foreach ($v as $idx => $val) {
-                $commission += ($val["commission_ratio"] < 1 ? (round($orderData[$val["id"]] * $val["commission_ratio"], 2)) : $val["commission_ratio"]);
-            }
-            $totalAmount = array_sum(array_column($v, "deposit")) + array_sum(array_column($v, "final_payment"));
-            $checkFee = array_sum(array_column($v, "check_fee"));
-            $manuscriptFee = array_sum(array_column($v, "manuscript_fee"));
-            $grossProfit = $totalAmount - $checkFee - $manuscriptFee - $commission;
+            $totalAmount = ($depositData[$k]??0) + ($finalPaymentData[$k]??0);
+            $grossProfit_ = $grossProfit[$k] - $checkFeeMap[$k] - $manuscriptFeeMap[$k] - $grossProfitMap[$k];
             $item = [
                 "name" => $k,
                 "market_user_id" => $v[0]["market_user_id"],
                 "total_amount" => $totalAmount,
-                "refund_amount" => array_sum(array_column($v, "refund_amount")),
-                "total_count" => count($v),
-                "gross_profit" => floatval(round($grossProfit, 2)),
-                "gross_profit_rate" => $totalAmount==0?"0%":round(($grossProfit / $totalAmount)*100, 2)."%",
+                "refund_amount" => $refundData[$k]??0,
+                "total_count" => $countMap[$k]??0,
+                "gross_profit" => floatval(round($grossProfit_, 2)),
+                "gross_profit_rate" => ($grossProfit_==0||$grossProfit[$k]==0)?"0%":round(($grossProfit_ / $grossProfit[$k])*100, 2)."%",
                 "deal_rate" => $total==0?"0%":round(($totalAmount / $total)*100, 2)."%"
             ];
             $retData[] = $item;
+        }
+        $final = array_combine(array_column($_finalPayment, "market_user_name"), array_column($_finalPayment, "market_user"));
+        $refund = array_combine(array_column($_refund, "market_user_name"), array_column($_refund, "market_user"));
+        $tail = array_merge($final, $refund);
+        foreach ($tail as $k => $v) {
+            if (!in_array($k, array_keys($tmp))) {
+                $grossProfit_ = $grossProfit[$k] - $checkFeeMap[$k] - $manuscriptFeeMap[$k] - $grossProfitMap[$k];
+                $item = [
+                    "name" => $k,
+                    "market_user_id" => $v,
+                    "total_amount" => $finalPaymentData[$k]??0,
+                    "refund_amount" => $refundData[$k]??0,
+                    "total_count" => 0,
+                    "gross_profit" => floatval(round($grossProfit_, 2)),
+                    "gross_profit_rate" => ($grossProfit_==0||$grossProfit[$k]==0)?"0%":round(($grossProfit_ / $grossProfit[$k])*100, 2)."%",
+                    "deal_rate" => $total==0?"0%":round(($totalAmount / $total)*100, 2)."%"
+                ];
+                $retData[] = $item;
+            }
         }
         $sort = array_column($retData, "total_amount");
         array_multisort($sort, SORT_DESC, $retData);
@@ -86,7 +136,7 @@ class MarketBiService
         if (isset($param["range_time"]) && !empty($param["range_time"])) {
             $where = [
                 ["om.create_time", ">=", strtotime($param["range_time"][0])],
-                ["om.create_time", "<=", strtotime($param["range_time"][1])]
+                ["om.create_time", "<=", strtotime($param["range_time"][1])],
             ];
         }else {
             $where = [
@@ -96,46 +146,90 @@ class MarketBiService
         }
         $where[] = ["o.market_user", "=", $param["market_user_id"]];
         # 获取数据
-        $marketUserOriginData = (new OrdersMainMapper())->marketUserOriginBiData($where);
-        $total = array_sum(array_column($marketUserOriginData, "deposit")) + array_sum(array_column($marketUserOriginData, "final_payment"));
+        $mapper = new OrdersMainMapper();
+        $marketDetailData = $mapper->marketDetailData($where);
         $tmp = [];
-        $_amountData = [];
-        $_orderData = [];
-        foreach ($marketUserOriginData as $k => $v) {
+        $countMap = [];
+        foreach ($marketDetailData as $k => $v) {
             $tmp[$v["origin_name"]][] = $v;
-            $_amountData[$v["origin_id"]][] = $v;
-            $_orderData[$v["id"]][] = $v;
+            $countMap[$v["origin_name"]] = ($countMap[$v["origin_name"]]??0) + 1;
         }
-        $amountData = [];
-        foreach ($_amountData as $k => $v) {
-            $amountData[$k]["total_amount"] = array_sum(array_column($v, "deposit")) + array_sum(array_column($v, "final_payment"));
-            $amountData[$k]["refund_amount"] = array_sum(array_column($v, "refund_amount"));
+
+        # 定金
+        $map = [
+            ["od.create_time", ">=", $where[0][2]],
+            ["od.create_time", "<=", $where[1][2]],
+            ["o.market_user", "=", $param["market_user_id"]],
+        ];
+        $_depositData = $mapper->marketDetailDeposit($map);
+        $depositData = processAmount($_depositData, "deposit", "origin_name");
+
+        # 尾款
+        $_finalPayment = $mapper->marketDetailFinal($map);
+        $finalPaymentData = processAmount($_finalPayment, "final_payment", "origin_name");
+
+        # 退款
+        $map = [
+            ["od.refund_time", ">=", $where[0][2]],
+            ["od.refund_time", "<=", $where[1][2]],
+            ["o.market_user", "=", $param["market_user_id"]],
+        ];
+        $_refund = $mapper->marketDetailRefund($map);
+        $refundData = processAmount($_refund, "refund_amount", "origin_name");
+        $marketDetailAmountData = array_merge($_depositData, $_finalPayment, $_refund);
+
+        # 毛利润
+        $mainOrderIds = array_unique(array_merge(array_column($marketDetailData, "main_order_id"), array_column($marketDetailAmountData, "main_order_id")));
+        $grossProfitData = $mapper->marketDetailGrossProfit(["om.id" => $mainOrderIds]);
+        $grossProfit = [];
+        $grossProfitMap = [];
+        foreach ($grossProfitData as $k => $v) {
+            $grossProfit[$v["origin_name"]] = ($grossProfit[$v["origin_name"]]??0) + ($v["deposit"] + $v["final_payment"]);
+            $grossProfitMap[$v["origin_name"]] = ($grossProfitMap[$v["origin_name"]]??0) + ($v["deposit"] + $v["final_payment"])*$v["commission_ratio"];
         }
-        $orderData = [];
-        foreach ($_orderData as $k => $v) {
-            $orderData[$k] = array_sum(array_column($v, "deposit")) + array_sum(array_column($v, "final_payment"));
+
+        $checkFeeMap = [];
+        $manuscriptFeeMap = [];
+        # 检测费/稿费
+        $fee = $mapper->marketDetailFee(["om.id" => $mainOrderIds]);
+        foreach ($fee as $k => $v) {
+            $checkFeeMap[$v["origin_name"]] = ($checkFeeMap[$v["origin_name"]]??0) + $v["check_fee"];
+            $manuscriptFeeMap[$v["origin_name"]] = ($manuscriptFeeMap[$v["origin_name"]]??0) + $v["manuscript_fee"];
         }
+
+        $total = array_sum(array_values($depositData)) + array_sum(array_values($finalPaymentData));
 
         $retData = [];
         foreach ($tmp as $k => $v) {
-            $totalAmount = $amountData[$v[0]["origin_id"]]["total_amount"];
-            $commission = 0;
-            foreach ($v as $key => $val) {
-                $commission += ($val["commission_ratio"] < 1 ? (round($orderData[$val["id"]] * $val["commission_ratio"], 2)) : $val["commission_ratio"]);
-            }
-            $checkFee = array_sum(array_column($v, "check_fee"));
-            $manuscriptFee = array_sum(array_column($v, "manuscript_fee"));
-            $grossProfit = $totalAmount - $checkFee - $manuscriptFee - $commission;
+            $totalAmount = ($depositData[$k]??0) + ($finalPaymentData[$k]??0);
+            $grossProfit_ = $grossProfit[$k] - $checkFeeMap[$k] - $manuscriptFeeMap[$k] - $grossProfitMap[$k];
+
             $item = [
                 "origin_name" => $k,
                 "total_amount" => $totalAmount,
-                "total_count" => count($v),
-                "refund_amount" => $amountData[$v[0]["origin_id"]]["refund_amount"],
-                "gross_profit" => floatval(round($grossProfit, 2)),
-                "gross_profit_rate" => $totalAmount==0?"0%":round(($grossProfit / $totalAmount)*100, 2)."%",
+                "total_count" => $countMap[$k]??0,
+                "refund_amount" => $refundData[$k]??0,
+                "gross_profit" => floatval(round($grossProfit_, 2)),
+                "gross_profit_rate" => ($grossProfit_==0||$grossProfit[$k]==0)?"0%":round(($grossProfit_ / $grossProfit[$k])*100, 2)."%",
                 "deal_rate" => $total==0?"0%":round(($totalAmount / $total)*100, 2)."%"
             ];
             $retData[] = $item;
+        }
+        $tail = array_merge(array_keys($finalPaymentData), array_keys($refundData));
+        foreach ($tail as $k => $v) {
+            if (!in_array($v, array_keys($tmp))) {
+                $grossProfit_ = $grossProfit[$v] - $checkFeeMap[$v] - $manuscriptFeeMap[$v] - $grossProfitMap[$v];
+                $item = [
+                    "origin_name" => $v,
+                    "total_amount" => $finalPaymentData[$v]??0,
+                    "total_count" => 0,
+                    "refund_amount" => $refundData[$v]??0,
+                    "gross_profit" => floatval(round($grossProfit_, 2)),
+                    "gross_profit_rate" => ($grossProfit_==0||$grossProfit[$v]==0)?"0%":round(($grossProfit_ / $grossProfit[$v])*100, 2)."%",
+                    "deal_rate" => $total==0?"0%":round(($totalAmount / $total)*100, 2)."%"
+                ];
+                $retData[] = $item;
+            }
         }
         $sort = array_column($retData, "total_amount");
         array_multisort($sort, SORT_DESC, $retData);

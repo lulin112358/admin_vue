@@ -17,7 +17,8 @@ class UserEngineersService extends BaseService
      * @return false|mixed
      */
     public function login($param) {
-        $exits = $this->findBy(["qq|phone" => $param["number"]]);
+        $where = ["qq|phone" => $param["number"]];
+        $exits = (new UserEngineersMapper())->findUser($where);
         if (!$exits)
             return false;
         if (!password_verify($param['pwd'], $exits['password']))

@@ -16,7 +16,7 @@ class Order extends Base
     public function getOrderInfo(OrderService $service) {
         $param = input("param.");
         try {
-            $info = $service->findBy(["order_sn" => $param["order_no"]], "require, delivery_time, manuscript_fee");
+            $info = $service->orderInfo($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -71,5 +71,21 @@ class Order extends Base
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
         $this->ajaxReturn($info);
+    }
+
+    /**
+     * 更新订单状态为已交稿
+     * @param OrderService $service
+     */
+    public function updateOrderStatus(OrderService $service) {
+        $param = input("param.");
+        try {
+            $res = $service->updateWhere(["order_sn" => $param["erp_order_no"]], ["status" => 3]);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        if ($res === false)
+            $this->ajaxReturn(Code::ERROR, "修改失败");
+        $this->ajaxReturn("修改成功");
     }
 }

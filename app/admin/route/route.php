@@ -72,6 +72,7 @@ Route::group('admin', function () {
     Route::get('user/customer_user', User::class.'@customerUser');
     Route::get('user/biller_user', User::class.'@billerUser');
     Route::get('user/almighty_user', User::class.'@almightyUser');
+    Route::get('user/almighty_user_sort', User::class.'@almightyUserSort');
     Route::get('user/partner_user', User::class.'@partnerUser');
     Route::get('user/part_time_editor', User::class.'@partTimeEditor');
     Route::get('user/all_group', User::class.'@allGroupUsers');
@@ -98,6 +99,7 @@ Route::group('admin', function () {
     Route::post('origin', Origin::class."@addOrigin");
     Route::get('origin', Origin::class."@allOrigin");
     Route::get('origin/list', Origin::class."@originList");
+    Route::get('origin/sort_list', Origin::class."@originSort");
     // Route::get('origin/info', Origin::class."@originInfo");
     Route::get('origin/info', Origin::class."@origin");
     Route::put('origin', Origin::class."@updateOrigin");
@@ -105,6 +107,7 @@ Route::group('admin', function () {
 
     # 接单账号
     Route::get('account', Account::class."@account");
+    Route::get('account_sort', Account::class."@accountSort");
     Route::get('account/info', Account::class."@accountInfo");
     Route::post('account', Account::class."@addAccount");
     Route::put('account', Account::class."@updateAccount");
@@ -113,6 +116,7 @@ Route::group('admin', function () {
 
     # 收款账户
     Route::get("amount_account", AmountAccount::class."@account");
+    Route::get("amount_account_sort", AmountAccount::class."@accountSort");
     Route::get("amount_account/info", AmountAccount::class."@accountInfo");
     Route::post("amount_account", AmountAccount::class."@addAccount");
     Route::put("amount_account", AmountAccount::class."@updateAccount");
@@ -120,6 +124,7 @@ Route::group('admin', function () {
 
     # 沉淀微信
     Route::get("wechat", Wechat::class."@wechat");
+    Route::get("wechat_sort", Wechat::class."@wechatSort");
     Route::get("wechat/info", Wechat::class."@wechatInfo");
     Route::post("wechat", Wechat::class."@addWechat");
     Route::put("wechat", Wechat::class."@updateWechat");
@@ -290,6 +295,7 @@ Route::group('admin', function () {
     Route::post("origin_bi/export", OriginBi::class."@export");
     Route::post("origin_detail_bi/export", OriginBi::class."@exportDetail");
     Route::post("origin_rec/export", OriginBi::class."@exportRec");
+    Route::post("attendances/export", Attendance::class."@export");
     # 文件上传
     Route::post("upload", Upload::class."@upload");
 })->allowCrossDomain()->middleware([IpFilter::class]);

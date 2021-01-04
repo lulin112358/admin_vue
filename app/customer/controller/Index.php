@@ -15,4 +15,8 @@ class Index extends BaseController
     public function order() {
         return view("index/order");
     }
+
+    public function qrcode() {
+        return view("index/qrcode");
+    }
 }

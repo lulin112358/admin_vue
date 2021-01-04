@@ -30,21 +30,38 @@ class OrdersMainMapper extends BaseMapper
     }
 
     /**
-     * 来源金额排序
+     * 来源金额排序定金数据
      * @param $where
      * @return array
      * @throws \think\db\exception\DataNotFoundException
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function accountAmountSortData($where) {
-        # bi_amount_view视图
-        return Db::table("bi_amount_view")
-            ->where(function ($query) use ($where) {
-                $query->where([["deposit_time", ">=", $where[0][2]], ["deposit_time", "<=", $where[1][2]]])
-                    ->whereOr([["final_payment_time", ">=", $where[0][2]], ["final_payment_time", "<=", $where[1][2]]]);
-            })
-            ->fieldRaw("deposit, final_payment, account_id, deposit_time, final_payment_time")
+    public function accountSortDepositData($where) {
+        return Db::table("orders_deposit")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.main_order_id")
+            ->join(["orders_account" => "oa"], "oa.id=om.order_account_id")
+            ->join(["account" => "a"], "a.id=oa.account_id")
+            ->where($where)
+            ->field("od.change_deposit as deposit, a.id as account_id")
+            ->select()->toArray();
+    }
+
+    /**
+     * 来源金额排序尾款数据
+     * @param $where
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function accountSortFinalData($where) {
+        return Db::table("orders_final_payment")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.main_order_id")
+            ->join(["orders_account" => "oa"], "oa.id=om.order_account_id")
+            ->join(["account" => "a"], "a.id=oa.account_id")
+            ->where($where)
+            ->field("od.change_amount as final_payment, a.id as account_id")
             ->select()->toArray();
     }
 
@@ -67,17 +84,40 @@ class OrdersMainMapper extends BaseMapper
     }
 
     /**
-     * 客服兵力部署金额BI统计数据
+     * 客服兵力部署定金金额BI统计数据
      * @param $where
      * @return array
      * @throws \think\db\exception\DataNotFoundException
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function customerAmountData($where) {
-        return Db::table("bi_amount_view")
+    public function customerDepositData($where) {
+        return Db::table("orders_deposit")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.main_order_id")
+            ->join(["orders_account" => "oa"], "oa.id=om.order_account_id")
+            ->join(["account" => "a"], "a.id=oa.account_id")
+            ->join(["user" => "u"], "u.id=om.customer_id")
             ->where($where)
-            ->fieldRaw("deposit, final_payment, deposit_time, final_payment_time, account_id, customer_id, customer_name as name")
+            ->field("od.change_deposit as deposit, a.id as account_id, u.name, om.customer_id")
+            ->select()->toArray();
+    }
+
+    /**
+     * 客服兵力部署尾款金额BI统计数据
+     * @param $where
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function customerFinalData($where) {
+        return Db::table("orders_final_payment")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.main_order_id")
+            ->join(["orders_account" => "oa"], "oa.id=om.order_account_id")
+            ->join(["account" => "a"], "a.id=oa.account_id")
+            ->join(["user" => "u"], "u.id=om.customer_id")
+            ->where($where)
+            ->field("od.change_amount as final_payment, a.id as account_id, u.name, om.customer_id")
             ->select()->toArray();
     }
 
@@ -105,27 +145,202 @@ class OrdersMainMapper extends BaseMapper
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function amountBiData($where) {
-        return Db::table("bi_amount_view")
+    public function customerOrderDeposit($where) {
+        return Db::table("orders_deposit")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.main_order_id")
+            ->join(["user" => "u"], "u.id=om.customer_id")
             ->where($where)
-            ->field("order_sn, origin_name, deposit_time, final_payment_time, refund_time, origin_id, main_order_id, market_user,  deposit, final_payment, refund_amount, account_id, customer_id, customer_name as name")
+            ->field("od.change_deposit as deposit, u.name, om. customer_id")
+            ->select()->toArray();
+    }
+    public function customerOrderFinal($where) {
+        return Db::table("orders_final_payment")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.main_order_id")
+            ->join(["user" => "u"], "u.id=om.customer_id")
+            ->where($where)
+            ->field("od.change_amount as final_payment, u.name, om. customer_id")
+            ->select()->toArray();
+    }
+    public function customerRefund($where) {
+        return Db::table("refund")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.order_main_id")
+            ->join(["user" => "u"], "u.id=om.customer_id")
+            ->where($where)
+            ->field("od.refund_amount, u.name, om. customer_id")
             ->select()->toArray();
     }
 
-    /**
-     * bi金额统计数据带有订单编号
-     * @param $where
-     * @return array
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\DbException
-     * @throws \think\db\exception\ModelNotFoundException
-     */
-    public function amountBiDataWithOrderSn($where) {
-        return Db::table("bi_amount_view")->alias("bav")
-            ->join(["orders" => "o"], "o.main_order_id=bav.main_order_id")
+//    public function amountBiData($where) {
+//        return Db::table("bi_amount_view")
+//            ->where($where)
+//            ->field("order_sn, origin_name, deposit_time, final_payment_time, refund_time, origin_id, main_order_id, market_user,  deposit, final_payment, refund_amount, account_id, customer_id, customer_name as name")
+//            ->select()->toArray();
+//    }
+    public function originDetailDeposit($where) {
+        return Db::table("orders_deposit")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.main_order_id")
+            ->join(["origin" => "o"], "o.id=om.origin_id")
+            ->join(["orders" => "ods"], "ods.main_order_id=od.main_order_id")
+            ->join(["user" => "u"], "u.id=om.customer_id")
+            ->where(["ods.is_split" => 0])
             ->where($where)
-            ->field("bav.origin_name, o.order_sn, bav.deposit_time, bav.final_payment_time, bav.refund_time, bav.origin_id, bav.main_order_id, bav.market_user,  bav.deposit, bav.final_payment, bav.refund_amount, bav.account_id, bav.customer_id, bav.customer_name as name")
-            ->group("o.main_order_id")
+            ->field("u.name, od.change_deposit as deposit, od.create_time as amount_time, ods.order_sn")
+            ->select()->toArray();
+    }
+    public function originDetailFinal($where) {
+        return Db::table("orders_final_payment")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.main_order_id")
+            ->join(["origin" => "o"], "o.id=om.origin_id")
+            ->join(["orders" => "ods"], "ods.main_order_id=od.main_order_id")
+            ->join(["user" => "u"], "u.id=om.customer_id")
+            ->where(["ods.is_split" => 0])
+            ->where($where)
+            ->field("u.name, od.change_amount as final_payment, od.create_time as amount_time, ods.order_sn")
+            ->select()->toArray();
+    }
+    public function originDetailRefund($where) {
+        return Db::table("refund")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.order_main_id")
+            ->join(["origin" => "o"], "o.id=om.origin_id")
+            ->join(["orders" => "ods"], "ods.main_order_id=od.order_main_id")
+            ->join(["user" => "u"], "u.id=om.customer_id")
+            ->where(["ods.is_split" => 0])
+            ->where($where)
+            ->field("u.name, od.refund_amount, od.refund_time as amount_time, ods.order_sn")
+            ->select()->toArray();
+    }
+
+
+    public function marketDetailDeposit($where) {
+        return Db::table("orders_deposit")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.main_order_id", "left")
+            ->join(["origin" => "o"], "o.id=om.origin_id", "left")
+            ->join(["orders" => "ods"], "ods.main_order_id=od.main_order_id", "left")
+            ->where($where)
+            ->where(["ods.is_split" => 0])
+            ->field("om.id as main_order_id, ods.is_split, od.change_deposit as deposit, o.origin_name, om.origin_id")
+            ->select()->toArray();
+    }
+    public function marketDetailFinal($where) {
+        return Db::table("orders_final_payment")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.main_order_id", "left")
+            ->join(["origin" => "o"], "o.id=om.origin_id", "left")
+            ->join(["orders" => "ods"], "ods.main_order_id=od.main_order_id", "left")
+            ->where($where)
+            ->where(["ods.is_split" => 0])
+            ->field("om.id as main_order_id, ods.is_split, od.change_amount as final_payment, o.origin_name, om.origin_id")
+            ->select()->toArray();
+    }
+    public function marketDetailRefund($where) {
+        return Db::table("refund")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.order_main_id", "left")
+            ->join(["origin" => "o"], "o.id=om.origin_id", "left")
+            ->join(["orders" => "ods"], "ods.main_order_id=od.order_main_id", "left")
+            ->where($where)
+            ->where(["ods.is_split" => 0])
+            ->field("om.id as main_order_id, ods.is_split, od.refund_amount, o.origin_name, om.origin_id")
+            ->select()->toArray();
+    }
+
+    public function marketDeposit($where) {
+        return Db::table("orders_deposit")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.main_order_id", "left")
+            ->join(["origin" => "o"], "o.id=om.origin_id", "left")
+            ->join(["user" => "u"], "u.id=o.market_user", "left")
+            ->where($where)
+            ->field("om.id as main_order_id, om.create_time, u.name as market_user_name, o.market_user, od.change_deposit as deposit")
+            ->select()->toArray();
+    }
+    public function marketFinal($where) {
+        return Db::table("orders_final_payment")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.main_order_id", "left")
+            ->join(["origin" => "o"], "o.id=om.origin_id", "left")
+            ->join(["user" => "u"], "u.id=o.market_user", "left")
+            ->where($where)
+            ->field("om.id as main_order_id, om.create_time, u.name as market_user_name, o.market_user, od.change_amount as final_payment")
+            ->select()->toArray();
+    }
+    public function marketRefund($where) {
+        return Db::table("refund")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.order_main_id", "left")
+            ->join(["origin" => "o"], "o.id=om.origin_id", "left")
+            ->join(["user" => "u"], "u.id=o.market_user", "left")
+            ->where($where)
+            ->field("om.id as main_order_id, om.create_time, u.name as market_user_name, o.market_user, od.refund_amount")
+            ->select()->toArray();
+    }
+    public function marketGrossProfit($where) {
+        return Db::table("orders_main")->alias("om")
+            ->join(["orders_deposit" => "od"], "od.main_order_id=om.id", "left")
+            ->join(["orders_final_payment" => "ofp"], "ofp.main_order_id=om.id", "left")
+            ->join(["origin" => "o"], "o.id=om.origin_id", "left")
+            ->join(["user" => "u"], "u.id=o.market_user", "left")
+            ->where($where)
+            ->where(function ($query) {
+                $query->where(["od.status" => 1])->whereOr(["ofp.status" => 1]);
+            })
+            ->field("om.id as main_order_id, od.deposit, ofp.final_payment, u.name as market_user_name, o.commission_ratio")
+            ->select()->toArray();
+    }
+    public function marketFee($where) {
+        return Db::table("orders_main")->alias("om")
+            ->join(["orders" => "o"], "o.main_order_id=om.id")
+            ->join(["origin" => "og"], "og.id=om.origin_id")
+            ->join(["user" => "u"], "u.id=og.market_user")
+            ->where($where)
+            ->field("o.check_fee, o.manuscript_fee, om.id as main_order_id, u.name as market_user_name, og.market_user")
+            ->select()->toArray();
+    }
+    public function marketDetailGrossProfit($where) {
+        return Db::table("orders_main")->alias("om")
+            ->join(["orders_deposit" => "od"], "od.main_order_id=om.id", "left")
+            ->join(["orders_final_payment" => "ofp"], "ofp.main_order_id=om.id", "left")
+            ->join(["origin" => "o"], "o.id=om.origin_id", "left")
+            ->where($where)
+            ->where(function ($query) {
+                $query->where(["od.status" => 1])->whereOr(["ofp.status" => 1]);
+            })
+            ->field("om.id as main_order_id, od.deposit, ofp.final_payment, o.commission_ratio, o.origin_name")
+            ->select()->toArray();
+    }
+    public function marketDetailFee($where) {
+        return Db::table("orders_main")->alias("om")
+            ->join(["orders" => "o"], "o.main_order_id=om.id")
+            ->join(["origin" => "og"], "og.id=om.origin_id")
+            ->where($where)
+            ->field("o.check_fee, o.manuscript_fee, om.id as main_order_id, og.origin_name")
+            ->select()->toArray();
+    }
+
+
+    public function customerDetailDeposit($where) {
+        return Db::table("orders_deposit")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.main_order_id")
+            ->join(["orders" => "ods"], "ods.main_order_id=om.id")
+            ->join(["origin" => "o"], "o.id=om.origin_id")
+            ->where(["ods.is_split" => 0])
+            ->where($where)
+            ->field("od.change_deposit as deposit, o.origin_name, ods.order_sn, od.create_time")
+            ->select()->toArray();
+    }
+    public function customerDetailFinal($where) {
+        return Db::table("orders_final_payment")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.main_order_id")
+            ->join(["orders" => "ods"], "ods.main_order_id=om.id")
+            ->join(["origin" => "o"], "o.id=om.origin_id")
+            ->where(["ods.is_split" => 0])
+            ->where($where)
+            ->field("od.change_amount as final_payment, o.origin_name, ods.order_sn, od.create_time")
+            ->select()->toArray();
+    }
+    public function customerDetailRefund($where) {
+        return Db::table("refund")->alias("od")
+            ->join(["orders_main" => "om"], "om.id=od.order_main_id")
+            ->join(["orders" => "ods"], "ods.main_order_id=om.id")
+            ->join(["origin" => "o"], "o.id=om.origin_id")
+            ->where(["ods.is_split" => 0])
+            ->where($where)
+            ->field("od.refund_amount, od.refund_time as create_time, o.origin_name, ods.order_sn")
             ->select()->toArray();
     }
 
@@ -138,92 +353,35 @@ class OrdersMainMapper extends BaseMapper
      */
     public function marketUserBiData($where) {
         return Db::table("orders_main")->alias("om")
-            ->join(["user" => "u"], "u.id=om.customer_id", 'left')
-            ->join(["origin" => "o"], "o.id=om.origin_id", 'left')
-            ->join(["user" => "u1"], "u1.id=o.market_user", 'left')
-            ->join(["orders" => "od"], "od.main_order_id=om.id", 'left')
-            ->join(["orders_deposit" => "ode"], "ode.main_order_id=om.id", "left")
-            ->join(["orders_final_payment" => "ofp"], "ofp.main_order_id=om.id", "left")
-            ->join(["refund" => "r"], "r.order_main_id=om.id", "left")
-            ->where(["od.is_split" => 0])
+            ->join(["origin" => "o"], "om.origin_id=o.id")
+            ->join(["user" => "u"], "u.id=o.market_user")
+            ->join(["orders" => "ods"], "ods.main_order_id=om.id")
             ->where($where)
-            ->where(function ($query) {
-                $query->where("ode.status", "=", 1)->whereOr("ode.status", "=", null);
-            })
-            ->where(function ($query) {
-                $query->where("ofp.status", "=", 1)->whereOr("ofp.status", "=", null);
-            })
-            ->field("ofp.final_payment, ode.deposit, r.refund_amount, om.id, o.market_user as market_user_id, u1.name as market_user, od.check_fee, u.name, od.manuscript_fee, od.check_fee, o.commission_ratio")
+            ->where(["ods.is_split" => 0])
+            ->field("om.id as main_order_id, om.origin_id, o.origin_name, ods.is_split, o.market_user as market_user_id, u.name as market_user_name, ods.check_fee, ods.manuscript_fee, o.commission_ratio")
             ->select()->toArray();
     }
 
-    /**
-     * 市场人员详细信息Bi统计数据
-     * @param $where
-     * @return array
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\DbException
-     * @throws \think\db\exception\ModelNotFoundException
-     */
-    public function marketUserOriginBiData($where) {
+
+    public function originData($where) {
         return Db::table("orders_main")->alias("om")
             ->join(["origin" => "o"], "o.id=om.origin_id")
-            ->join(["orders" => "od"], "od.main_order_id=om.id")
-            ->join(["orders_deposit" => "ode"], "ode.main_order_id=om.id", "left")
-            ->join(["orders_final_payment" => "ofp"], "ofp.main_order_id=om.id", "left")
-            ->join(["refund" => "r"], "r.order_main_id=om.id", "left")
-            ->where(["od.is_split" => 0])
+            ->join(["orders" => "ods"], "ods.main_order_id=om.id")
             ->where($where)
-            ->where(function ($query) {
-                $query->where("ode.status", "=", 1)->whereOr("ode.status", "=", null);
-            })
-            ->where(function ($query) {
-                $query->where("ofp.status", "=", 1)->whereOr("ofp.status", "=", null);
-            })
-            ->field("ofp.final_payment, ode.deposit, r.refund_amount, om.id, om.category_id, o.origin_name, om.origin_id, od.check_fee, od.manuscript_fee, od.check_fee, o.commission_ratio")
+            ->where(["ods.is_split" => 0])
+            ->field("ods.is_split, o.origin_name, om.origin_id")
             ->select()->toArray();
     }
-
-    /**
-     * 来源BI统计数据
-     * @return array
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\DbException
-     * @throws \think\db\exception\ModelNotFoundException
-     */
-    public function originBiData($where) {
+    public function marketDetailData($where) {
         return Db::table("orders_main")->alias("om")
             ->join(["origin" => "o"], "o.id=om.origin_id")
-            ->join(["orders" => "od"], "od.main_order_id=om.id")
-            ->join(["orders_deposit" => "ode"], "ode.main_order_id=om.id", "left")
-            ->join(["orders_final_payment" => "ofp"], "ofp.main_order_id=om.id", "left")
-            ->where(["od.is_split" => 0])
+            ->join(["orders" => "ods"], "ods.main_order_id=om.id")
+            ->where(["ods.is_split" => 0])
             ->where($where)
-            ->where(function ($query) {
-                $query->where("ode.status", "=", 1)->whereOr("ode.status", "=", null);
-            })
-            ->where(function ($query) {
-                $query->where("ofp.status", "=", 1)->whereOr("ofp.status", "=", null);
-            })
-            ->field("ofp.final_payment, ode.deposit, om.id, o.origin_name, om.origin_id, od.check_fee, od.manuscript_fee, od.check_fee, o.commission_ratio")
-            ->select()->toArray();
+            ->field("om.id as main_order_id, o.origin_name")->select()->toArray();
     }
 
-    /**
-     * 来源详情BI统计数据
-     * @param $where
-     * @return array
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\DbException
-     * @throws \think\db\exception\ModelNotFoundException
-     */
-    public function originDetailBiData($where) {
-        # orders_view视图
-        return Db::table("orders_view")->where($where)
-            ->where("is_split", "=", 0)
-            ->field("origin_id, origin_name, total_amount, check_fee, manuscript_fee, commission_ratio, refund_amount, deposit, final_payment, create_time")
-            ->select()->toArray();
-    }
+
 
     /**
      * 填写主订单的主要信息
@@ -260,14 +418,14 @@ class OrdersMainMapper extends BaseMapper
         }
 
         return Db::table("orders_main")->alias("om")
-            ->join(["orders_deposit" => "od"], "om.id=od.main_order_id")
-            ->join(["origin" => "o"], "o.id=om.origin_id")
-            ->join(["orders_account" => "oa"], "oa.id=om.order_account_id")
-            ->join(["account" => "a"], "a.id=oa.account_id")
-            ->join(["orders_account" => "oa1"], "oa1.id=om.wechat_id")
-            ->join(["account" => "a1"], "a1.id=oa1.account_id")
-            ->join(["user" => "u"], "u.id=om.customer_manager")
-            ->join(["category" => "c"], "c.id=om.category_id")
+            ->join(["orders_deposit" => "od"], "om.id=od.main_order_id", "left")
+            ->join(["origin" => "o"], "o.id=om.origin_id", "left")
+            ->join(["orders_account" => "oa"], "oa.id=om.order_account_id", "left")
+            ->join(["account" => "a"], "a.id=oa.account_id", "left")
+            ->join(["orders_account" => "oa1"], "oa1.id=om.wechat_id", "left")
+            ->join(["account" => "a1"], "a1.id=oa1.account_id", "left")
+            ->join(["user" => "u"], "u.id=om.customer_manager", "left")
+            ->join(["category" => "c"], "c.id=om.category_id", "left")
             ->where([["o.status", "<>", 0], ["oa.status", "<>", 0], ["od.status", "<>", 0], ["a1.is_wechat", "=", 1], ["u.status", "=", 1]])
             ->where(["om.customer_id" => request()->uid])
             ->where($map)
@@ -275,7 +433,7 @@ class OrdersMainMapper extends BaseMapper
             ->field("od.main_order_id, od.create_time, om.origin_id, om.customer_manager, om.id, 
             oa.id as order_account_id,
             concat(om.origin_id, '-', oa.id, '-', od.amount_account_id) as auto,
-             om.category_id, oa1.id as wechat_id, od.amount_account_id")
+             om.category_id, oa1.id as wechat_id, od.amount_account_id, om.school_id, om.degree_id")
             ->order("od.create_time asc")
             ->group("om.id")
             ->limit(50)

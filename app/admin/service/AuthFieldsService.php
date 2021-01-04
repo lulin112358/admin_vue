@@ -22,7 +22,9 @@ class AuthFieldsService extends BaseService
         ["value" => 3, "label" => "已交稿"],
         ["value" => 4, "label" => "准备退款"],
 //        ["value" => 5, "label" => "已退款"],
-        ["value" => 6, "label" => "已发全能"]
+        ["value" => 6, "label" => "已发全能"],
+        ["value" => 7, "label" => "已发发单"],
+        ["value" => 8, "label" => "返修中"],
     ];
 
     /**

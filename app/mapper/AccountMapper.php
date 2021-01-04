@@ -27,4 +27,19 @@ class AccountMapper extends BaseMapper
             ->field("oa.account_id, a.account, oa.id, ac.cate_name, oa.nickname, a.simple_name, a.account_cate, a.is_wechat")
             ->find();
     }
+
+    /**
+     * 账号信息
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function accounts() {
+        return Db::table("orders_account")->alias("oa")
+            ->join(["account" => "a"], "a.id=oa.account_id")
+            ->where(["oa.status" => 1])
+            ->field("oa.id as order_account_id, oa.nickname, a.account")
+            ->select()->toArray();
+    }
 }

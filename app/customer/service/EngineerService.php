@@ -46,4 +46,16 @@ class EngineerService extends BaseService
         }
 
     }
+
+    /**
+     * 更新工程师信息
+     * @param $param
+     * @return mixed
+     */
+    public function updateEngineer($param) {
+        $exits = $this->findBy(["contact_qq" => $param["contact_qq"]]);
+        if (!$exits)
+            return "未找到该QQ 请填写对应QQ号";
+        return $this->updateWhere(["contact_qq" => $param["contact_qq"]], ["collection_code" => $param["collection_code"]]);
+    }
 }

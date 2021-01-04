@@ -22,6 +22,6 @@ class Login extends Base
         }
         if (!$res)
             $this->ajaxReturn(Code::ERROR, "账户或密码错误");
-        $this->ajaxReturn(Code::SUCCESS, "success", $res["engineer_id"]);
+        $this->ajaxReturn(Code::SUCCESS, "success", ["uid" => $res["engineer_id"], "nickname" => $res["qq_nickname"], "number" => empty($res["qq"])?$res["phone"]:$res["qq"]]);
     }
 }

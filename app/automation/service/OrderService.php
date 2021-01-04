@@ -99,4 +99,64 @@ class OrderService extends BaseService
         ];
         return $this->updateWhere(["order_sn" => $param["order_no"]], $updateData);
     }
+
+    /**
+     * 指定工程师稿费信息
+     * @param $param
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function manuscript($param) {
+        $data = (new OrdersMapper())->engineerManuscripts(["e.id" => $param["uid"]]);
+        $retData = [
+            "settlemented" => $data[0]["settlemented"],
+            "total" => $data[0]["manuscript_fee"],
+            "unsettlement" => $data[0]["manuscript_fee"] - $data[0]["settlemented"]
+        ];
+        return $retData;
+    }
+
+    /**
+     * 工程师稿费详情
+     * @param $param
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function manuscriptDetail($param) {
+        $data = (new OrdersMapper())->engineerManuscriptsDetail(["o.engineer_id" => $param["uid"], "is_auto_split" => $param["is_auto_split"]]);
+        foreach ($data as $k => $v) {
+            $data[$k]["settlement_time"] = $v["settlement_time"] == 0 ? "未结算" :date("Y-m-d H:i:s", $v["settlement_time"]);
+            $data[$k]["actual_delivery_time"] = date("Y-m-d H:i:s", $v["actual_delivery_time"]);
+            $data[$k]["settlement_fee"] = is_null($v["settlement_fee"])?"未结算":$v["settlement_fee"];
+        }
+        return $data;
+    }
+
+    /**
+     * 订单详情
+     * @param $param
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function orderInfo($param) {
+        if (is_array($param["order_no"])) {
+            $data = (new OrdersMapper())->orderInfo(["o.order_sn" => $param["order_no"]]);
+            foreach ($data as $k => $v) {
+                $data[$k]["settlement_time"] = date("Y-m-d H:i:s", $v["settlement_time"]);
+                $data[$k]["settlement_status"] = $v["settlemented"]==0?"未结算":($v["settlemented"]<$v["manuscript_fee"]?"部分结算":"已结算");
+            }
+        }else {
+            $data = (new OrdersMapper())->orderInfo(["o.order_sn" => $param["order_no"]]);
+            $data = $data[0];
+            $data["settlement_time"] = date("Y-m-d H:i:s", $data["settlement_time"]);
+            $data["settlement_status"] = $data["settlemented"]==0?"未结算":($data["settlemented"]<$data["manuscript_fee"]?"部分结算":"已结算");
+        }
+        return $data;
+    }
 }

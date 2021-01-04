@@ -29,9 +29,13 @@ class Base
     private $authRowRequest = [
         "/admin/orders",
         "/admin/wechat",
+        "/admin/wechat_sort",
         "/admin/origin/list",
+        "/admin/origin/sort_list",
         "/admin/account",
+        "/admin/account_sort",
         "/admin/amount_account",
+        "/admin/amount_account_sort",
 //        "/admin/engineer",
         "/admin/user"
     ];

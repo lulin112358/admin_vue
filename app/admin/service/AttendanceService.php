@@ -6,6 +6,7 @@ namespace app\admin\service;
 
 use app\mapper\AttendanceMapper;
 use app\mapper\UserMapper;
+use excel\Excel;
 
 class AttendanceService extends BaseService
 {
@@ -61,6 +62,9 @@ class AttendanceService extends BaseService
                 ["a.create_time", "<=", time()],
             ];
         }
+        if (isset($param["user_id"]) && !empty($param["user_id"])) {
+            $where[] = ["u.id", "=", $param["user_id"]];
+        }
         $data = (new AttendanceMapper())->attendances($where);
         $tmp = [];
         foreach ($data as $k => $v)
@@ -98,6 +102,32 @@ class AttendanceService extends BaseService
             $retData[] = $item;
         }
         return $retData;
+    }
+
+    /**
+     * 导出
+     * @param $param
+     * @return bool
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function export($param) {
+        $data = $this->attendances($param);
+        $header = [
+            ["姓名", "name"],
+            ["部门-职位", "department"],
+            ["出勤", "attendance_count"],
+            ["迟到次数", "late_count"],
+            ["迟到时长", "late_time"],
+            ["请假天数", "leave_count"],
+            ["出勤率", "attendance_rate"],
+            ["意外率", "accident_rate"],
+            ["奖惩", "reward"],
+        ];
+        return Excel::exportData($data, $header, "考勤数据");
     }
 
     /**
@@ -147,7 +177,7 @@ class AttendanceService extends BaseService
      */
     public function addData() {
         # 查询所有在职用户
-        $userId = (new UserMapper())->columnBy(["status" => 1], "id");
+        $userId = (new UserMapper())->columnBy(["status" => 1, "work_nature" => 1], "id");
         # 添加考勤记录
         $data = [];
         foreach($userId as $k => $v) {

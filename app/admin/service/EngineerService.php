@@ -58,7 +58,7 @@ class EngineerService extends BaseService
             # 添加工程师登录信息
             $accountData = [
                 "engineer_id" => $res->id,
-                "qq" => $param["contact_qq"],
+                "qq" => isset($param["contact_qq"])?$param["contact_qq"]:$param["wechat"],
                 "phone" => $param["contact_phone"],
                 "password" => password_hash("123456", PASSWORD_DEFAULT),
                 "create_time" => time(),

@@ -4,6 +4,7 @@
 namespace app\admin\service;
 
 
+use app\mapper\OrdersMainMapper;
 use app\mapper\UserMapper;
 use app\mapper\UserRoleMapper;
 
@@ -91,6 +92,31 @@ class UserService extends BaseService
                 "id" => $this->map[$k],
                 "children" => $v
             ];
+        }
+        return $retData;
+    }
+
+    /**
+     * 全能客服排序列表
+     * @return array
+     */
+    public function almightyUserSort() {
+        $list = $this->groupUsers(7);
+        $sort = array_count_values((new OrdersMainMapper())->columnBy(["customer_id" => request()->uid], "customer_manager"));
+        arsort($sort);
+        $retData = [];
+        foreach ($sort as $k => $v) {
+            foreach ($list as $key => $val) {
+                if ($val["id"] == $k) {
+                    $retData[] = $val;
+                }
+            }
+        }
+
+        foreach ($list as $k => $v) {
+            if (!in_array($v["id"], array_keys($sort))) {
+                $retData[] = $v;
+            }
         }
         return $retData;
     }

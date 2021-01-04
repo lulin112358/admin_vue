@@ -21,10 +21,13 @@ class RefundMapper extends BaseMapper
      */
     public function refundList($where) {
         # refund_view视图
-        return Db::table("refund_view")
-            ->where("status", "<>", 1)
+        return Db::table("refund_view")->alias("rv")
+            ->join(["orders_deposit" => "od"], "rv.order_main_id=od.main_order_id", "left")
+            ->join(["orders_final_payment" => "ofp"], "ofp.main_order_id=rv.order_main_id", "left")
+            ->where("rv.status", "<>", 1)
             ->where($where)
-            ->order("apply_time desc")
+            ->field("rv.*, od.amount_account_id as deposit, ofp.amount_account_id as final")
+            ->order("rv.apply_time desc")
             ->select()->toArray();
     }
 }

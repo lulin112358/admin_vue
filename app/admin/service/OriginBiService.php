@@ -23,7 +23,7 @@ class OriginBiService
         if (isset($param["range_time"]) && !empty($param["range_time"])) {
             $where = [
                 ["om.create_time", ">=", strtotime($param["range_time"][0])],
-                ["om.create_time", "<=", strtotime($param["range_time"][1])]
+                ["om.create_time", "<=", strtotime($param["range_time"][1])],
             ];
         }else {
             $where = [
@@ -31,84 +31,100 @@ class OriginBiService
                 ["om.create_time", "<=", time()],
             ];
         }
+        $mapper = new OrdersMainMapper();
         # 获取数据
-        $originBiData = (new OrdersMainMapper())->originBiData($where);
-        $_amountData = [];
-        $_orderData = [];
+        $originBiData = $mapper->originData($where);
+        $tmp = [];
+        $countMap = [];
         foreach ($originBiData as $k => $v) {
-            $_amountData[$v["origin_id"]][] = $v;
-            $_orderData[$v['id']][] = $v;
-        }
-        $orderData = [];
-        foreach ($_orderData as $k => $v) {
-            $orderData[$k] = array_sum(array_column($v, "deposit")) + array_sum(array_column($v, "final_payment"));
+            $tmp[$v["origin_name"]][] = $v;
+            $countMap[$v["origin_name"]] = ($countMap[$v["origin_name"]]??0) + 1;
         }
         # 获取订单金额数据
-        $map = function ($query) use ($where) {
-            $query->where([["deposit_time", ">=", $where[0][2]], ["deposit_time", "<=", $where[1][2]]])
-                ->whereOr(function ($query) use ($where) {
-                    $query->where([["final_payment_time", ">=", $where[0][2]], ["final_payment_time", "<=", $where[1][2]]]);
-                })
-                ->whereOr(function ($query) use ($where) {
-                    $query->where([["refund_time", ">=", $where[0][2]], ["refund_time", "<=", $where[1][2]]]);
-                });
-        };
-        $originBiAmountData = (new OrdersMainMapper())->amountBiData($map);
         # 定金
-        $_depositData = collect($originBiAmountData)->where("deposit_time", ">=", $where[0][2])
-            ->where("deposit_time", "<=", $where[1][2])->toArray();
+        $map = [
+            ["od.create_time", ">=", $where[0][2]],
+            ["od.create_time", "<=", $where[1][2]],
+        ];
+        $_depositData = $mapper->marketDetailDeposit($map);
         $depositData = processAmount($_depositData, "deposit", "origin_name");
 
         # 尾款
-        $_finalPayment = collect($originBiAmountData)->where("final_payment_time", ">=", $where[0][2])
-            ->where("final_payment_time", "<=", $where[1][2])->toArray();
+        $_finalPayment = $mapper->marketDetailFinal($map);
         $finalPaymentData = processAmount($_finalPayment, "final_payment", "origin_name");
 
         # 退款
-        $_refund = collect($originBiAmountData)->where("refund_time", ">=", $where[0][2])
-            ->where("refund_time", "<=", $where[1][2])->toArray();
+        $map = [
+            ["od.refund_time", ">=", $where[0][2]],
+            ["od.refund_time", "<=", $where[1][2]],
+        ];
+        $_refund = $mapper->marketDetailRefund($map);
         $refundData = processAmount($_refund, "refund_amount", "origin_name");
-        $total = array_sum(array_values($depositData)) + array_sum(array_values($finalPaymentData));
-        $amountData = [];
-        foreach ($depositData as $k => $v) {
-            $amountData[$k] = $v;
-        }
-        foreach ($finalPaymentData as $k => $v) {
-            $amountData[$k] = $amountData[$k]??0;
-            $amountData[$k] += $v;
+        $originAmountData = array_merge($_depositData, $_finalPayment, $_refund);
+
+        # 毛利润
+        $mainOrderIds = array_unique(array_merge(array_column($originBiData, "main_order_id"), array_column($originAmountData, "main_order_id")));
+        $grossProfitData = $mapper->marketDetailGrossProfit(["om.id" => $mainOrderIds]);
+        $grossProfit = [];
+        $grossProfitMap = [];
+        foreach ($grossProfitData as $k => $v) {
+            $grossProfit[$v["origin_name"]] = ($grossProfit[$v["origin_name"]]??0) + ($v["deposit"] + $v["final_payment"]);
+            $grossProfitMap[$v["origin_name"]] = ($grossProfitMap[$v["origin_name"]]??0) + ($v["deposit"] + $v["final_payment"])*$v["commission_ratio"];
         }
 
-        $tmp = [];
-        foreach ($originBiData as $k => $v)
-            $tmp[$v["origin_name"]][] = $v;
+        $checkFeeMap = [];
+        $manuscriptFeeMap = [];
+        # 检测费/稿费
+        $fee = $mapper->marketDetailFee(["om.id" => $mainOrderIds]);
+        foreach ($fee as $k => $v) {
+            $checkFeeMap[$v["origin_name"]] = ($checkFeeMap[$v["origin_name"]]??0) + $v["check_fee"];
+            $manuscriptFeeMap[$v["origin_name"]] = ($manuscriptFeeMap[$v["origin_name"]]??0) + $v["manuscript_fee"];
+        }
+
+        $total = array_sum(array_values($depositData)) + array_sum(array_values($finalPaymentData));
 
         $retData = [];
         foreach ($tmp as $k => $v) {
-            $totalAmount = $amountData[$k];
-            $commission = 0;
-            foreach ($v as $key => $val) {
-                $commission += ($val["commission_ratio"] < 1 ? (round($orderData[$val["id"]] * $val["commission_ratio"], 2)) : $val["commission_ratio"]);
-            }
-
-            $checkFee = array_sum(array_column($v, "check_fee"));
-            $manuscriptFee = array_sum(array_column($v, "manuscript_fee"));
-            $grossProfit = $totalAmount - $checkFee - $manuscriptFee - $commission;
             $deposit = $depositData[$k]??0;
-            $finalPayment = $finalPaymentData[$k]??0;
+            $final = $finalPaymentData[$k]??0;
+            $totalAmount = $deposit + $final;
+            $grossProfit_ = $grossProfit[$k] - $checkFeeMap[$k] - $manuscriptFeeMap[$k] - $grossProfitMap[$k];
             $item = [
                 "origin_name" => $k,
                 "origin_id" => $v[0]["origin_id"],
                 "total_amount" => $totalAmount,
-                "total_count" => count($v),
+                "total_count" => $countMap[$k]??0,
                 "refund_amount" => $refundData[$k]??0,
-                "gross_profit" => floatval(round($grossProfit, 2)),
-                "gross_profit_rate" => $totalAmount==0?"0%":round(($grossProfit / $totalAmount)*100, 2)."%",
-                "deal_rate" => $total==0?"0%":round((($deposit+$finalPayment) / $total)*100, 2)."%",
-                "supplier_commission" => floatval(round($commission, 2)),
+                "gross_profit" => floatval(round($grossProfit_, 2)),
+                "gross_profit_rate" => ($grossProfit_==0||$grossProfit[$k]==0)?"0%":round(($grossProfit_ / $grossProfit[$k])*100, 2)."%",
+                "deal_rate" => $total==0?"0%":round(($totalAmount / $total)*100, 2)."%",
+                "supplier_commission" => floatval(round($grossProfitMap[$k], 2)),
                 "deposit" => $deposit,
-                "final_payment" => $finalPayment,
+                "final_payment" => $final,
             ];
             $retData[] = $item;
+        }
+        $final = array_combine(array_column($_finalPayment, "origin_name"), array_column($_finalPayment, "origin_id"));
+        $refund = array_combine(array_column($_refund, "origin_name"), array_column($_refund, "origin_id"));
+        $tail = array_merge($final, $refund);
+        foreach ($tail as $k => $v) {
+            if (!in_array($k, array_keys($tmp))) {
+                $grossProfit_ = $grossProfit[$k] - $checkFeeMap[$k] - $manuscriptFeeMap[$k] - $grossProfitMap[$k];
+                $item = [
+                    "origin_name" => $k,
+                    "origin_id" => $v,
+                    "total_amount" => $finalPaymentData[$k]??0,
+                    "total_count" => 0,
+                    "refund_amount" => $refundData[$k]??0,
+                    "gross_profit" => floatval(round($grossProfit_, 2)),
+                    "gross_profit_rate" => ($grossProfit_==0||$grossProfit[$k]==0)?"0%":round(($grossProfit_ / $grossProfit[$k])*100, 2)."%",
+                    "deal_rate" => $total==0?"0%":round(($totalAmount / $total)*100, 2)."%",
+                    "supplier_commission" => floatval(round($grossProfitMap[$k], 2)),
+                    "deposit" => 0,
+                    "final_payment" => $finalPaymentData[$k]??0,
+                ];
+                $retData[] = $item;
+            }
         }
         $sort = array_column($retData, "total_amount");
         array_multisort($sort, SORT_DESC, $retData);
@@ -136,57 +152,25 @@ class OriginBiService
             $endTime = time();
         }
         # 获取数据
-        $map = function ($query) use ($param, $startTime, $endTime) {
-            $query->where([["deposit_time", ">=", $startTime], ["deposit_time", "<=", $endTime], ["origin_id", "=", $param["origin_id"]]])
-                ->whereOr(function ($query) use ($param, $startTime, $endTime) {
-                    $query->where([["final_payment_time", ">=", $startTime], ["final_payment_time", "<=", $endTime], ["origin_id", "=", $param["origin_id"]]]);
-                })
-                ->whereOr(function ($query) use ($param, $startTime, $endTime) {
-                    $query->where([["refund_time", ">=", $startTime], ["refund_time", "<=", $endTime], ["origin_id", "=", $param["origin_id"]]]);
-                });
-        };
+        $mapper = new OrdersMainMapper();
+        $map = [
+            ["od.create_time", ">=", $startTime],
+            ["od.create_time", "<=", $endTime],
+            ["om.origin_id", "=", $param["origin_id"]]
+        ];
+        # 定金
+        $depositData = $mapper->originDetailDeposit($map);
+        # 尾款
+        $finalPaymentData = $mapper->originDetailFinal($map);
+        # 退款
+        $map = [
+            ["od.refund_time", ">=", $startTime],
+            ["od.refund_time", "<=", $endTime],
+            ["om.origin_id", "=", $param["origin_id"]]
+        ];
+        $refundData = $mapper->originDetailRefund($map);
 
-        $originDetailBiData = (new OrdersMainMapper())->amountBiData($map);
-        $deposit = [];
-        $finalPayment = [];
-        $refund = [];
-        foreach ($originDetailBiData as $k => $v) {
-            if (!is_null($v["deposit_time"])) {
-                if ($v["deposit_time"] >= $startTime && $v["deposit_time"] <= $endTime) {
-                    $item = [
-                        "deposit" => $v["deposit"],
-                        "amount_time" => date("Y-m-d H点", $v["deposit_time"]),
-                        "name" => $v["name"],
-                        "order_sn" => $v["order_sn"]
-                    ];
-                    $deposit[] = $item;
-                }
-            }
-            if (!is_null($v["final_payment_time"])) {
-                if ($v["final_payment_time"] >= $startTime && $v["final_payment_time"] <= $endTime) {
-                    $item = [
-                        "final_payment" => $v["final_payment"],
-                        "amount_time" => date("Y-m-d H点", $v["final_payment_time"]),
-                        "name" => $v["name"],
-                        "order_sn" => $v["order_sn"]
-                    ];
-                    $finalPayment[] = $item;
-                }
-            }
-            if (!is_null($v['refund_time'])) {
-                if ($v["refund_time"] >= $startTime && $v["refund_time"] <= $endTime) {
-                    $item = [
-                        "refund_amount" => $v["refund_amount"],
-                        "amount_time" => date("Y-m-d H点", $v["refund_time"]),
-                        "name" => $v["name"],
-                        "order_sn" => $v["order_sn"]
-                    ];
-                    $refund[] = $item;
-                }
-            }
-        }
-
-        $data = array_merge($deposit, $finalPayment, $refund);
+        $data = array_merge($depositData, $finalPaymentData, $refundData);
 
         $retData = [];
         foreach ($data as $k => $v) {

@@ -4,6 +4,7 @@
 namespace app\admin\service;
 
 
+use app\mapper\OrdersMainMapper;
 use app\mapper\UserAuthRowMapper;
 use app\mapper\WechatMapper;
 use think\facade\Db;
@@ -21,6 +22,34 @@ class WechatService extends BaseService
      */
     public function wechats() {
         return (new WechatMapper())->wechats();
+    }
+
+    /**
+     * 沉淀微信排序列表
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function wechatSort() {
+        $list = (new WechatMapper())->wechats();
+        $sort = array_count_values((new OrdersMainMapper())->columnBy(["customer_id" => request()->uid], "wechat_id"));
+        arsort($sort);
+        $retData = [];
+        foreach ($sort as $k => $v) {
+            foreach ($list as $key => $val) {
+                if ($val["wechat_account_id"] == $k) {
+                    $retData[] = $val;
+                }
+            }
+        }
+
+        foreach ($list as $k => $v) {
+            if (!in_array($v["wechat_account_id"], array_keys($sort))) {
+                $retData[] = $v;
+            }
+        }
+        return $retData;
     }
 
 //    /**

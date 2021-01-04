@@ -25,6 +25,19 @@ class AmountAccount extends Base
     }
 
     /**
+     * 收款账号排序列表
+     * @param AmountAccountService $service
+     */
+    public function accountSort(AmountAccountService $service) {
+        try {
+            $data = $service->accountSort();
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
+
+    /**
      * 添加收款账户
      *
      * @param AmountAccountService $service

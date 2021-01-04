@@ -28,7 +28,9 @@ class OrdersService extends BaseService
         3 => "已交稿",
         4 => "准备退款",
         5 => "已退款",
-        6 => "已发全能"
+        6 => "已发全能",
+        7 => "已发发单",
+        8 => "返修中",
     ];
 
     # 订单状态颜色
@@ -38,7 +40,9 @@ class OrdersService extends BaseService
         3 => "green",
         4 => "black",
         5 => "black",
-        6 => "yellow"
+        6 => "yellow",
+        7 => "red",
+        8 => "red",
     ];
 
     # 修改orders_main表的字段
@@ -81,6 +85,7 @@ class OrdersService extends BaseService
     public function orders($params, $export = false) {
         // 设置中文
         Carbon::setLocale("zh");
+        $carbon = new Carbon();
         if ($export) {
             request()->uid = Jwt::decodeToken($params["token"])["data"]->uid;
         }
@@ -219,6 +224,8 @@ class OrdersService extends BaseService
             $data[$k]["commission_ratio"] = $v["commission_ratio"]<=1?($v["commission_ratio"] * 100)."%":$v["commission_ratio"]."元";
             $data[$k]["biller"] = is_null($v["biller"])?"暂未填写":$v["biller"];
             $data[$k]["status"] = $this->status[$v["status"]];
+            $data[$k]["manuscript_fee_ratio"] = ($v["deposit"] + $v["final_payment"])==0?"0%":floatval(round(($v["manuscript_fee"] / ($v["deposit"] + $v["final_payment"])) * 100, 2))."%";
+            $data[$k]["build_time"] = Carbon::parse($data[$k]["create_time"])->diffForHumans(Carbon::now());
             # 保留有效位数
             $data[$k]["total_amount"] = floatval($v["total_amount"]);
             $data[$k]["total_fee"] = floatval($v["total_amount"]);
@@ -237,12 +244,26 @@ class OrdersService extends BaseService
                 }
             }
 
+            $billTime = Carbon::parse(date("Y-m-d H:i:s", $v["bill_time"]));
+            $createTime = Carbon::parse($data[$k]["create_time"]);
+            # 分钟差
+            $billTimeMinutes = $createTime->diffInMinutes($billTime);
+            # 小时差
+            $billTimeHours = $createTime->diffInHours($billTime);
+            if ($billTimeMinutes > 60) {
+                $billTimeDiff = $billTimeHours."时".($billTimeMinutes - $billTimeHours * 60)."分";
+            }else{
+                $billTimeDiff = $billTimeMinutes."分";
+            }
+            $data[$k]["bill_time"] = $v["bill_time"]==0?"未记录":$billTimeDiff;
+
+
             # TODO 此处待优化
             $time = Carbon::parse(date("Y-m-d H:i:s", $v["delivery_time"]));
             # 天数差
-            $diffDay = (new Carbon())->diffInDays($time);
+            $diffDay = $carbon->diffInDays($time);
             # 小时差
-            $diffHour = (new Carbon())->diffInHours($time);
+            $diffHour = $carbon->diffInHours($time);
             if ($diffHour > 24) {
                 $diff = $diffDay."天".($diffHour - $diffDay * 24)."时";
             }else{
@@ -421,6 +442,8 @@ class OrdersService extends BaseService
                 "customer_manager" => $data["customer_manager"],
                 "category_id" => is_array($data["cate_id"])?(count($data["cate_id"])==2?$data["cate_id"][1]:$data["cate_id"][0]):$data["cate_id"],
                 "wechat_id" => $data["wechat_id"],
+                "school_id" => $data["school_id"]??0,
+                "degree_id" => $data["degree_id"]??0,
                 "file" => $data["file"]??"",
                 "create_time" => time(),
                 "update_time" => time()
@@ -521,10 +544,11 @@ class OrdersService extends BaseService
                 "id" => $data["order_id"],
                 $data["field"] => $data["value"]
             ];
-            # 如果更新工程师则更新发单人和订单状态
+            # 如果更新工程师则更新发单人、发单时间和订单状态
             if ($data["field"] == "engineer_id") {
                 $updateData["biller"] = request()->uid;
                 $updateData["status"] = 2;
+                $updateData["bill_time"] = time();
             }
             # 如果更新订单状态为已交稿则更新实际交稿时间
             if ($data["field"] == "status" && $data["value"] == 3) {
@@ -590,13 +614,27 @@ class OrdersService extends BaseService
             $category_pid = (new CategoryMapper())->findBy(["id" => $category], "pid")["pid"];
             $category = $category_pid==0?$category:[$category_pid, $category];
             $customer_manager = $this->maxAutoValue($data, "customer_manager");
-            $auto = $this->maxAutoValue($data, "auto");
-            $autoData = explode("-", $auto);
-            $origin = $autoData[0];
-            $order_account_id = (int)$autoData[1];
-            $amount_account_id = $autoData[2];
+            $schoolData = collect($data)->where("school_id", "<>", 0)->toArray();
+            $degreeData = collect($data)->where("degree_id", "<>", 0)->toArray();
+            $school_id = empty($schoolData) ? 0 : $this->maxAutoValue($schoolData, "school_id");
+            $degree_id = empty($degreeData) ? 0 : $this->maxAutoValue($degreeData, "degree_id");
 
-            $retData = compact("wechat", "category", "customer_manager", "origin", "order_account_id", "amount_account_id");
+            $auto = array_column($data, "auto");
+            $originData = [];
+            $orderAccountData = [];
+            $amountAccountData = [];
+            foreach ($auto as $k => $v) {
+                $autoData = explode("-", $v);
+                $originData[] = $autoData[0];
+                $orderAccountData[$autoData[0]][] = (int)$autoData[1];
+                $amountAccountData[$autoData[0]][$autoData[1]][] = $autoData[2];
+            }
+
+            $origin = $this->maxValue($originData);
+            $order_account_id = $this->maxValue($orderAccountData[$origin]);
+            $amount_account_id = $this->maxValue($amountAccountData[$origin][$order_account_id]);
+
+            $retData = compact("school_id", "degree_id", "wechat", "category", "customer_manager", "origin", "order_account_id", "amount_account_id");
             if (isset($param["field"])) {
                 if ($param["field"] == "origin_id")
                     unset($retData["origin"]);
@@ -604,6 +642,12 @@ class OrdersService extends BaseService
                     unset($retData["origin"]);
                     unset($retData["order_account_id"]);
                 }
+            }
+            if ($retData["school_id"] == 0) {
+                unset($retData["school_id"]);
+            }
+            if ($retData["degree_id"] == 0) {
+                unset($retData["degree_id"]);
             }
             return $retData;
         }else{
@@ -724,11 +768,17 @@ class OrdersService extends BaseService
      * @return mixed
      */
     public function topSchools() {
-        $data = (new OrdersMainMapper())->selectBy(["customer_id" => request()->uid], "school_id");
-        $school_ids = array_keys(array_count_values(array_column($data, "school_id")));
-        rsort($school_ids);
-        array_splice($school_ids, 0, 10);
-        return (new SchoolMapper())->selectBy(["id" => $school_ids], "id, name");
+        $mapper = new OrdersMainMapper();
+        $data = $mapper->selectBy([["customer_id", "=", request()->uid], ["school_id", "<>", 0]], "school_id");
+        $school_ids = array_flip(array_count_values(array_column($data, "school_id")));
+        $school_ids_keys = array_keys($school_ids);
+        rsort($school_ids_keys);
+        $school_ids_keys = array_splice($school_ids_keys, 0, 10);
+        $school_ids_arr = [];
+        foreach ($school_ids_keys as $k => $v) {
+            $school_ids_arr[] = $school_ids[$v];
+        }
+        return (new SchoolMapper())->selectBy(["id" => $school_ids_arr], "id, name");
     }
 
 
@@ -741,6 +791,13 @@ class OrdersService extends BaseService
      */
     private function maxAutoValue($data, $key) {
         $_data = array_flip(array_count_values(array_column($data, $key)));
+        $array_keys = array_keys($_data);
+        rsort($array_keys);
+        return $_data[$array_keys[0]];
+    }
+
+    private function maxValue($data) {
+        $_data = array_flip(array_count_values($data));
         $array_keys = array_keys($_data);
         rsort($array_keys);
         return $_data[$array_keys[0]];

@@ -19,8 +19,10 @@ Route::group('customer', function () {
     Route::get("software", Software::class."@software");
     Route::get("tendency", Tendency::class."@tendency");
     Route::post("engineer", Engineer::class."@addEngineer");
+    Route::post("engineer/qrcode", Engineer::class."@updateEngineer");
     Route::get("order", Index::class."@order");
     Route::get("order/info", Order::class."@orderInfo");
+    Route::get("qrcode", Index::class."@qrcode");
     Route::post("order/updateOrder", Order::class."@updateOrder");
     Route::post("upload", Upload::class."@upload");
 })->allowCrossDomain();

@@ -34,6 +34,20 @@ class Attendance extends Base
         $this->ajaxReturn($list);
     }
 
+
+    /**
+     * 导出
+     * @param AttendanceService $service
+     */
+    public function export(AttendanceService $service) {
+        $param = input("param.");
+        try {
+            $service->export($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+    }
+
     /**
      * 获取用户考勤信息
      * @param AttendanceService $service

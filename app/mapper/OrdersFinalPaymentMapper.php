@@ -62,6 +62,7 @@ class OrdersFinalPaymentMapper extends BaseMapper
             ->join(["user" => "u"], "u.id=od.payee_id", "left")
             ->join(["user" => "u1"], "u1.id=om.customer_id", "left")
             ->where($where)
+            ->where(["or.is_split" => 0])
             ->field("aa.account, od.change_amount, or.order_sn, od.create_time, u.name, u1.name as customer_name")
             ->select()->toArray();
     }

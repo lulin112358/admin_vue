@@ -41,13 +41,29 @@ class ManuscriptFeeService extends BaseService
             $where[] = ["o.delivery_time", "<=", strtotime($param["delivery_time"][1])];
         }
         $data = (new OrdersMapper())->manuscripts($where);
-        $canSettlement = collect($data)->where("delivery_time|actual_delivery_time", "<=", time())->toArray();
-        $canSettlementData = [];
-        foreach ($canSettlement as $k => $v) {
-            $canSettlementData[$v["engineer_id"]] = floatval($v["manuscript_fee"] - $v["settlemented"] - $v["deduction"]);
-        }
+        $tmp = [];
         foreach ($data as $k => $v) {
-            $time = ($v["delivery_time"] > $v["actual_delivery_time"]) ? $v["actual_delivery_time"] : $v["delivery_time"];
+            $tmp[$v["engineer_id"]][] = $v;
+        }
+
+        $carbon = Carbon::now();
+        $day = $carbon->day;
+        if ($day >=1 && $day <= 10) {
+            $settlementDay = 10;
+        } elseif ($day > 10 && $day <= 20) {
+            $settlementDay = 20;
+        }else {
+            $settlementDay = $carbon->daysInMonth;
+        }
+        $retData = [];
+        foreach ($tmp as $k => $v) {
+            $manuscriptFee = array_sum(array_column($v, "manuscript_fee"));
+            $settlemented = array_sum(array_column($v, "settlemented"));
+            $deduction = array_sum(array_column($v, "deduction"));
+
+            $minDeliveryTime = min(array_column($v, "delivery_time"));
+            $minActualDeliveryTime = min(array_column($v, "actual_delivery_time"));
+            $time = $minDeliveryTime > $minActualDeliveryTime ? $minActualDeliveryTime : $minDeliveryTime;
             $carbonObj = Carbon::parse(date("Y-m-d H:i:s", $time));
             $carbonObj = $carbonObj->addDays(10);
             $year = $carbonObj->year;
@@ -60,19 +76,46 @@ class ManuscriptFeeService extends BaseService
             }else {
                 $day = $carbonObj->daysInMonth;
             }
-            $data[$k]["settlement_time"] = $year.'-'.$month.'-'.$day;
-            $data[$k]["manuscript_fee"] = $canSettlementData[$v["engineer_id"]]??0;
-            $data[$k]["deduction"] = floatval($v["deduction"]);
-            $data[$k]["settlemented"] = floatval($v["settlemented"]);
-            $data[$k]["remain_fee"] = floatval($v["manuscript_fee"] - $v["settlemented"] - $v["deduction"]);
-            $data[$k]["rate"] = $data[$k]["remain_fee"] == 0 ? 0 : ($data[$k]["manuscript_fee"] / $data[$k]["remain_fee"]) * 100;
+            $recentSettlement = 0;
+            foreach ($v as $key => $val) {
+                $time = ($val["delivery_time"] > $val["actual_delivery_time"]) ? $val["actual_delivery_time"] : $val["delivery_time"];
+                $carbonObj = Carbon::parse(date("Y-m-d H:i:s", $time));
+                $carbonObj = $carbonObj->addDays(10);
+                $_year = $carbonObj->year;
+                $_month = $carbonObj->month;
+                $_day = $carbonObj->day;
+                if ($_day >=1 && $_day <= 10) {
+                    $_day = 10;
+                } elseif ($_day > 10 && $_day <= 20) {
+                    $_day = 20;
+                }else {
+                    $_day = $carbonObj->daysInMonth;
+                }
+                if (strtotime("{$_year}-{$_month}-{$_day}") <= strtotime(date("Y-m-{$settlementDay}", time()))){
+                    $recentSettlement += $val["manuscript_fee"];
+                }
+            }
+            $recentSettlement = $recentSettlement - $settlemented - $deduction;
+            $remainFee = floatval($manuscriptFee - $settlemented - $deduction);
+            $item = [
+                "engineer_id" => $k,
+                "qq_nickname" => $v[0]["qq_nickname"],
+                "contact_qq" => $v[0]["contact_qq"],
+                "collection_code" => $v[0]["collection_code"],
+//                "manuscript_fee" => array_sum(array_column($v, "manuscript_fee")),
+                "manuscript_fee" => $recentSettlement,
+                "remain_fee" => $remainFee,
+                "settlement_time" => $year.'-'.$month.'-'.$day,
+                "rate" => $remainFee == 0 ? 0 : round(($recentSettlement / $remainFee) * 100, 2)
+            ];
+            $retData[] = $item;
         }
         # 按照应结率 / 应结降序排序
-        $sortField = array_column($data, 'rate');
-        array_multisort($sortField, SORT_DESC, $data);
-        $sortField1 = array_column($data, 'manuscript_fee');
-        array_multisort($sortField1, SORT_DESC, $data);
-        return $data;
+        $sortField = array_column($retData, 'rate');
+        array_multisort($sortField, SORT_DESC, $retData);
+        $sortField1 = array_column($retData, 'manuscript_fee');
+        array_multisort($sortField1, SORT_DESC, $retData);
+        return $retData;
     }
 
 
@@ -130,8 +173,8 @@ class ManuscriptFeeService extends BaseService
             $data[$k]["settlement_status"] = $settlementStatus;
         }
         # 按照未结算降序排列
-        $sortField = array_column($data, 'remain_fee');
-        array_multisort($sortField, SORT_DESC, $data);
+        $sortField = array_column($data, 'settlement_time');
+        array_multisort($sortField, SORT_ASC, $data);
         return $data;
     }
 

@@ -87,4 +87,31 @@ class AmountAccountService extends BaseService
             return $exception->getMessage();
         }
     }
+
+
+    /**
+     * 收款账号排序列表
+     * @return array
+     */
+    public function accountSort() {
+        $list = $this->selectBy(["status" => 1], "id, account");
+        $sort = (new AmountAccountMapper())->accountSort();
+        $sort = array_count_values($sort);
+        arsort($sort);
+        $retData = [];
+        foreach ($sort as $k => $v) {
+            foreach ($list as $key => $val) {
+                if ($val["id"] == $k) {
+                    $retData[] = $val;
+                }
+            }
+        }
+
+        foreach ($list as $k => $v) {
+            if (!in_array($v["id"], array_keys($sort))) {
+                $retData[] = $v;
+            }
+        }
+        return $retData;
+    }
 }

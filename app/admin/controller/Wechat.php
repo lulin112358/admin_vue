@@ -25,6 +25,19 @@ class Wechat extends Base
     }
 
     /**
+     * 沉淀微信排序列表
+     * @param WechatService $service
+     */
+    public function wechatSort(WechatService $service) {
+        try {
+            $data = $service->wechatSort();
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
+
+    /**
      * 获取沉淀微信信息
      *
      * @param WechatService $service

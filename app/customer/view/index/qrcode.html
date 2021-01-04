@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>收款码</title>
+  <link rel="stylesheet" href="https://unpkg.com/element-ui@2.14.1/lib/theme-chalk/index.css">
+</head>
+<style>
+    #app{
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: flex-start;
+        background: url("/static/images/zhuceback.jpg");
+        background-size: 100% 100%;
+    }
+    .container{
+        width: 100%;
+        height: auto;
+        margin-top: 20px;
+        background: white;
+    }
+    ._input, .el-select, .el-cascader{
+        width: 95%;
+    }
+    body{
+        margin: 0;
+        padding: 0;
+    }
+
+    .avatar-uploader .el-upload {
+        border: 1px dashed #d9d9d9;
+        border-radius: 6px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    .avatar-uploader .el-upload:hover {
+        border-color: #409EFF;
+    }
+    .avatar-uploader-icon {
+        font-size: 28px;
+        color: #8c939d;
+        width: 178px;
+        height: 178px;
+        line-height: 178px;
+        text-align: center;
+    }
+    .avatar {
+        width: 178px;
+        height: 178px;
+        display: block;
+    }
+    @media only screen and (min-width: 768px){
+        .el-scrollbar.el-cascader-menu{
+            width: 200px;
+        }
+    }
+    @media only screen and (min-width: 1920px){
+        .el-scrollbar.el-cascader-menu{
+            width: auto;
+        }
+    }
+    @media only screen and (min-width: 1200px){
+        .el-scrollbar.el-cascader-menu{
+            width: auto;
+        }
+    }
+    @media only screen and (min-width: 992px){
+        .el-scrollbar.el-cascader-menu{
+            width: auto;
+        }
+    }
+</style>
+<body>
+<div id="app">
+  <el-row :gutter="10">
+    <el-col class="nothing" :xs="1" :sm="1" :md="6" :lg="6" :xl="6"><span style="visibility: hidden;font-size: 12px;">11</span></el-col>
+    <el-col :xs="24" :sm="24" :md="10" :lg="10" :xl="10">
+      <div class="container">
+        <div class="title-img">
+          <img style="width: 100%;" src="/static/images/xiu99top.jpg" alt="">
+        </div>
+        <h1 style="color: rgb(13, 141, 219);text-align: center;">支付宝收款码</h1>
+        <el-form :model="addParam" :rules="rules" ref="ruleForm">
+
+          <el-form-item label="QQ" :label-width="formLabelWidth" prop="contact_qq">
+            <el-input class="_input" v-model="addParam.contact_qq" autocomplete="off" placeholder="请输入QQ"></el-input>
+          </el-form-item>
+
+<!--          <el-form-item label="电话号码" :label-width="formLabelWidth" prop="contact_phone">-->
+<!--            <el-input class="_input" v-model="addParam.contact_phone" autocomplete="off" placeholder="请输入工程师联系电话"></el-input>-->
+<!--          </el-form-item>-->
+
+          <el-form-item label="支付宝收款码" :label-width="formLabelWidth" prop="collection_code">
+            <el-upload
+                class="avatar-uploader"
+                action="http://customer.erp2020.top/customer/upload"
+                :show-file-list="false"
+                :on-success="uploadSuccess"
+                :before-upload="beforeUpload">
+              <img v-if="imageUrl" :src="imageUrl" class="avatar">
+              <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+            </el-upload>
+          </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" @click="submit('ruleForm')" style="width: 95%;margin-left: 2.5%;margin-bottom: 20px;">提交</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </el-col>
+  </el-row>
+</div>
+</body>
+</html>
+<script src="/static/js/jquery.min.js"></script>
+<script src="/static/js/request.js"></script>
+<script src="/static/js/vue.js"></script>
+<script src="https://unpkg.com/element-ui@2.14.1/lib/index.js"></script>
+<script>
+    var app = new Vue({
+        el: "#app",
+        data() {
+            return {
+                imageUrl: "",
+                personnel_id: 0,
+                formLabelWidth: "120px",
+                param: {},
+                addParam: {},
+                rules: {
+                    contact_qq: [
+                        {required: true, message: '请填写QQ', trigger: 'blur'}
+                    ],
+                    // contact_phone: [
+                    //     {required: true, message: '请输入电话', trigger: 'blur'}
+                    // ],
+                },
+            }
+        },
+
+        mounted() {
+            this.resizeHandle()
+            window.onresize = () => {
+                this.resizeHandle()
+            }
+        },
+
+        methods: {
+            // 调整屏幕尺寸自适应
+            resizeHandle() {
+                const height = window.innerHeight
+                const width = document.body.clientWidth
+                const bodyHeight = document.body.offsetHeight
+                const container = $(".container")
+                $('#app').css("height", `${height}px`)
+                if (width < 767) {
+                    $(".nothing").hide()
+                    container.css("marginTop", 0)
+                    container.css("height", '100vh')
+                }else {
+                    $(".nothing").show()
+                    container.css("marginTop", 20)
+                    container.css("height", `auto`)
+                }
+            },
+            uploadSuccess(res, file) {
+                this.imageUrl = "/storage/" + res.data
+                this.addParam.collection_code = this.imageUrl
+            },
+            beforeUpload(file) {
+                const type = file.type
+                if (type.substr(0, 5) !== "image") {
+                    this.$message.error('只能上传图片格式哦!');
+                    return false
+                }
+            },
+            // 提交
+            submit(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        // 提交表单
+                        http.post("customer/engineer/qrcode", this.addParam).then(res => {
+                            if (res.code !== 1) {
+                                this.$message.error(res.msg);
+                            }else {
+                                this.$message({
+                                    message: res.msg,
+                                    type: 'success'
+                                });
+                                setTimeout(function () {
+                                    window.location.reload()
+                                }, 1500)
+                            }
+                        })
+                        return false
+                    }
+                    // 提交错误
+                    this.$message.error('请将信息补充完整');
+                });
+            }
+        }
+    })
+</script>
