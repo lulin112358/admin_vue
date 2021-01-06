@@ -250,7 +250,11 @@ class OrdersService extends BaseService
             $billTimeMinutes = $createTime->diffInMinutes($billTime);
             # 小时差
             $billTimeHours = $createTime->diffInHours($billTime);
-            if ($billTimeMinutes > 60) {
+            # 天数差
+            $billTimeDays = $createTime->diffInDays($billTime);
+            if ($billTimeHours > 24) {
+                $billTimeDiff = $billTimeDays."天".($billTimeHours - $billTimeDays * 24)."时".($billTimeMinutes - $billTimeHours * 60)."分";
+            }else if ($billTimeMinutes > 60) {
                 $billTimeDiff = $billTimeHours."时".($billTimeMinutes - $billTimeHours * 60)."分";
             }else{
                 $billTimeDiff = $billTimeMinutes."分";

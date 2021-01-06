@@ -128,8 +128,10 @@ class OriginBiService
         }
         $sort = array_column($retData, "total_amount");
         array_multisort($sort, SORT_DESC, $retData);
+        $max = $retData[0]["total_amount"]??0;
         foreach ($retData as $k => $v) {
             $retData[$k]["rank"] = $k+1;
+            $retData[$k]["champion_ratio"] = round(($v["total_amount"] / $max) * 100, 2)."%";
         }
         return $retData;
     }
@@ -179,7 +181,7 @@ class OriginBiService
                 "deposit" => isset($v["deposit"])?floatval($v["deposit"]):0,
                 "final_payment" => isset($v["final_payment"])?floatval($v["final_payment"]):0,
                 "refund_amount" => isset($v["refund_amount"])?floatval($v["refund_amount"]):0,
-                "amount_time" => $v["amount_time"],
+                "amount_time" => date("Y-m-d H", $v["amount_time"]),
                 "order_sn" => $v["order_sn"]
             ];
             $retData[] = $item;

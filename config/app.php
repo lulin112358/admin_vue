@@ -23,7 +23,8 @@ return [
     'domain_bind'      => [
         'tperp.io' => 'admin',
         'customer.tperp.io' => 'customer',
-        'automation.tperp.io' => 'automation'
+        'automation.tperp.io' => 'automation',
+        'engineer.tperp.io' => 'engineer'
     ],
     // 禁止URL访问的应用列表（自动多应用模式有效）
     'deny_app_list'    => [],

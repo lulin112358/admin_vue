@@ -178,6 +178,7 @@ class AttendanceService extends BaseService
     public function addData() {
         # 查询所有在职用户
         $userId = (new UserMapper())->columnBy(["status" => 1, "work_nature" => 1], "id");
+        $userId1 = (new UserMapper())->columnBy(["status" => 1, "work_nature" => 0], "id");
         # 添加考勤记录
         $data = [];
         foreach($userId as $k => $v) {
@@ -185,6 +186,15 @@ class AttendanceService extends BaseService
                 "user_id" => $v,
                 "type" => 1,
                 "result" => 1,
+                "create_time" => strtotime(date("Y-m-d 09:00:00", time()))
+            ];
+            $data[] = $item;
+        }
+        foreach($userId1 as $k => $v) {
+            $item = [
+                "user_id" => $v,
+                "type" => 4,
+                "result" => 0,
                 "create_time" => strtotime(date("Y-m-d 09:00:00", time()))
             ];
             $data[] = $item;

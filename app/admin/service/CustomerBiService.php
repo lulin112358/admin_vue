@@ -296,8 +296,10 @@ class CustomerBiService
 
         $sort = array_column($retData, "total_amount");
         array_multisort($sort, SORT_DESC, $retData);
+        $max = $retData[0]["total_amount"]??0;
         foreach ($retData as $k => $v) {
             $retData[$k]["rank"] = $k+1;
+            $retData[$k]["champion_ratio"] = round(($v["total_amount"] / $max) * 100, 2)."%";
         }
         return $retData;
     }

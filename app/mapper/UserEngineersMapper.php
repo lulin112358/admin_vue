@@ -14,7 +14,7 @@ class UserEngineersMapper extends BaseMapper
         return Db::table("user_engineers")->alias("ue")
             ->join(["engineer" => "e"], "e.id=ue.engineer_id")
             ->where($where)
-            ->field("ue.engineer_id, e.qq_nickname, ue.qq, ue.phone, ue.password")
+            ->field("ue.engineer_id, e.qq_nickname, ue.qq, ue.phone, ue.password, e.qq_nickname")
             ->find();
     }
 }
