@@ -65,8 +65,12 @@ class SettlementLogService extends BaseService
      * @param $param
      * @return bool
      */
-    public function settlementAll($param) {
-        $orders = (new OrdersMapper())->selectBy(["id" => $param["order_id"]], "manuscript_fee, settlemented, deduction, id");
+    public function settlementAll($param, $can = false) {
+        if ($can) {
+            $orders = (new OrdersMapper())->selectBy(["engineer_id" => $param["engineer_id"], "is_check" => 1], "manuscript_fee, settlemented, deduction, id");
+        }else {
+            $orders = (new OrdersMapper())->selectBy(["id" => $param["order_id"]], "manuscript_fee, settlemented, deduction, id");
+        }
         $updateData = [];
         $insertData = [];
         $settlementFee = $param["settlement_fee"];

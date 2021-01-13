@@ -4,18 +4,26 @@
 namespace app\admin\service;
 
 
+use Alchemy\Zippy\Zippy;
 use app\mapper\AccountMapper;
 use app\mapper\CategoryMapper;
 use app\mapper\OrdersDepositMapper;
+use app\mapper\OrdersFinalPaymentMapper;
 use app\mapper\OrdersMainMapper;
 use app\mapper\OrdersMapper;
 use app\mapper\OriginMapper;
 use app\mapper\SchoolMapper;
 use app\mapper\UserMapper;
+use app\mapper\UserRoleMapper;
 use Carbon\Carbon;
 use excel\Excel;
 use jwt\Jwt;
+use League\Flysystem\Filesystem;
+use League\Flysystem\ZipArchive\ZipArchiveAdapter;
+use PhpZip\ZipFile;
 use think\facade\Db;
+use ZipStream\Option\Archive;
+use ZipStream\ZipStream;
 
 class OrdersService extends BaseService
 {
@@ -89,12 +97,14 @@ class OrdersService extends BaseService
         if ($export) {
             request()->uid = Jwt::decodeToken($params["token"])["data"]->uid;
         }
+        # 获取用户角色
+        $roles = (new UserRoleMapper())->columnBy(["user_id" => request()->uid], "role_id");
         # 行权限过滤
         $whereRow = [];
         $authRow = [];
         # 发单人权限
         $billerUser = [];
-        if (request()->uid != 1) {
+        if (request()->uid != 1 && !in_array(15, $roles)) {
             $authRow = row_auth();
             $authRowUserCustomer = $authRow["user_customer_id"]??[];
             array_push($authRowUserCustomer, request()->uid);
@@ -104,6 +114,11 @@ class OrdersService extends BaseService
             array_push($authRowUserAlmighty, request()->uid);
             $billerUser = $authRow["user_biller_id"]??[];
             array_push($billerUser, request()->uid);
+            if (!in_array(6, $roles) || count($roles) > 1) {
+                # 获取所有网络发单人id
+                $netBiller = (new UserRoleMapper())->columnBy(["role_id" => 15], "user_id");
+                $billerUser = array_merge($netBiller, $billerUser);
+            }
 //            $authRowUserCommissioner = $authRow["user_commissioner_id"]??[];
 //            array_push($authRowUserCommissioner, request()->uid);
 //            $authRowUserMaintain = $authRow["user_maintain_id"]??[];
@@ -138,7 +153,7 @@ class OrdersService extends BaseService
             if (strstr($params["search_order"], "create_time")) {
                 $where[] = ["create_time", ">=", strtotime($params["date_time"][0])];
                 $where[] = ["create_time", "<=", strtotime($params["date_time"][1])];
-            }else{
+            }else if (strstr($params["search_order"], "delivery_time")){
                 $where[] = ["delivery_time", ">=", strtotime($params["date_time"][0])];
                 $where[] = ["delivery_time", "<=", strtotime($params["date_time"][1])];
             }
@@ -168,21 +183,27 @@ class OrdersService extends BaseService
                         ->whereOr("final_payment_amount_account_id", null);
                     }
                 })
-                # 发单人权限验证
-                ->where(function ($query) use ($billerUser) {
-                    if (request()->uid != 1) {
+                # 发单人权限验证/网络发单人写死的
+                ->where(function ($query) use ($billerUser, $roles) {
+                    if (request()->uid != 1 && !in_array(15, $roles)) {
                         $query->where(["biller_id" => $billerUser]);
+                    }
+                    # 网络发单人
+                    if (in_array(15, $roles)) {
+                        $query->where(["biller_id" => [request()->uid, 0]]);
                     }
                 })
                 # 模糊匹配查询条件
                 ->where("manuscript_fee|biller|cate_name|check_fee|commission_ratio|customer_manager|customer_name|market_maintain|market_manager|market_user|order_sn|total_amount|customer_contact|deposit|final_payment|require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|note", "like", "%$searchKey%")
                 ->where($where)
+                ->fieldRaw("*, if((ifnull(deposit,0) + ifnull(final_payment,0))=0,0,(manuscript_fee / (ifnull(deposit,0) + ifnull(final_payment,0)))) as manuscript_fee_ratio")
                 ->orderRaw("if(status=3, 1, 0), if(status=5, 1, 0)")
                 ->order($params["search_order"])
                 ->order("order_id asc")
                 ->paginate(100, true)->items();
         }else {         # 导出excel不需要分页
-            $data = Db::table("orders_view")
+            $data = Db::table("orders_view")->alias("ov")
+                ->join(['settlement_log' => "sl"], "sl.order_id=ov.order_id", "left")
                 # 收款账号查询条件
                 ->where(function ($query)use ($amountAccountId) {
                     if (!empty($amountAccountId)) {
@@ -204,18 +225,23 @@ class OrdersService extends BaseService
                             ->whereOr("final_payment_amount_account_id", null);
                     }
                 })
-                # 发单人权限验证
-                ->where(function ($query) use ($billerUser) {
-                    if (request()->uid != 1) {
+                # 发单人权限验证/网络发单人写死的
+                ->where(function ($query) use ($billerUser, $roles) {
+                    if (request()->uid != 1 && !in_array(15, $roles)) {
                         $query->where(["biller_id" => $billerUser]);
+                    }
+                    # 网络发单人
+                    if (in_array(15, $roles)) {
+                        $query->where(["biller_id" => [request()->uid, 0]]);
                     }
                 })
                 # 模糊匹配查询条件
-                ->where("manuscript_fee|biller|cate_name|check_fee|commission_ratio|customer_manager|customer_name|market_maintain|market_manager|market_user|order_sn|total_amount|customer_contact|deposit|final_payment|require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|note", "like", "%$searchKey%")
+                ->where("ov.manuscript_fee|ov.biller|cate_name|ov.check_fee|commission_ratio|customer_manager|customer_name|market_maintain|market_manager|market_user|ov.order_sn|total_amount|customer_contact|deposit|final_payment|ov.require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|ov.note", "like", "%$searchKey%")
                 ->where($where)
-                ->orderRaw("if(status=3, 1, 0), if(status=5, 1, 0)")
+                ->fieldRaw("sl.create_time as settlement_time, ov.*, if((ifnull(deposit,0) + ifnull(final_payment,0))=0,0,(ov.manuscript_fee / (ifnull(deposit,0) + ifnull(final_payment,0)))) as manuscript_fee_ratio")
+                ->orderRaw("if(ov.status=3, 1, 0), if(ov.status=5, 1, 0)")
                 ->order($params["search_order"])
-                ->order("order_id asc")->select()->toArray();
+                ->order("order_id asc")->group("ov.order_id")->select()->toArray();
         }
 
         foreach ($data as $k => $v) {
@@ -224,7 +250,8 @@ class OrdersService extends BaseService
             $data[$k]["commission_ratio"] = $v["commission_ratio"]<=1?($v["commission_ratio"] * 100)."%":$v["commission_ratio"]."元";
             $data[$k]["biller"] = is_null($v["biller"])?"暂未填写":$v["biller"];
             $data[$k]["status"] = $this->status[$v["status"]];
-            $data[$k]["manuscript_fee_ratio"] = ($v["deposit"] + $v["final_payment"])==0?"0%":floatval(round(($v["manuscript_fee"] / ($v["deposit"] + $v["final_payment"])) * 100, 2))."%";
+//            $data[$k]["manuscript_fee_ratio"] = ($v["deposit"] + $v["final_payment"])==0?0:floatval(round(($v["manuscript_fee"] / ($v["deposit"] + $v["final_payment"])) * 100, 2));
+            $data[$k]["manuscript_fee_ratio"] = floatval(round($v["manuscript_fee_ratio"] * 100, 2))."%";
             $data[$k]["build_time"] = Carbon::parse($data[$k]["create_time"])->diffForHumans(Carbon::now());
             # 保留有效位数
             $data[$k]["total_amount"] = floatval($v["total_amount"]);
@@ -317,50 +344,52 @@ class OrdersService extends BaseService
     public function order($param) {
         // 设置中文
         Carbon::setLocale("zh");
-
+        # 获取用户角色
+//        $roles = (new UserRoleMapper())->columnBy(["user_id" => request()->uid], "role_id");
         # 行权限过滤
-        $whereRow = [];
-        $authRow = [];
-        # 发单人权限
-//        $billerUser = [];
-        if (request()->uid != 1) {
-            $authRow = row_auth();
-            $authRowUserCustomer = $authRow["user_customer_id"]??[];
-            array_push($authRowUserCustomer, request()->uid);
-//            $authRowUserBiller = $authRow["user_biller_id"]??[];
-//            array_push($authRowUserBiller, request()->uid);
-            $authRowUserAlmighty = $authRow["user_almighty_id"]??[];
-            array_push($authRowUserAlmighty, request()->uid);
-//            $billerUser = $authRow["user_biller_id"]??[];
-//            array_push($billerUser, request()->uid);
-//            $authRowUserCommissioner = $authRow["user_commissioner_id"]??[];
-//            array_push($authRowUserCommissioner, request()->uid);
-//            $authRowUserMaintain = $authRow["user_maintain_id"]??[];
-//            array_push($authRowUserMaintain, request()->uid);
-//            $authRowUserManager = $authRow["user_manager_id"]??[];
-//            array_push($authRowUserManager, request()->uid);
-            $whereRow[] = ["account_id", "in", ($authRow["account_id"]??[])];
-            $whereRow[] = ["origin_id", "in", ($authRow["origin_id"]??[])];
-            $whereRow[] = ["wechat_id", "in", ($authRow["wechat_id"]??[])];
-            $whereRow[] = ["customer_id", "in", $authRowUserCustomer];
-            $whereRow[] = ["customer_manager_id", "in", $authRowUserAlmighty];
-//            $whereRow[] = ["market_user_id", "in", $authRowUserCommissioner];
-//            $whereRow[] = ["market_maintain_id", "in", $authRowUserMaintain];
-//            $whereRow[] = ["market_manager_id", "in", $authRowUserManager];
-            $whereRow[] = ["deposit_amount_account_id", "in", ($authRow["amount_account_id"]??[])];
-        }
+//        $whereRow = [];
+//        $authRow = [];
+//        # 发单人权限
+////        $billerUser = [];
+//        if (request()->uid != 1 && !in_array(15, $roles)) {
+//            $authRow = row_auth();
+//            $authRowUserCustomer = $authRow["user_customer_id"]??[];
+//            array_push($authRowUserCustomer, request()->uid);
+////            $authRowUserBiller = $authRow["user_biller_id"]??[];
+////            array_push($authRowUserBiller, request()->uid);
+//            $authRowUserAlmighty = $authRow["user_almighty_id"]??[];
+//            array_push($authRowUserAlmighty, request()->uid);
+////            $billerUser = $authRow["user_biller_id"]??[];
+////            array_push($billerUser, request()->uid);
+////            $authRowUserCommissioner = $authRow["user_commissioner_id"]??[];
+////            array_push($authRowUserCommissioner, request()->uid);
+////            $authRowUserMaintain = $authRow["user_maintain_id"]??[];
+////            array_push($authRowUserMaintain, request()->uid);
+////            $authRowUserManager = $authRow["user_manager_id"]??[];
+////            array_push($authRowUserManager, request()->uid);
+//            $whereRow[] = ["account_id", "in", ($authRow["account_id"]??[])];
+//            $whereRow[] = ["origin_id", "in", ($authRow["origin_id"]??[])];
+//            $whereRow[] = ["wechat_id", "in", ($authRow["wechat_id"]??[])];
+//            $whereRow[] = ["customer_id", "in", $authRowUserCustomer];
+//            $whereRow[] = ["customer_manager_id", "in", $authRowUserAlmighty];
+////            $whereRow[] = ["market_user_id", "in", $authRowUserCommissioner];
+////            $whereRow[] = ["market_maintain_id", "in", $authRowUserMaintain];
+////            $whereRow[] = ["market_manager_id", "in", $authRowUserManager];
+//            $whereRow[] = ["deposit_amount_account_id", "in", ($authRow["amount_account_id"]??[])];
+//        }
 
         $data = Db::table("orders_view")
             # 查询目前可用的记录
             ->where(["order_id" => $param["order_id"]])
             # 行权限控制
-            ->where($whereRow)
-            ->where(function ($query) use ($authRow) {
-                if (request()->uid != 1) {
-                    $query->where(["final_payment_amount_account_id" => ($authRow["amount_account_id"]??[])])
-                        ->whereOr("final_payment_amount_account_id", null);
-                }
-            })->find();
+//            ->where($whereRow)
+//            ->where(function ($query) use ($authRow) {
+//                if (request()->uid != 1) {
+//                    $query->where(["final_payment_amount_account_id" => ($authRow["amount_account_id"]??[])])
+//                        ->whereOr("final_payment_amount_account_id", null);
+//                }
+//            })
+            ->find();
 
         $status = $data["status"];
         $delivery_time = $data["delivery_time"];
@@ -436,6 +465,7 @@ class OrdersService extends BaseService
                 ["create_time", ">=", strtotime(date("Y-m-d"))],
                 ["create_time", "<=", time()]
             ]) + 1;
+            $orderSn = $codename.substr(date("ymd"), 1).str_pad($count, 2, "0", STR_PAD_LEFT);
             # 主订单添加信息
             $orderMainData = [
                 "customer_id" => request()->uid,
@@ -448,7 +478,7 @@ class OrdersService extends BaseService
                 "wechat_id" => $data["wechat_id"],
                 "school_id" => $data["school_id"]??0,
                 "degree_id" => $data["degree_id"]??0,
-                "file" => $data["file"]??"",
+                "file" => implode(",", $data["file_path"]??[]),
                 "create_time" => time(),
                 "update_time" => time()
             ];
@@ -458,7 +488,7 @@ class OrdersService extends BaseService
             # 分订单信息添加
             $orderData = [
                 "main_order_id" => $mainRes->id,
-                "order_sn" => $codename.substr(date("ymd"), 1).str_pad($count, 2, "0", STR_PAD_LEFT),
+                "order_sn" => $orderSn,
                 "require" => $data["require"]??'',
                 "note" => $data["note"]??"",
                 "delivery_time" => strtotime($data["delivery_time"].":00:00"),
@@ -559,8 +589,14 @@ class OrdersService extends BaseService
                 $engineer_id = $this->findBy(["id" => $data["order_id"]], "engineer_id")["engineer_id"];
                 if ($engineer_id == 0)
                     return "该订单暂未发单 不允许交稿";
+                $totalAmount = (new OrdersMainMapper())->findBy(["id" => $data["main_order_id"]], "total_amount")["total_amount"];
+                $deposit = (new OrdersDepositMapper())->findBy(["main_order_id" => $data["main_order_id"], "status" => 1], "deposit")["deposit"];
+                $finalPayment = (new OrdersFinalPaymentMapper())->findBy(["main_order_id" => $data["main_order_id"], "status" => 1], "final_payment")["final_payment"];
+                if ($totalAmount != ($deposit + $finalPayment))
+                    return "尾款没有收齐 不允许交稿";
                 $updateData["actual_delivery_time"] = time();
             }
+
             return (new OrdersMapper())->updateBy($updateData);
         }
     }
@@ -721,6 +757,45 @@ class OrdersService extends BaseService
         }
     }
 
+    /**
+     * 上传文档
+     * @param $param
+     * @return mixed
+     */
+    public function bindDoc($param) {
+        return (new OrdersMainMapper())->updateWhere(["id" => $param["main_order_id"]], ["file" => implode(",", $param["file_path"])]);
+    }
+
+    /**
+     * 下载
+     * @param $param
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function downDoc($param) {
+        $zip = new ZipFile();
+
+        $files = (new OrdersMainMapper())->downDoc(["om.id" => $param["main_order_id"]]);
+        $downFileName = implode(",", array_column($files, "order_sn")).".zip";
+        if (file_exists(root_path()."public/storage/doczips/".$downFileName)) {
+            unlink(root_path()."public/storage/doczips/".$downFileName);
+        }
+        foreach ($files as $k => $v) {
+            if (!empty($v["file"])) {
+                foreach (explode(",", $v["file"]) as $key => $val) {
+                    $filename = empty($v["require"])?basename($val):$v["require"].".".explode(".", basename($val))[1];
+                    $zip->addFile(root_path()."public/storage/".$val, $v["order_sn"]."/".$filename);
+                }
+            }
+        }
+        if (empty($zip->getListFiles())) {
+            throw new \Exception("暂无文档下载");
+        }
+        $zip->saveAsFile(root_path()."public/storage/doczips/".$downFileName)->close();
+        download_file(root_path()."public/storage/doczips/".$downFileName, $downFileName);
+    }
+
 
     /**
      * 导出订单数据
@@ -735,33 +810,52 @@ class OrdersService extends BaseService
      */
     public function export($data) {
         $_data = $this->orders($data, true);
+        foreach ($_data as $k => $v) {
+            $_data[$k]["remain_fee"] = floatval($v["manuscript_fee"] - $v["settlemented"] - $v["deduction"]);
+            if ($v["settlemented"] == 0) {
+                $settlementStatus = "未结算";
+            }
+            if ($_data[$k]["remain_fee"] == 0) {
+                $settlementStatus = "已结算";
+            }
+            if ($v["settlemented"] != 0 && $_data[$k]["remain_fee"] != 0) {
+                $settlementStatus = "部分结算";
+            }
+            if ($v["manuscript_fee"] == 0) {
+                $settlementStatus = '稿费为0默认已结算';
+            }
+            $_data[$k]["settlement_status"] = $settlementStatus;
+            $_data[$k]["settlement_time"] = is_null($v["settlement_time"])?'未结算':date("Y-m-d H:i:s", $v["settlement_time"]);
+        }
         $header = [
-            ["接单客服", "customer_name"],
-            ["订单编号", "order_sn"],
-            ["总价", "total_amount"],
-            ["客户联系方式", "customer_contact"],
-            ["业务分支", "cate_name"],
             ["创建时间", "create_time"],
-            ["倒计时", "countdown"],
-            ["检测费", "check_fee"],
-            ["稿费", "manuscript_fee"],
+            ["来源", "origin_name"],
+            ["接单客服", "customer_name"],
+            ["总价", "total_amount"],
             ["定金", "deposit"],
             ["尾款", "final_payment"],
+            ["工程师QQ", "contact_qq"],
+            ["交稿时间", "delivery_time"],
+            ["稿费", "manuscript_fee"],
+            ["检测费", "check_fee"],
+            ["接单账号", "account"],
+            ["接单昵称", "nickname"],
+            ["发单人", "biller"],
+            ["全能客服", "customer_manager"],
+            ["订单编号", "order_sn"],
+            ["结算状态", "settlement_status"],
+            ["结算时间", "settlement_time"],
+            ["客户联系方式", "customer_contact"],
+            ["业务分支", "cate_name"],
+            ["倒计时", "countdown"],
             ["备注", "note"],
             ["要求", "require"],
             ["状态", "status"],
-            ["客服主管", "customer_manager"],
-            ["发单人", "biller"],
             ["沉淀微信", "wechat"],
-            ["来源", "origin_name"],
-            ["接单账号", "account"],
-            ["接单昵称", "nickname"],
             ["提成比例", "commission_ratio"],
             ["市场专员", "market_user"],
             ["市场管理", "market_manager"],
             ["市场维护", "market_maintain"],
-            ["交稿时间", "delivery_time"],
-            ["工程师QQ", "contact_qq"],
             ["工程师", "qq_nickname"],
         ];
         return Excel::exportData($_data, $header, "订单数据");

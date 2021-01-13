@@ -27,6 +27,7 @@ use app\admin\controller\School;
 use app\admin\controller\Secrets;
 use app\admin\controller\SettlementLog;
 use app\admin\controller\Software;
+use app\admin\controller\StationLetter;
 use app\admin\controller\Tendency;
 use app\admin\controller\Typesetting;
 use app\admin\controller\Upload;
@@ -191,6 +192,7 @@ Route::group('admin', function () {
     Route::delete("orders", Orders::class."@delOrder");
     Route::delete("orders/engineer", Orders::class."@delEngineer");
     Route::post("orders/split", Orders::class."@splitOrder");
+    Route::put("orders/bind_doc", Orders::class."@bindDoc");
 
     # 定金
     Route::get("deposit", OrdersDeposit::class."@deposit");
@@ -230,8 +232,11 @@ Route::group('admin', function () {
 
     # 稿费计算
     Route::get("manuscript_fee", ManuscriptFee::class."@manuscriptFees");
+    Route::get("manuscript_fee/can_settlement", ManuscriptFee::class."@canSettlement");
     Route::get("manuscript_fee/detail", ManuscriptFee::class."@engineerDetail");
+    Route::get("manuscript_fee/can_settlement_detail", ManuscriptFee::class."@canSettlementDetail");
     Route::post("settlement_all", ManuscriptFee::class."@settlementAll");
+    Route::post("direct_settlement", ManuscriptFee::class."@directSettlement");
     Route::get("settlement/log", SettlementLog::class."@settlementLogs");
 
     # 退款
@@ -277,6 +282,13 @@ Route::group('admin', function () {
     Route::post("typesetting", Typesetting::class."@uploadPaper");
     Route::get("typesetting/list", Typesetting::class."@recordList");
     Route::delete("typesetting", Typesetting::class."@delRecord");
+
+    # 站内信
+    Route::get("wait_deal", StationLetter::class."@waitDeal");
+    Route::get("already_read", StationLetter::class."@alreadyRead");
+    Route::get("already_deal", StationLetter::class."@alreadyDeal");
+    Route::get("station_letters", StationLetter::class."@stationLetters");
+    Route::put("deal_err", StationLetter::class."@dealErr");
 })->allowCrossDomain()->middleware([JwtMiddleware::class, IpFilter::class]);
 
 # 后台路由组   不需要jwt登录验证
@@ -286,7 +298,9 @@ Route::group('admin', function () {
     Route::post("orders/export", Orders::class."@export");
     Route::post("engineer/export", Engineer::class."@export");
     Route::post("manuscript_fee/export", ManuscriptFee::class."@export");
+    Route::post("can_settlement/export", ManuscriptFee::class."@canSettlementExport");
     Route::post("manuscript_fee/export_detail", ManuscriptFee::class."@exportDetail");
+    Route::post("can_settlement/export_detail", ManuscriptFee::class."@canSettlementDetailExport");
     Route::post("settlement_log/export", SettlementLog::class."@export");
     Route::post("refund/export", Refund::class."@exportRefund");
     Route::post("refund_log/export", Refund::class."@exportRefundLog");
@@ -298,6 +312,8 @@ Route::group('admin', function () {
     Route::post("attendances/export", Attendance::class."@export");
     # 文件上传
     Route::post("upload", Upload::class."@upload");
+    # 文档下载
+    Route::get("orders/down_doc", Orders::class."@downDoc");
 })->allowCrossDomain()->middleware([IpFilter::class]);
 
 # 定时任务

@@ -46,9 +46,13 @@ class Base
      */
     private $tableMap = [
         "/admin/wechat" => "wechat_id",
+        "/admin/wechat_sort" => "wechat_id",
         "/admin/origin/list" => "origin_id",
+        "/admin/origin/sort_list" => "origin_id",
         "/admin/account" => "account_id",
+        "/admin/account_sort" => "account_id",
         "/admin/amount_account" => "amount_account_id",
+        "/admin/amount_account_sort" => "amount_account_id",
         "/admin/engineer" => "engineer_id",
 //        "/admin/user" => "user_id",
         "/admin/user/user_manager" => "user_user_manager_id",

@@ -25,7 +25,10 @@ class OrdersValidate extends Validate
         "value|变动值" => "require",
         "main_order_id" => "require",
         "order_id" => "require",
-        "settlement_fee" => "require"
+        "settlement_fee" => "require",
+        "id" => "require",
+        "engineer_id|工程师" => "require",
+        "file_path|文档" => "require"
     ];
 
     protected $scene = [
@@ -35,6 +38,10 @@ class OrdersValidate extends Validate
         "del" => ["order_id"],
         "split" => ["main_order_id"],
         "settlement" => ["order_id", "settlement_fee"],
-        "one" => ["order_id"]
+        "one" => ["order_id"],
+        "confirmManuscript" => ["id"],
+        "directSettlement" => ["settlement_fee", "engineer_id"],
+        "bindDoc" => ["main_order_id", "file_path"],
+        "downDoc" => ["main_order_id"]
     ];
 }

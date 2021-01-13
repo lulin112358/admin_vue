@@ -194,6 +194,42 @@ class Orders extends Base
         $this->ajaxReturn("操作成功");
     }
 
+    /**
+     * 上传文档
+     * @param OrdersService $service
+     * @param OrdersValidate $validate
+     */
+    public function bindDoc(OrdersService $service, OrdersValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("bindDoc")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $res = $service->bindDoc($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        if ($res === false)
+            $this->ajaxReturn(Code::ERROR, "上传失败");
+        $this->ajaxReturn("上传成功");
+    }
+
+    /**
+     * 下载文档
+     * @param OrdersService $service
+     * @param OrdersValidate $validate
+     */
+    public function downDoc(OrdersService $service, OrdersValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("downDoc")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $service->downDoc($param);
+        }catch (\Exception $exception) {
+            exit($exception->getMessage());
+//            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+    }
+
 
     /**
      * 导出订单数据

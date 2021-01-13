@@ -46,6 +46,19 @@ class Login extends Base
     }
 
 //    public function test() {
+//        $data = Db::table("engineer")->column("id");
+//        $data1 = Db::table("user_engineers")->column("engineer_id");
+//        $data2 = array_diff($data, $data1);
+//        $data3 = Db::table("engineer")->where(["id" => $data2])->field("contact_qq as qq, contact_phone as phone, id as engineer_id")->select()->toArray();
+//        foreach ($data3 as $k => $v) {
+//            $data3[$k]["password"] = password_hash("123456", PASSWORD_DEFAULT);
+//            $data3[$k]["create_time"] = time();
+//            $data3[$k]["update_time"] = time();
+//        }
+//        Db::table("user_engineers")->insertAll($data3);
+//    }
+
+//    public function test() {
 //        $map = [
 //            1 => 2,
 //            2 => 10,

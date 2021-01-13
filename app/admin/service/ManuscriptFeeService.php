@@ -29,7 +29,7 @@ class ManuscriptFeeService extends BaseService
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function manuscriptFees($param) {
+    public function manuscriptFees($param, $can = false) {
         // 设置中文
         Carbon::setLocale("zh");
         $where = [];
@@ -40,7 +40,11 @@ class ManuscriptFeeService extends BaseService
             $where[] = ["o.delivery_time", ">=", strtotime($param["delivery_time"][0])];
             $where[] = ["o.delivery_time", "<=", strtotime($param["delivery_time"][1])];
         }
-        $data = (new OrdersMapper())->manuscripts($where);
+        if ($can){
+            $data = (new OrdersMapper())->canSettlement($where);
+        }else {
+            $data = (new OrdersMapper())->manuscripts($where);
+        }
         $tmp = [];
         foreach ($data as $k => $v) {
             $tmp[$v["engineer_id"]][] = $v;
@@ -118,19 +122,22 @@ class ManuscriptFeeService extends BaseService
         return $retData;
     }
 
-
     /**
      * 获取工程师稿费结算详情信息
      *
      * @param $param
      * @return mixed
      */
-    public function engineerDetail($param)
+    public function engineerDetail($param, $can = false)
     {
         $where = [];
         if (isset($param["order_sn"]) && !empty($param["order_sn"]))
             $where[] = ["o.order_sn", "like", "%{$param['order_sn']}%"];
-        $data = (new OrdersMapper())->engineerDetail($param["engineer_id"], $where);
+        if ($can) {
+            $data = (new OrdersMapper())->canSettlementDetail($param["engineer_id"], $where);
+        }else{
+            $data = (new OrdersMapper())->engineerDetail($param["engineer_id"], $where);
+        }
         foreach ($data as $k => $v) {
             $data[$k]["remain_fee"] = floatval($v["manuscript_fee"] - $v["settlemented"] - $v["deduction"]);
             $data[$k]["status_text"] = $this->status[$v["status"]];
@@ -204,6 +211,30 @@ class ManuscriptFeeService extends BaseService
     }
 
     /**
+     * 导出
+     * @param $param
+     * @return bool
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function canSettlementExport($param) {
+        $_data = $this->manuscriptFees($param, true);
+        foreach ($_data as $k => $v)
+            $_data[$k]["rate"] = $v["rate"]."%";
+        $header = [
+            ["编辑", "qq_nickname"],
+            ["应结", "manuscript_fee"],
+            ["未发总计", "remain_fee"],
+            ["应结率", "rate"],
+            ["应结时间", "settlement_time"]
+        ];
+        return Excel::exportData($_data, $header, "编辑稿费数据");
+    }
+
+    /**
      * 导出详情
      *
      * @param $param
@@ -213,6 +244,36 @@ class ManuscriptFeeService extends BaseService
      */
     public function exportDetail($param) {
         $_data = $this->engineerDetail($param);
+        $header = [
+            ["订单编号", "order_sn"],
+            ["业务分类", "cate_name"],
+            ["稿费预计发放时间", "settlement_time"],
+            ["稿费", "manuscript_fee"],
+            ["已结算", "settlemented"],
+            ["未结算", "remain_fee"],
+            ["扣款", "deduction"],
+            ["预计交稿时间", "delivery_time"],
+            ["实际交稿时间", "actual_delivery_time"],
+            ["结算状态", "settlement_status"],
+            ["订单状态", "status_text"],
+        ];
+        foreach ($_data as $k => $v) {
+            if ($v["actual_delivery_time"] == 0) {
+                $_data[$k]["actual_delivery_time"] = "暂未交稿";
+            }
+        }
+        return Excel::exportData($_data, $header, "编辑稿费数据");
+    }
+
+    /**
+     * 导出详情
+     * @param $param
+     * @return bool
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     */
+    public function canSettlementDetailExport($param) {
+        $_data = $this->engineerDetail($param, true);
         $header = [
             ["订单编号", "order_sn"],
             ["业务分类", "cate_name"],

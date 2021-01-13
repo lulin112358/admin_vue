@@ -133,7 +133,7 @@ class OrdersMainMapper extends BaseMapper
         return Db::table("orders_main")->alias("om")
             ->join(["user" => "u"], "u.id=om.customer_id", "right")
             ->where($where)
-            ->field("om.customer_id, u.name, om.category_id, om.create_time")
+            ->field("om.customer_id, u.name, om.category_id, om.create_time, u.department")
             ->select()->toArray();
     }
 
@@ -150,7 +150,7 @@ class OrdersMainMapper extends BaseMapper
             ->join(["orders_main" => "om"], "om.id=od.main_order_id")
             ->join(["user" => "u"], "u.id=om.customer_id")
             ->where($where)
-            ->field("od.change_deposit as deposit, u.name, om. customer_id")
+            ->field("od.change_deposit as deposit, u.name, om. customer_id, u.department")
             ->select()->toArray();
     }
     public function customerOrderFinal($where) {
@@ -158,7 +158,7 @@ class OrdersMainMapper extends BaseMapper
             ->join(["orders_main" => "om"], "om.id=od.main_order_id")
             ->join(["user" => "u"], "u.id=om.customer_id")
             ->where($where)
-            ->field("od.change_amount as final_payment, u.name, om. customer_id")
+            ->field("od.change_amount as final_payment, u.name, om. customer_id, u.department")
             ->select()->toArray();
     }
     public function customerRefund($where) {
@@ -166,7 +166,7 @@ class OrdersMainMapper extends BaseMapper
             ->join(["orders_main" => "om"], "om.id=od.order_main_id")
             ->join(["user" => "u"], "u.id=om.customer_id")
             ->where($where)
-            ->field("od.refund_amount, u.name, om. customer_id")
+            ->field("od.refund_amount, u.name, om. customer_id, u.department")
             ->select()->toArray();
     }
 
@@ -437,6 +437,23 @@ class OrdersMainMapper extends BaseMapper
             ->order("od.create_time asc")
             ->group("om.id")
             ->limit(50)
+            ->select()->toArray();
+    }
+
+    /**
+     * 文档下载
+     * @param $where
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function downDoc($where) {
+        return Db::table("orders_main")->alias("om")
+            ->join(["orders" => "o"], "om.id=o.main_order_id")
+            ->where($where)
+            ->where(["is_split" => 0])
+            ->field("om.file, o.order_sn, o.require")
             ->select()->toArray();
     }
 }

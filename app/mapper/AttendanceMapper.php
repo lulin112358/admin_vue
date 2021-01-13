@@ -23,6 +23,7 @@ class AttendanceMapper extends BaseMapper
         return Db::table("attendance")->alias("a")
             ->join(["user" => "u"], "a.user_id=u.id", "right")
             ->where($where)
+            ->where(["u.work_nature" => 1])
             ->field("u.name, u.department, a.result, a.type, a.late_time, a.reward, a.note, a.create_time, u.id as user_id")
             ->select()->toArray();
     }

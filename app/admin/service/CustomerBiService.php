@@ -5,6 +5,7 @@ namespace app\admin\service;
 
 
 use app\mapper\AccountMapper;
+use app\mapper\AttendanceMapper;
 use app\mapper\OrdersMainMapper;
 use app\mapper\UserMapper;
 use Carbon\Carbon;
@@ -198,13 +199,21 @@ class CustomerBiService
                 ["om.create_time", ">=", strtotime($param["range_time"][0])],
                 ["om.create_time", "<=", strtotime($param["range_time"][1])]
             ];
-            $days = Carbon::parse($param["range_time"][0])->diffInDays(Carbon::parse($param["range_time"][1]));
+            $attendanceMap = [
+                ["a.create_time", ">=", strtotime($param["range_time"][0])],
+                ["a.create_time", "<=", strtotime($param["range_time"][1])]
+            ];
+//            $days = Carbon::parse($param["range_time"][0])->diffInDays(Carbon::parse($param["range_time"][1]));
         }else {
             $where = [
                 ["om.create_time", ">=", strtotime(date("Y-m-d", time()))],
                 ["om.create_time", "<=", time()],
             ];
-            $days = (new Carbon())->diffInDays(Carbon::parse(date("Y-m-d", time())));
+            $attendanceMap = [
+                ["a.create_time", ">=", strtotime(date("Y-m-d", time()))],
+                ["a.create_time", "<=", time()],
+            ];
+//            $days = (new Carbon())->diffInDays(Carbon::parse(date("Y-m-d", time())));
         }
         # 查找客服业绩数量
         $customerData = (new OrdersMainMapper())->customerOrderData($where);
@@ -224,20 +233,20 @@ class CustomerBiService
         $_refund = $mapper->customerRefund($map);
         $refundData = processAmount($_refund, "refund_amount");
 
-        # 客服入职日期
-        $userData = (new UserMapper())->userData();
-        foreach ($userData as $k => $v) {
-            if (!isset($v["extend"]["entry_time"])) {
-                $userData[$k]["entry_time"] = $userData[$k]["create_time"];
-            }else {
-                if ($v["extend"]["entry_time"]==0) {
-                    $userData[$k]["entry_time"] = $userData[$k]["create_time"];
-                }else {
-                    $userData[$k]["entry_time"] = date("Y-m-d H:i:s", $v["extend"]["entry_time"]);
-                }
-            }
+        # 客服在所选时间内的上工天数
+        $data = (new AttendanceMapper())->attendances($attendanceMap);
+        $tmp = [];
+        foreach ($data as $k => $v)
+            $tmp[$v["name"]][] = $v;
+
+        $entryTime = [];
+        foreach ($tmp as $k => $v) {
+            $dataCollect = collect($v);
+            # 出勤考勤
+            $attendanceCount = $dataCollect->whereIn("type", [1, 2, 3, 6])->count();
+            $attendanceCount = floatval($dataCollect->where("type", "=", 7)->count() / 2 + $attendanceCount);
+            $entryTime[$v[0]["user_id"]] = $attendanceCount;
         }
-        $entryTime = array_combine(array_column($userData, "id"), array_column($userData, "entry_time"));
 
         # 总入账
         $totalAmountAll = array_sum(array_values($depositData)) + array_sum(array_values($finalPaymentData));
@@ -248,10 +257,11 @@ class CustomerBiService
 
         $retData = [];
         foreach ($tmp as $k => $v) {
-            $cusTotalAmount = ($depositData[$k]??0) + ($finalPaymentData[$k]??0);
+            $cusTotalAmount = floatval(round(($depositData[$k]??0) + ($finalPaymentData[$k]??0), 2));
             $item = [
                 "name" => $k,
-                "deal_rate" => (round($cusTotalAmount / $totalAmountAll, 2) * 100) . "%",
+                "department" => $v[0]["department"],
+                "deal_rate" => $totalAmountAll==0?:(round($cusTotalAmount / $totalAmountAll, 2) * 100) . "%",
                 "total_amount" => $cusTotalAmount,
                 "total_count" => count($v),
                 "write_count" => collect($v)->where("category_id", "in", [9])->count(),
@@ -261,22 +271,25 @@ class CustomerBiService
                 "final_payment" => $finalPaymentData[$k]??0,
                 "refund_amount" => $refundData[$k]??0,
                 "customer_id" => $v[0]["customer_id"],
-                "day_count" => round(count($v) / $days, 1),
-                "day_amount" => floatval(round($cusTotalAmount / $days, 2)),
-                "entry_days" => (new Carbon())->diffInDays(Carbon::parse($entryTime[$v[0]["customer_id"]]))
+                "day_count" => $entryTime[$v[0]["customer_id"]]==0?:round(count($v) / $entryTime[$v[0]["customer_id"]], 1),
+                "day_amount" => $entryTime[$v[0]["customer_id"]]==0?:floatval(round($cusTotalAmount / $entryTime[$v[0]["customer_id"]], 2)),
+                "entry_days" => $entryTime[$v[0]["customer_id"]]??0
             ];
             $retData[] = $item;
         }
 
+        $deposit = array_combine(array_column($_depositData, "name"), array_column($_depositData, "customer_id"));
         $final = array_combine(array_column($_finalPayment, "name"), array_column($_finalPayment, "customer_id"));
         $refund = array_combine(array_column($_refund, "name"), array_column($_refund, "customer_id"));
-        $tail = array_merge($final, $refund);
+        $tail = array_merge($final, $refund, $deposit);
+        $department = array_merge(array_combine(array_column($_depositData, "name"), array_column($_depositData, "customer_id")), array_combine(array_column($_finalPayment, "name"), array_column($_finalPayment, "department")), array_combine(array_column($_refund, "name"), array_column($_refund, "department")));
         foreach ($tail as $k => $v) {
             if (!in_array($k, array_keys($tmp))) {
-                $cusTotalAmount = ($depositData[$k]??0) + ($finalPaymentData[$k]??0);
+                $cusTotalAmount = floatval(round(($depositData[$k]??0) + ($finalPaymentData[$k]??0), 2));
                 $item = [
                     "name" => $k,
-                    "deal_rate" => (round($cusTotalAmount / $totalAmountAll, 2) * 100) . "%",
+                    "department" => $department[$k],
+                    "deal_rate" => $totalAmountAll==0?:(round($cusTotalAmount / $totalAmountAll, 2) * 100) . "%",
                     "total_amount" => $cusTotalAmount,
                     "total_count" => 0,
                     "write_count" => 0,
@@ -287,8 +300,8 @@ class CustomerBiService
                     "refund_amount" => $refundData[$k]??0,
                     "customer_id" => $v,
                     "day_count" => 0,
-                    "day_amount" => floatval(round($cusTotalAmount / $days, 2)),
-                    "entry_days" => (new Carbon())->diffInDays(Carbon::parse($entryTime[$v]))
+                    "day_amount" => $entryTime[$v]==0?:floatval(round($cusTotalAmount / $entryTime[$v], 2)),
+                    "entry_days" => $entryTime[$v]??0
                 ];
                 $retData[] = $item;
             }
@@ -299,7 +312,7 @@ class CustomerBiService
         $max = $retData[0]["total_amount"]??0;
         foreach ($retData as $k => $v) {
             $retData[$k]["rank"] = $k+1;
-            $retData[$k]["champion_ratio"] = round(($v["total_amount"] / $max) * 100, 2)."%";
+            $retData[$k]["champion_ratio"] = $max==0?:floatval(round(($v["total_amount"] / $max) * 100, 2))."%";
         }
         return $retData;
     }

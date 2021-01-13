@@ -25,6 +25,7 @@ class SettlementLogMapper extends BaseMapper
             ->join(["user" => "u"], "sl.settlement_user=u.id")
             ->where($where)
             ->field("u.name as settlement_user_name, sl.id, sl.settlement_fee, sl.create_time, o.order_sn")
+            ->order("sl.create_time desc")
             ->select()->toArray();
     }
 }

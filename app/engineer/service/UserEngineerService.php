@@ -15,7 +15,7 @@ class UserEngineerService extends BaseService
      * @return array|false|\think\Model
      */
     public function login($param) {
-        $where = ["qq|phone" => $param["user_name"]];
+        $where = ["phone" => $param["user_name"]];
         $exits = (new UserEngineersMapper())->findUser($where);
         if (!$exits)
             return false;

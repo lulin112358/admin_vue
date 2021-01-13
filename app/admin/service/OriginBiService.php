@@ -104,16 +104,17 @@ class OriginBiService
             ];
             $retData[] = $item;
         }
+        $deposit = array_combine(array_column($_depositData, "origin_name"), array_column($_depositData, "origin_id"));
         $final = array_combine(array_column($_finalPayment, "origin_name"), array_column($_finalPayment, "origin_id"));
         $refund = array_combine(array_column($_refund, "origin_name"), array_column($_refund, "origin_id"));
-        $tail = array_merge($final, $refund);
+        $tail = array_merge($final, $refund, $deposit);
         foreach ($tail as $k => $v) {
             if (!in_array($k, array_keys($tmp))) {
                 $grossProfit_ = $grossProfit[$k] - $checkFeeMap[$k] - $manuscriptFeeMap[$k] - $grossProfitMap[$k];
                 $item = [
                     "origin_name" => $k,
                     "origin_id" => $v,
-                    "total_amount" => $finalPaymentData[$k]??0,
+                    "total_amount" => $finalPaymentData[$k]??0 + $depositData[$k]??0,
                     "total_count" => 0,
                     "refund_amount" => $refundData[$k]??0,
                     "gross_profit" => floatval(round($grossProfit_, 2)),
@@ -131,7 +132,7 @@ class OriginBiService
         $max = $retData[0]["total_amount"]??0;
         foreach ($retData as $k => $v) {
             $retData[$k]["rank"] = $k+1;
-            $retData[$k]["champion_ratio"] = round(($v["total_amount"] / $max) * 100, 2)."%";
+            $retData[$k]["champion_ratio"] = floatval(round(($v["total_amount"] / $max) * 100, 2))."%";
         }
         return $retData;
     }

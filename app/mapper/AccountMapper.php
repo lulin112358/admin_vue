@@ -39,7 +39,7 @@ class AccountMapper extends BaseMapper
         return Db::table("orders_account")->alias("oa")
             ->join(["account" => "a"], "a.id=oa.account_id")
             ->where(["oa.status" => 1])
-            ->field("oa.id as order_account_id, oa.nickname, a.account")
+            ->field("oa.id as order_account_id, a.id, oa.nickname, a.account")
             ->select()->toArray();
     }
 }

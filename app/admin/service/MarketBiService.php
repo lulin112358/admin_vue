@@ -96,11 +96,12 @@ class MarketBiService
             ];
             $retData[] = $item;
         }
+        $deposit = array_combine(array_column($_depositData, "market_user_name"), array_column($_depositData, "market_user"));
         $final = array_combine(array_column($_finalPayment, "market_user_name"), array_column($_finalPayment, "market_user"));
         $refund = array_combine(array_column($_refund, "market_user_name"), array_column($_refund, "market_user"));
-        $tail = array_merge($final, $refund);
+        $tail = array_merge($final, $refund, $deposit);
         foreach ($tail as $k => $v) {
-            if (!in_array($k, array_keys($tmp))) {
+            if (!in_array($k, array_keys($tmp)) && !is_null($v)) {
                 $grossProfit_ = $grossProfit[$k] - $checkFeeMap[$k] - $manuscriptFeeMap[$k] - $grossProfitMap[$k];
                 $item = [
                     "name" => $k,
@@ -120,7 +121,7 @@ class MarketBiService
         $max = $retData[0]["total_amount"]??0;
         foreach ($retData as $k => $v) {
             $retData[$k]["rank"] = $k+1;
-            $retData[$k]["champion_ratio"] = round(($v["total_amount"] / $max) * 100, 2)."%";
+            $retData[$k]["champion_ratio"] = floatval(round(($v["total_amount"] / $max) * 100, 2))."%";
         }
         return $retData;
     }
@@ -217,7 +218,7 @@ class MarketBiService
             ];
             $retData[] = $item;
         }
-        $tail = array_merge(array_keys($finalPaymentData), array_keys($refundData));
+        $tail = array_merge(array_keys($depositData), array_keys($finalPaymentData), array_keys($refundData));
         foreach ($tail as $k => $v) {
             if (!in_array($v, array_keys($tmp))) {
                 $grossProfit_ = $grossProfit[$v] - $checkFeeMap[$v] - $manuscriptFeeMap[$v] - $grossProfitMap[$v];
@@ -238,7 +239,7 @@ class MarketBiService
         $max = $retData[0]["total_amount"]??0;
         foreach ($retData as $k => $v) {
             $retData[$k]["rank"] = $k+1;
-            $retData[$k]["champion_ratio"] = round(($v["total_amount"] / $max) * 100, 2)."%";
+            $retData[$k]["champion_ratio"] = $max==0?'0%':round(($v["total_amount"] / $max) * 100, 2)."%";
         }
         return $retData;
     }
