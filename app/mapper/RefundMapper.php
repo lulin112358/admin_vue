@@ -24,9 +24,11 @@ class RefundMapper extends BaseMapper
         return Db::table("refund_view")->alias("rv")
             ->join(["orders_deposit" => "od"], "rv.order_main_id=od.main_order_id", "left")
             ->join(["orders_final_payment" => "ofp"], "ofp.main_order_id=rv.order_main_id", "left")
+            ->join(["orders_main" => "om"], "om.id=rv.order_main_id", "left")
+            ->join(["user" => "u"], "u.id=om.customer_id", "left")
             ->where("rv.status", "<>", 1)
             ->where($where)
-            ->field("rv.*, od.amount_account_id as deposit, ofp.amount_account_id as final")
+            ->field("rv.*, od.amount_account_id as deposit, ofp.amount_account_id as final, u.name")
             ->order("rv.apply_time desc")
             ->select()->toArray();
     }

@@ -7,6 +7,7 @@ namespace app\admin\service;
 use Alchemy\Zippy\Zippy;
 use app\mapper\AccountMapper;
 use app\mapper\CategoryMapper;
+use app\mapper\EngineerMapper;
 use app\mapper\OrderFilesMapper;
 use app\mapper\OrdersAccountMapper;
 use app\mapper\OrdersDepositMapper;
@@ -297,9 +298,15 @@ class OrdersService extends BaseService
                 $diff = $diffDay."天".($diffHour - $diffDay * 24)."时";
             }else{
                 $diff = $diffHour."时";
+                if ($diffHour == 0) {
+                    $diff = $carbon->diffInMinutes($time)."分";
+                }
             }
             if (!$time->gt(Carbon::now())) {
                 $diff = "超".$diff;
+                if ($diffHour == 0) {
+                    $diff = "超".$carbon->diffInMinutes($time)."分";
+                }
                 $data[$k]["color"] = "red";
             }else{
                 $rate = ($v["delivery_time"] - time()) / ($v["delivery_time"] - $v["create_time"]);
@@ -342,6 +349,7 @@ class OrdersService extends BaseService
     public function order($param) {
         // 设置中文
         Carbon::setLocale("zh");
+        $carbon = new Carbon();
         # 获取用户角色
 //        $roles = (new UserRoleMapper())->columnBy(["user_id" => request()->uid], "role_id");
         # 行权限过滤
@@ -415,19 +423,42 @@ class OrdersService extends BaseService
             }
         }
 
+        $billTime = Carbon::parse(date("Y-m-d H:i:s", $data["bill_time"]));
+        $createTime = Carbon::parse($data["create_time"]);
+        # 分钟差
+        $billTimeMinutes = $createTime->diffInMinutes($billTime);
+        # 小时差
+        $billTimeHours = $createTime->diffInHours($billTime);
+        # 天数差
+        $billTimeDays = $createTime->diffInDays($billTime);
+        if ($billTimeHours > 24) {
+            $billTimeDiff = $billTimeDays."天".($billTimeHours - $billTimeDays * 24)."时".($billTimeMinutes - $billTimeHours * 60)."分";
+        }else if ($billTimeMinutes > 60) {
+            $billTimeDiff = $billTimeHours."时".($billTimeMinutes - $billTimeHours * 60)."分";
+        }else{
+            $billTimeDiff = $billTimeMinutes."分";
+        }
+        $data["bill_time"] = $data["bill_time"]==0?"未记录":$billTimeDiff;
+
         # TODO 此处待优化
         $time = Carbon::parse($data["delivery_time"].":00:00");
         # 天数差
-        $diffDay = (new Carbon())->diffInDays($time);
+        $diffDay = $carbon->diffInDays($time);
         # 小时差
-        $diffHour = (new Carbon())->diffInHours($time);
+        $diffHour = $carbon->diffInHours($time);
         if ($diffHour > 24) {
             $diff = $diffDay."天".($diffHour - $diffDay * 24)."时";
         }else{
             $diff = $diffHour."时";
+            if ($diffHour == 0) {
+                $diff = $carbon->diffInMinutes($time)."分";
+            }
         }
         if (!$time->gt(Carbon::now())) {
             $diff = "超".$diff;
+            if ($diffHour == 0) {
+                $diff = "超".$carbon->diffInMinutes($time)."分";
+            }
             $data["color"] = "red";
         }else{
             $rate = ($delivery_time - time()) / ($delivery_time - $create_time);
@@ -605,17 +636,26 @@ class OrdersService extends BaseService
                 $updateData["status"] = 2;
                 $updateData["bill_time"] = time();
             }
-            # 如果更新订单状态为已交稿则更新实际交稿时间
+            # 如果更新订单状态为已交稿则更新实际交稿时间/验证稿费是否可以为0
             if ($data["field"] == "status" && $data["value"] == 3) {
-                $engineer_id = $this->findBy(["id" => $data["order_id"]], "engineer_id")["engineer_id"];
-                if ($engineer_id == 0)
+                # 获取内部写手
+                $innerEngineers = (new EngineerMapper())->columnBy(["is_inner" => 1], "id");
+                $orderInfo = $this->findBy(["id" => $data["order_id"]], "engineer_id, manuscript_fee");
+                if ($orderInfo["engineer_id"] == 0)
                     return "该订单暂未发单 不允许交稿";
+                # 非内部写手稿费为0不允许交稿
+                if (!in_array($orderInfo["engineer_id"], $innerEngineers) && $orderInfo["manuscript_fee"] == 0)
+                    return "该订单稿费不允许为0 请填写稿费";
                 $totalAmount = (new OrdersMainMapper())->findBy(["id" => $data["main_order_id"]], "total_amount")["total_amount"];
                 $deposit = (new OrdersDepositMapper())->findBy(["main_order_id" => $data["main_order_id"], "status" => 1], "deposit")["deposit"];
                 $finalPayment = (new OrdersFinalPaymentMapper())->findBy(["main_order_id" => $data["main_order_id"], "status" => 1], "final_payment")["final_payment"];
                 if ($totalAmount != ($deposit + $finalPayment))
                     return "尾款没有收齐 不允许交稿";
                 $updateData["actual_delivery_time"] = time();
+            }
+            # 订单改为未发出时 重置写手
+            if ($data["field"] == "status" && $data["value"] == 1) {
+                $updateData["engineer_id"] = 0;
             }
 
             return (new OrdersMapper())->updateBy($updateData);

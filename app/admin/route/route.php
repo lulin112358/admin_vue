@@ -296,6 +296,7 @@ Route::group('admin', function () {
     # 兼职管理
     Route::get("part_times", PartTime::class."@partTimes");
     Route::get("part_time_detail", PartTime::class."@partTimeDetail");
+    Route::get("part_time_row", PartTime::class."@partTimeRow");
     Route::put("salary", PartTime::class."@updateSalary");
     Route::put("part_times", PartTime::class."@updatePartTime");
 })->allowCrossDomain()->middleware([JwtMiddleware::class, IpFilter::class]);

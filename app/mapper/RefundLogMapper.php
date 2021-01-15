@@ -23,8 +23,10 @@ class RefundLogMapper extends BaseMapper
         return Db::table("refund_log")->alias("rl")
             ->join(["refund_view" => "rv"], "rl.refund_id=rv.id")
             ->join(["user" => "u"], "u.id=rl.refund_user")
+            ->join(["orders_main" => "om"], "om.id=rv.order_main_id")
+            ->join(["user" => "u1"], "u1.id=om.customer_id")
             ->where($where)
-            ->field("rl.create_time, rl.refund_account, rl.actual_refund_amount, u.name, rv.*")
+            ->field("rl.create_time, rl.refund_account, rl.actual_refund_amount, u.name, rv.*, u1.name as order_cus_name")
             ->select()->toArray();
     }
 }

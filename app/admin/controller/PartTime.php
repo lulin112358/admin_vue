@@ -25,6 +25,20 @@ class PartTime extends Base
     }
 
     /**
+     * 单行兼职数据
+     * @param PartTimeService $service
+     */
+    public function partTimeRow(PartTimeService $service) {
+        $param = input("param.");
+        try {
+            $data = $service->partTimes($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
+
+    /**
      * 更新薪水
      * @param PartTimeService $service
      */
