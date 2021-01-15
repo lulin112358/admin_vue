@@ -261,7 +261,7 @@ class CustomerBiService
             $item = [
                 "name" => $k,
                 "department" => $v[0]["department"],
-                "deal_rate" => $totalAmountAll==0?:(round($cusTotalAmount / $totalAmountAll, 2) * 100) . "%",
+                "deal_rate" => $totalAmountAll==0?"0%":(round($cusTotalAmount / $totalAmountAll, 2) * 100) . "%",
                 "total_amount" => $cusTotalAmount,
                 "total_count" => count($v),
                 "write_count" => collect($v)->where("category_id", "in", [9])->count(),
@@ -271,8 +271,8 @@ class CustomerBiService
                 "final_payment" => $finalPaymentData[$k]??0,
                 "refund_amount" => $refundData[$k]??0,
                 "customer_id" => $v[0]["customer_id"],
-                "day_count" => $entryTime[$v[0]["customer_id"]]==0?:round(count($v) / $entryTime[$v[0]["customer_id"]], 1),
-                "day_amount" => $entryTime[$v[0]["customer_id"]]==0?:floatval(round($cusTotalAmount / $entryTime[$v[0]["customer_id"]], 2)),
+                "day_count" => $entryTime[$v[0]["customer_id"]]==0?0:round(count($v) / $entryTime[$v[0]["customer_id"]], 1),
+                "day_amount" => $entryTime[$v[0]["customer_id"]]==0?0:floatval(round($cusTotalAmount / $entryTime[$v[0]["customer_id"]], 2)),
                 "entry_days" => $entryTime[$v[0]["customer_id"]]??0
             ];
             $retData[] = $item;
@@ -289,7 +289,7 @@ class CustomerBiService
                 $item = [
                     "name" => $k,
                     "department" => $department[$k],
-                    "deal_rate" => $totalAmountAll==0?:(round($cusTotalAmount / $totalAmountAll, 2) * 100) . "%",
+                    "deal_rate" => $totalAmountAll==0?"0%":(round($cusTotalAmount / $totalAmountAll, 2) * 100) . "%",
                     "total_amount" => $cusTotalAmount,
                     "total_count" => 0,
                     "write_count" => 0,
@@ -300,7 +300,7 @@ class CustomerBiService
                     "refund_amount" => $refundData[$k]??0,
                     "customer_id" => $v,
                     "day_count" => 0,
-                    "day_amount" => $entryTime[$v]==0?:floatval(round($cusTotalAmount / $entryTime[$v], 2)),
+                    "day_amount" => $entryTime[$v]==0?0:floatval(round($cusTotalAmount / $entryTime[$v], 2)),
                     "entry_days" => $entryTime[$v]??0
                 ];
                 $retData[] = $item;
@@ -312,7 +312,7 @@ class CustomerBiService
         $max = $retData[0]["total_amount"]??0;
         foreach ($retData as $k => $v) {
             $retData[$k]["rank"] = $k+1;
-            $retData[$k]["champion_ratio"] = $max==0?:floatval(round(($v["total_amount"] / $max) * 100, 2))."%";
+            $retData[$k]["champion_ratio"] = $max==0?"0%":floatval(round(($v["total_amount"] / $max) * 100, 2))."%";
         }
         return $retData;
     }

@@ -80,9 +80,7 @@ class OriginBiService
             $checkFeeMap[$v["origin_name"]] = ($checkFeeMap[$v["origin_name"]]??0) + $v["check_fee"];
             $manuscriptFeeMap[$v["origin_name"]] = ($manuscriptFeeMap[$v["origin_name"]]??0) + $v["manuscript_fee"];
         }
-
         $total = array_sum(array_values($depositData)) + array_sum(array_values($finalPaymentData));
-
         $retData = [];
         foreach ($tmp as $k => $v) {
             $deposit = $depositData[$k]??0;
@@ -119,7 +117,7 @@ class OriginBiService
                     "refund_amount" => $refundData[$k]??0,
                     "gross_profit" => floatval(round($grossProfit_, 2)),
                     "gross_profit_rate" => ($grossProfit_==0||$grossProfit[$k]==0)?"0%":round(($grossProfit_ / $grossProfit[$k])*100, 2)."%",
-                    "deal_rate" => $total==0?"0%":round(($totalAmount / $total)*100, 2)."%",
+                    "deal_rate" => $total==0?"0%":round((($finalPaymentData[$k]??0 + $depositData[$k]??0) / $total)*100, 2)."%",
                     "supplier_commission" => floatval(round($grossProfitMap[$k], 2)),
                     "deposit" => 0,
                     "final_payment" => $finalPaymentData[$k]??0,

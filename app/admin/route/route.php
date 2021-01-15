@@ -19,6 +19,7 @@ use app\admin\controller\OrdersDeposit;
 use app\admin\controller\OrdersFinalPayment;
 use app\admin\controller\Origin;
 use app\admin\controller\OriginBi;
+use app\admin\controller\PartTime;
 use app\admin\controller\Profession;
 use app\admin\controller\Refund;
 use app\admin\controller\RoleAuthFields;
@@ -186,6 +187,8 @@ Route::group('admin', function () {
     # 订单
     Route::get("orders", Orders::class."@orders");
     Route::get("order", Orders::class."@order");
+    Route::get("down/doc_list", Orders::class."@docList");
+    Route::get("confirm_info", Orders::class."@confirmInfo");
     Route::get("orders/auto_fill", Orders::class."@ordersAutoFill");
     Route::post("orders", Orders::class."@addOrder");
     Route::put("orders", Orders::class."@updateOrder");
@@ -289,6 +292,12 @@ Route::group('admin', function () {
     Route::get("already_deal", StationLetter::class."@alreadyDeal");
     Route::get("station_letters", StationLetter::class."@stationLetters");
     Route::put("deal_err", StationLetter::class."@dealErr");
+
+    # 兼职管理
+    Route::get("part_times", PartTime::class."@partTimes");
+    Route::get("part_time_detail", PartTime::class."@partTimeDetail");
+    Route::put("salary", PartTime::class."@updateSalary");
+    Route::put("part_times", PartTime::class."@updatePartTime");
 })->allowCrossDomain()->middleware([JwtMiddleware::class, IpFilter::class]);
 
 # 后台路由组   不需要jwt登录验证
@@ -312,6 +321,7 @@ Route::group('admin', function () {
     Route::post("attendances/export", Attendance::class."@export");
     # 文件上传
     Route::post("upload", Upload::class."@upload");
+    Route::post("upload_order_doc", Upload::class."@uploadOrderDoc");
     # 文档下载
     Route::get("orders/down_doc", Orders::class."@downDoc");
 })->allowCrossDomain()->middleware([IpFilter::class]);

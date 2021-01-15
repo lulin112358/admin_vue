@@ -163,7 +163,7 @@ class Orders extends Base
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
         try {
-            $res = $service->updateWhere(["id" => $param["order_id"]], ["engineer_id" => 0]);
+            $res = $service->updateWhere(["id" => $param["order_id"]], ["engineer_id" => 0, "status" => 1]);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
@@ -195,6 +195,20 @@ class Orders extends Base
     }
 
     /**
+     * 确认信息
+     * @param OrdersService $service
+     */
+    public function confirmInfo(OrdersService $service) {
+        $param = input("param.");
+        try {
+            $data = $service->confirmInfo($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
+
+    /**
      * 上传文档
      * @param OrdersService $service
      * @param OrdersValidate $validate
@@ -211,6 +225,23 @@ class Orders extends Base
         if ($res === false)
             $this->ajaxReturn(Code::ERROR, "上传失败");
         $this->ajaxReturn("上传成功");
+    }
+
+    /**
+     * 下载列表
+     * @param OrdersService $service
+     * @param OrdersValidate $validate
+     */
+    public function docList(OrdersService $service, OrdersValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("docList")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $data = $service->docList($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
     }
 
     /**

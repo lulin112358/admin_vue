@@ -5,6 +5,7 @@ namespace app\admin\service;
 
 
 use app\mapper\AttendanceMapper;
+use app\mapper\PartTimeMapper;
 use app\mapper\UserMapper;
 use excel\Excel;
 
@@ -178,7 +179,7 @@ class AttendanceService extends BaseService
     public function addData() {
         # 查询所有在职用户
         $userId = (new UserMapper())->columnBy(["status" => 1, "work_nature" => 1], "id");
-        $userId1 = (new UserMapper())->columnBy(["status" => 1, "work_nature" => 0], "id");
+        $userId1 = (new UserMapper())->columnBy(["status" => 1, "work_nature" => [0, 2]], "id");
         # 添加考勤记录
         $data = [];
         foreach($userId as $k => $v) {
@@ -190,15 +191,16 @@ class AttendanceService extends BaseService
             ];
             $data[] = $item;
         }
+        $data1 = [];
         foreach($userId1 as $k => $v) {
             $item = [
                 "user_id" => $v,
-                "type" => 4,
-                "result" => 0,
-                "create_time" => strtotime(date("Y-m-d 09:00:00", time()))
+                "create_time" => strtotime(date("Y-m-d 09:00:00", time())),
+                "update_time" => strtotime(date("Y-m-d 09:00:00", time()))
             ];
-            $data[] = $item;
+            $data1[] = $item;
         }
         (new AttendanceMapper())->addAll($data);
+        (new PartTimeMapper())->addAll($data1);
     }
 }

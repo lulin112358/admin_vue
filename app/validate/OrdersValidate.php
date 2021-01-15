@@ -42,6 +42,7 @@ class OrdersValidate extends Validate
         "confirmManuscript" => ["id"],
         "directSettlement" => ["settlement_fee", "engineer_id"],
         "bindDoc" => ["main_order_id", "file_path"],
-        "downDoc" => ["main_order_id"]
+        "downDoc" => ["id"],
+        "docList" => ["main_order_id", "order_id"],
     ];
 }

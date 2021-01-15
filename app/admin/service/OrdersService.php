@@ -7,6 +7,8 @@ namespace app\admin\service;
 use Alchemy\Zippy\Zippy;
 use app\mapper\AccountMapper;
 use app\mapper\CategoryMapper;
+use app\mapper\OrderFilesMapper;
+use app\mapper\OrdersAccountMapper;
 use app\mapper\OrdersDepositMapper;
 use app\mapper\OrdersFinalPaymentMapper;
 use app\mapper\OrdersMainMapper;
@@ -18,12 +20,8 @@ use app\mapper\UserRoleMapper;
 use Carbon\Carbon;
 use excel\Excel;
 use jwt\Jwt;
-use League\Flysystem\Filesystem;
-use League\Flysystem\ZipArchive\ZipArchiveAdapter;
 use PhpZip\ZipFile;
 use think\facade\Db;
-use ZipStream\Option\Archive;
-use ZipStream\ZipStream;
 
 class OrdersService extends BaseService
 {
@@ -478,7 +476,7 @@ class OrdersService extends BaseService
                 "wechat_id" => $data["wechat_id"],
                 "school_id" => $data["school_id"]??0,
                 "degree_id" => $data["degree_id"]??0,
-                "file" => implode(",", $data["file_path"]??[]),
+                "file" => "",
                 "create_time" => time(),
                 "update_time" => time()
             ];
@@ -498,6 +496,26 @@ class OrdersService extends BaseService
             $subRes = $this->add($orderData);
             if (!$subRes)
                 throw new \Exception("订单信息添加失败!");
+            # 上传文档信息添加
+            if(isset($data["file_path"])){
+                $fileData = [];
+                foreach ($data["file_path"] as $k => $v) {
+                    $item = [
+                        "order_id" => $subRes->id,
+                        "main_order_id" => $mainRes->id,
+                        "file" => $v["save_filename"],
+                        "filename" => $v["filename"],
+                        "user_id" => request()->uid,
+                        "create_time" => time(),
+                        "update_time" => time()
+                    ];
+                    $fileData[] = $item;
+                }
+                $fileRes = (new OrderFilesMapper())->addAll($fileData);
+                if (!$fileRes)
+                    throw new \Exception("文档添加失败");
+            }
+
             # 收款信息添加
             $res = (new OrdersDepositMapper())->updateWhere(["main_order_id" => $mainRes->id], ["status" => 0]);
             if ($res === false)
@@ -518,17 +536,20 @@ class OrdersService extends BaseService
             # 构造剪贴板内容
             if ($data["account_id"] == $data["wechat_id"]) {
                 $returnData = [
-                    "content" => "http://customer.erp2020.top/customer/order?oid=".base64_encode($mainRes->id)."
-                    麻烦您核实并填写下表单内容"
+                    "content" => "http://customer.erp2020.top/customer/order?oid=".base64_encode($mainRes->id).
+                        "\r\n麻烦您核实并填写下表单内容，您的订单编号为：{$orderData['order_sn']}"
                 ];
             }else {
                 # 获取沉淀微信
-                $wechat = (new AccountMapper())->accountInfo($data["account_id"])["account"];
+                $wechatId = (new OrdersAccountMapper())->findBy(["id" => $data["wechat_id"]], "account_id")["account_id"];
+                $wechat = (new AccountMapper())->accountInfo($wechatId)["account"];
                 # 获取来源
                 $origin = (new OriginMapper())->findBy(["id" => $data["origin_id"]], "origin_name")["origin_name"];
                 $returnData = [
-                    "content" => "http://customer.erp2020.top/customer/order?oid=".base64_encode($mainRes->id)."
-                    麻烦您核实并填写下表单内容，并添加我微信: {$wechat}，验证信息为: {$origin}-{$orderData['order_sn']}，将文件及检测报告发给我微信。"
+                    "content" => "http://customer.erp2020.top/customer/order?oid=".base64_encode($mainRes->id).
+                        "\r\n麻烦您核实并填写下表单内容，您的订单编号为：{$orderData['order_sn']}，并添加我微信: {$wechat} 
+验证信息为: {$origin}-{$orderData['order_sn']}
+将文件及检测报告发给我微信。"
                 ];
             }
             return $returnData;
@@ -758,12 +779,67 @@ class OrdersService extends BaseService
     }
 
     /**
+     * 确认信息
+     * @param $param
+     * @return string
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function confirmInfo($param) {
+        # 获取所需信息
+        $info = (new OrdersMapper())->confirmInfo(["o.id" => $param["order_id"]]);
+        # 构造剪贴板内容
+        if ($info["account_id"] == $info["wechat_id"]) {
+            $text = "http://customer.erp2020.top/customer/order?oid=".base64_encode($param["order_id"]).
+                "\r\n麻烦您核实并填写下表单内容, 您的订单编号为: {$info['order_sn']}";
+        }else {
+            # 获取沉淀微信
+            $wechatId = (new OrdersAccountMapper())->findBy(["id" => $info["wechat_id"]], "account_id")["account_id"];
+            $wechat = (new AccountMapper())->accountInfo($wechatId)["account"];
+            # 获取来源
+            $origin = (new OriginMapper())->findBy(["id" => $info["origin_id"]], "origin_name")["origin_name"];
+            $text = "http://customer.erp2020.top/customer/order?oid=".base64_encode($param["order_id"]).
+                "\r\n麻烦您核实并填写下表单内容，您的订单编号为：{$info["order_sn"]}，并添加我微信: {$wechat}
+验证信息为: {$origin}-{$info['order_sn']}
+将文件及检测报告发给我微信。";
+        }
+        return $text;
+    }
+
+    /**
      * 上传文档
      * @param $param
      * @return mixed
      */
     public function bindDoc($param) {
-        return (new OrdersMainMapper())->updateWhere(["id" => $param["main_order_id"]], ["file" => implode(",", $param["file_path"])]);
+        $data = [];
+        foreach ($param["file_path"] as $k => $v) {
+            $item = [
+                "order_id" => $param["order_id"],
+                "main_order_id" => $param["main_order_id"],
+                "file" => $v["save_filename"],
+                "filename" => $v["filename"],
+                "user_id" => request()->uid,
+                "create_time" => time(),
+                "update_time" => time()
+            ];
+            $data[] = $item;
+        }
+        return (new OrderFilesMapper())->addAll($data);
+    }
+
+    /**
+     * 下载列表
+     * @param $param
+     * @return mixed
+     */
+    public function docList($param) {
+        $data = (new OrderFilesMapper())->docList(["of.order_id" => $param["order_id"], "of.main_order_id" => $param["main_order_id"]]);
+        foreach ($data as $k => $v) {
+            $data[$k]["create_time"] = date("Y-m-d H:i:s", $v["create_time"]);
+        }
+        return $data;
     }
 
     /**
@@ -776,18 +852,22 @@ class OrdersService extends BaseService
     public function downDoc($param) {
         $zip = new ZipFile();
 
-        $files = (new OrdersMainMapper())->downDoc(["om.id" => $param["main_order_id"]]);
-        $downFileName = implode(",", array_column($files, "order_sn")).".zip";
+        $files = (new OrderFilesMapper())->downDoc(["of.id" => $param["id"]]);
+//        $files = (new OrdersMainMapper())->downDoc(["om.id" => $param["main_order_id"]]);
+        $downFileName = implode(",", array_unique(array_column($files, "order_sn"))).".zip";
         if (file_exists(root_path()."public/storage/doczips/".$downFileName)) {
             unlink(root_path()."public/storage/doczips/".$downFileName);
         }
         foreach ($files as $k => $v) {
-            if (!empty($v["file"])) {
-                foreach (explode(",", $v["file"]) as $key => $val) {
-                    $filename = empty($v["require"])?basename($val):$v["require"].".".explode(".", basename($val))[1];
-                    $zip->addFile(root_path()."public/storage/".$val, $v["order_sn"]."/".$filename);
-                }
-            }
+//            $filename = empty($v["require"])?basename($v["filename"]):$v["require"].".".explode(".", basename($v["filename"]))[1];
+            $filename = $v["filename"];
+            $zip->addFile(root_path()."public/storage/".$v["file"], $v["order_sn"]."/".$filename);
+//            if (!empty($v["file"])) {
+//                foreach (explode(",", $v["file"]) as $key => $val) {
+//                    $filename = empty($v["require"])?basename($val):$v["require"].".".explode(".", basename($val))[1];
+//                    $zip->addFile(root_path()."public/storage/".$val, $v["order_sn"]."/".$filename);
+//                }
+//            }
         }
         if (empty($zip->getListFiles())) {
             throw new \Exception("暂无文档下载");

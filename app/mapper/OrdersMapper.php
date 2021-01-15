@@ -169,4 +169,20 @@ class OrdersMapper extends BaseMapper
             ->group("o.id")
             ->select()->toArray();
     }
+
+    /**
+     * 获取确认订单相关信息
+     * @param $where
+     * @return array|\think\Model|null
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function confirmInfo($where) {
+        return Db::table("orders")->alias("o")
+            ->join(["orders_main" => "om"], "om.id=o.main_order_id")
+            ->where($where)
+            ->field("o.order_sn, om.origin_id, om.wechat_id, om.order_account_id as account_id")
+            ->find();
+    }
 }
