@@ -8,6 +8,7 @@ use app\mapper\AmountAccountMapper;
 use app\mapper\OrdersMapper;
 use app\mapper\RefundLogMapper;
 use app\mapper\RefundMapper;
+use app\mapper\RefundTurnDownLogMapper;
 use excel\Excel;
 use think\facade\Db;
 
@@ -146,5 +147,64 @@ class RefundService extends BaseService
             ["退款时间", "refund_time"]
         ];
         return Excel::exportData($data, $header, "退款数据");
+    }
+
+    /**
+     * 驳回
+     * @param $param
+     * @return mixed
+     */
+    public function turnDown($param) {
+        return (new RefundTurnDownLogMapper())->turnDown($param);
+    }
+
+    /**
+     * 被驳回列表
+     * @return mixed
+     */
+    public function turnDownList() {
+        $data = (new RefundMapper())->turnDownList(["rv.customer_id" => request()->uid, "rtdl.status" => 1, "rv.status" => 0]);
+        foreach ($data as $k => $v) {
+            $data[$k]["create_time"] = date("Y-m-d H:i:s", $v["create_time"]);
+            $data[$k]["apply_time"] = date("Y-m-d H:i:s", $v["apply_time"]);
+        }
+        return $data;
+    }
+
+    /**
+     * 修改退款信息
+     * @param $param
+     * @return bool
+     */
+    public function updateRefund($param) {
+        $param["is_turn_down"] = 0;
+        return (new RefundMapper())->updateRefund($param);
+    }
+
+    /**
+     * 驳回记录
+     * @param $param
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function turnDownLog($param) {
+        $where = [];
+        if (isset($param["search_key"]) && !empty($param["search_key"]))
+            $where[] = ["rv.order_sn|u.name", "like", "%{$param['search_key']}%"];
+        if (isset($param["turn_down_time"]) && !empty($param["turn_down_time"])) {
+            $where[] = ["rtdl.create_time", ">=", strtotime($param["turn_down_time"][0])];
+            $where[] = ["rtdl.create_time", "<=", strtotime($param["turn_down_time"][1])];
+        }
+        $data = (new RefundTurnDownLogMapper())->turnDownLog($where);
+        foreach ($data as $k => $v) {
+            $data[$k]["create_time"] = date("Y-m-d H:i:s", $v["create_time"]);
+            $data[$k]["apply_time"] = date("Y-m-d H:i:s", $v["apply_time"]);
+            $data[$k]["refund_amount"] = floatval($v["refund_amount"]);
+            $data[$k]["status_color"] = $v["status"]==0?"green":"red";
+            $data[$k]["status"] = $v["status"]==0?"已处理":"未处理";
+        }
+        return $data;
     }
 }

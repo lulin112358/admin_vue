@@ -16,11 +16,13 @@ class RefundValidate extends Validate
         "refund_reason|退款原因" => "require",
         "order_main_id|订单id" => "require",
         "id|退款订单id" => "require",
-        "amount_account|退款账号" => "require"
+        "amount_account|退款账号" => "require",
+        "turndown_reason|驳回原因" => "require"
     ];
 
     protected $scene = [
         "add" => ["client_alipay", "client_wechat", "client_name", "refund_amount", "refund_reason"],
-        "refund" => ["id", "refund_amount"]
+        "refund" => ["id", "refund_amount"],
+        "turnDown" => ["id", "turndown_reason"]
     ];
 }

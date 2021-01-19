@@ -258,6 +258,7 @@ class CustomerBiService
         $retData = [];
         foreach ($tmp as $k => $v) {
             $cusTotalAmount = floatval(round(($depositData[$k]??0) + ($finalPaymentData[$k]??0), 2));
+            $entryDays = $entryTime[$v[0]["customer_id"]]??0;
             $item = [
                 "name" => $k,
                 "department" => $v[0]["department"],
@@ -271,9 +272,9 @@ class CustomerBiService
                 "final_payment" => $finalPaymentData[$k]??0,
                 "refund_amount" => $refundData[$k]??0,
                 "customer_id" => $v[0]["customer_id"],
-                "day_count" => $entryTime[$v[0]["customer_id"]]==0?0:round(count($v) / $entryTime[$v[0]["customer_id"]], 1),
-                "day_amount" => $entryTime[$v[0]["customer_id"]]==0?0:floatval(round($cusTotalAmount / $entryTime[$v[0]["customer_id"]], 2)),
-                "entry_days" => $entryTime[$v[0]["customer_id"]]??0
+                "day_count" => $entryDays==0?0:round(count($v) / $entryDays, 1),
+                "day_amount" => $entryDays==0?0:floatval(round($cusTotalAmount / $entryDays, 2)),
+                "entry_days" => $entryDays
             ];
             $retData[] = $item;
         }
@@ -286,6 +287,7 @@ class CustomerBiService
         foreach ($tail as $k => $v) {
             if (!in_array($k, array_keys($tmp))) {
                 $cusTotalAmount = floatval(round(($depositData[$k]??0) + ($finalPaymentData[$k]??0), 2));
+                $entryDays = $entryTime[$v]??0;
                 $item = [
                     "name" => $k,
                     "department" => $department[$k],
@@ -300,8 +302,8 @@ class CustomerBiService
                     "refund_amount" => $refundData[$k]??0,
                     "customer_id" => $v,
                     "day_count" => 0,
-                    "day_amount" => $entryTime[$v]==0?0:floatval(round($cusTotalAmount / $entryTime[$v], 2)),
-                    "entry_days" => $entryTime[$v]??0
+                    "day_amount" => $entryDays==0?0:floatval(round($cusTotalAmount / $entryDays, 2)),
+                    "entry_days" => $entryDays
                 ];
                 $retData[] = $item;
             }

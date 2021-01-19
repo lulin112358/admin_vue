@@ -102,4 +102,47 @@ class Attendance extends Base
         }
         $this->ajaxReturn($data);
     }
+
+    /**
+     * 签到
+     * @param AttendanceService $service
+     */
+    public function checkIn(AttendanceService $service) {
+        try {
+            $res = $service->checkIn();
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        if ($res === false)
+            $this->ajaxReturn(Code::ERROR, "签到失败");
+        $this->ajaxReturn("签到成功");
+    }
+
+    /**
+     * 签退
+     * @param AttendanceService $service
+     */
+    public function checkOut(AttendanceService $service) {
+        try {
+            $res = $service->checkOut();
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        if ($res === false)
+            $this->ajaxReturn(Code::ERROR, "签退失败");
+        $this->ajaxReturn("签退成功");
+    }
+
+    /**
+     * 是否签到
+     * @param AttendanceService $service
+     */
+    public function isCheckIn(AttendanceService $service) {
+        try {
+            $info = $service->isCheckIn();
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($info);
+    }
 }

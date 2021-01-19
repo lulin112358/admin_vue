@@ -35,6 +35,7 @@ use app\admin\controller\Upload;
 use app\admin\controller\UserAuthFields;
 use app\admin\controller\UserAuthRow;
 use app\admin\controller\UserExtend;
+use app\admin\controller\Vacation;
 use app\admin\controller\Wechat;
 use app\middleware\admin\IpFilter;
 use think\facade\Route;
@@ -245,14 +246,24 @@ Route::group('admin', function () {
     # 退款
     Route::get("refund", Refund::class."@refundList");
     Route::get("refund_log", Refund::class."@refundLogList");
+    Route::get("refund/turndown_list", Refund::class."@turnDownList");
+    Route::get("turndown_log_list", Refund::class."@turnDownLog");
     Route::post("refund", Refund::class."@refund");
     Route::post("refund_handle", Refund::class."@refundHandle");
+    Route::put("refund/turn_down", Refund::class."@turnDown");
+    Route::put("turn_down", Refund::class."@updateRefund");
 
     # 考勤
     Route::get("attendance", Attendance::class."@attendances");
     Route::get("attendance/user", Attendance::class."@userAttendances");
     Route::get("attendance/info", Attendance::class."@attendanceInfo");
+    Route::get("attendance/is_check_in", Attendance::class."@isCheckIn");
     Route::put("attendance", Attendance::class."@updateAttendance");
+    Route::put("attendance/check_in", Attendance::class."@checkIn");
+    Route::put("attendance/check_out", Attendance::class."@checkOut");
+    Route::put("vacation/cancel", Vacation::class."@cancelVacation");
+    Route::post("attendance", Vacation::class."@putVacation");
+    Route::get("vacations", Vacation::class."@vacations");
 
     # IP
     Route::get("ip_white", IpWhite::class."@ipWhites");

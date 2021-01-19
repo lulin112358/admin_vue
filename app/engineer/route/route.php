@@ -10,6 +10,7 @@ Route::group('engineer', function () {
     Route::put("update_pwd", Index::class."@updatePassword");
     Route::get("manuscript_fee", Manuscript::class."@manuscriptFee");
     Route::get("orders", Orders::class."@orders");
+    Route::get("down/doc_list", Orders::class."@docList");
     Route::put("manuscript_fee", Manuscript::class."@confirmManuscript");
     Route::get("settlement/log", Manuscript::class."@settlementLog");
     Route::post("manuscript_fee/err", Manuscript::class."@errSubmit");

@@ -5,6 +5,7 @@ namespace app\engineer\service;
 
 
 use app\BaseService;
+use app\mapper\OrderFilesMapper;
 use app\mapper\OrdersMainMapper;
 use app\mapper\OrdersMapper;
 use app\mapper\UserRoleMapper;
@@ -225,18 +226,22 @@ class OrdersService extends BaseService
     public function downDoc($param) {
         $zip = new ZipFile();
 
-        $files = (new OrdersMainMapper())->downDoc(["om.id" => $param["main_order_id"]]);
-        $downFileName = implode(",", array_column($files, "order_sn")).".zip";
+        $files = (new OrderFilesMapper())->downDoc(["of.id" => $param["id"]]);
+//        $files = (new OrdersMainMapper())->downDoc(["om.id" => $param["main_order_id"]]);
+        $downFileName = implode(",", array_unique(array_column($files, "order_sn"))).".zip";
         if (file_exists(root_path()."public/storage/doczips/".$downFileName)) {
             unlink(root_path()."public/storage/doczips/".$downFileName);
         }
         foreach ($files as $k => $v) {
-            if (!empty($v["file"])) {
-                foreach (explode(",", $v["file"]) as $key => $val) {
-                    $filename = empty($v["require"])?basename($val):$v["require"].".".explode(".", basename($val))[1];
-                    $zip->addFile(root_path()."public/storage/".$val, $v["order_sn"]."/".$filename);
-                }
-            }
+//            $filename = empty($v["require"])?basename($v["filename"]):$v["require"].".".explode(".", basename($v["filename"]))[1];
+            $filename = $v["filename"];
+            $zip->addFile(root_path()."public/storage/".$v["file"], $v["order_sn"]."/".$filename);
+//            if (!empty($v["file"])) {
+//                foreach (explode(",", $v["file"]) as $key => $val) {
+//                    $filename = empty($v["require"])?basename($val):$v["require"].".".explode(".", basename($val))[1];
+//                    $zip->addFile(root_path()."public/storage/".$val, $v["order_sn"]."/".$filename);
+//                }
+//            }
         }
         if (empty($zip->getListFiles())) {
             throw new \Exception("暂无文档下载");

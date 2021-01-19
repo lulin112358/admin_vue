@@ -7,6 +7,7 @@ namespace app\engineer\controller;
 use app\Code;
 use app\engineer\service\OrdersService;
 use app\validate\OrdersValidate;
+use app\admin\service\OrdersService as AdminOrdersService;
 
 class Orders extends Base
 {
@@ -52,5 +53,22 @@ class Orders extends Base
             exit($exception->getMessage());
 //            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
+    }
+
+    /**
+     * 下载列表
+     * @param \app\admin\service\OrdersService $service
+     * @param OrdersValidate $validate
+     */
+    public function docList(AdminOrdersService $service, OrdersValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("docList")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $data = $service->docList($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
     }
 }
