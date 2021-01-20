@@ -143,7 +143,11 @@ class OrdersService extends BaseService
                 }else {
                     $val = explode(",", $v);
                 }
-                $map[$val[0]][] = $val[1];
+                if (count($val) > 2) {
+                    $map[$val[0]][] = $val[2];
+                }else{
+                    $map[$val[0]][] = $val[1];
+                }
             }
         }
         # 构造时间段查询条件
@@ -649,9 +653,17 @@ class OrdersService extends BaseService
                 $totalAmount = (new OrdersMainMapper())->findBy(["id" => $data["main_order_id"]], "total_amount")["total_amount"];
                 $deposit = (new OrdersDepositMapper())->findBy(["main_order_id" => $data["main_order_id"], "status" => 1], "deposit")["deposit"];
                 $finalPayment = (new OrdersFinalPaymentMapper())->findBy(["main_order_id" => $data["main_order_id"], "status" => 1], "final_payment")["final_payment"];
-                if ($totalAmount != ($deposit + $finalPayment))
-                    return "尾款没有收齐 不允许交稿";
+                # 查询是否未中介来源 中介来源允许没收齐尾款交稿
+                $isIntermediary = (new OrdersMainMapper())->isIntermediary(["om.id" => $data["main_order_id"]]);
+                if (!$isIntermediary) {
+                    if ($totalAmount != ($deposit + $finalPayment))
+                        return "尾款没有收齐 不允许交稿";
+                }
                 $updateData["actual_delivery_time"] = time();
+            }
+            # 订单状态改为不是已交稿 需要重新核定
+            if ($data["field"] == "status" && $data["value"] != 3) {
+                $updateData["is_check"] = 0;
             }
             # 订单改为未发出时 重置写手
             if ($data["field"] == "status" && $data["value"] == 1) {

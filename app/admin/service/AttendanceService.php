@@ -193,10 +193,11 @@ class AttendanceService extends BaseService
         $carbon = new Carbon();
         $info = $this->findBy(["user_id" => request()->uid], "id, create_time", "create_time desc");
         $updateData = [
-            "check_in_time" => time()
+            "check_in_time" => time(),
+            "type" => 1
         ];
         # 迟到了
-        if (time() > $info["create_time"]) {
+        if (time() > strtotime($info["create_time"])) {
             $time = Carbon::parse($info["create_time"]);
             $lateTime = $carbon->diffInMinutes($time);
             $updateData["late_time"] = $lateTime;

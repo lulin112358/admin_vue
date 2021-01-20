@@ -456,4 +456,16 @@ class OrdersMainMapper extends BaseMapper
             ->field("om.file, o.order_sn, o.require")
             ->select()->toArray();
     }
+
+    /**
+     * 获取订单来源是否是中介
+     * @param $where
+     * @return mixed
+     */
+    public function isIntermediary($where) {
+        return Db::table("orders_main")->alias("om")
+            ->join(["origin" => "o"], "o.id=om.origin_id")
+            ->where($where)
+            ->value("o.is_intermediary");
+    }
 }

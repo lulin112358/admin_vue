@@ -67,7 +67,7 @@ class SettlementLogService extends BaseService
      */
     public function settlementAll($param, $can = false) {
         if ($can) {
-            $orders = (new OrdersMapper())->selectBy(["engineer_id" => $param["engineer_id"], "is_check" => 1], "manuscript_fee, settlemented, deduction, id");
+            $orders = (new OrdersMapper())->selectBy([["engineer_id", "=", $param["engineer_id"]], ["is_check", "=", 1], ["is_clear", "=", 0]], "manuscript_fee, settlemented, deduction, id");
         }else {
             $orders = (new OrdersMapper())->selectBy(["id" => $param["order_id"]], "manuscript_fee, settlemented, deduction, id");
         }
@@ -77,6 +77,7 @@ class SettlementLogService extends BaseService
         foreach ($orders as $k => $v) {
             $updateData[] = [
                 "settlemented" => $v["manuscript_fee"] - $v["deduction"],
+                "is_clear" => 1,
                 "id" => $v["id"]
             ];
             $insertData[] = [
@@ -89,6 +90,7 @@ class SettlementLogService extends BaseService
             if ($settlementFee <= 0) {
                 $insertData[$k]["settlement_fee"] = $settlementFee + ($v["manuscript_fee"] - $v["settlemented"] - $v["deduction"]);
                 $updateData[$k]["settlemented"] = $v["settlemented"] + $settlementFee + ($v["manuscript_fee"] - $v["settlemented"] - $v["deduction"]);
+                $updateData[$k]["is_clear"] = 0;
                 break;
             }
         }
