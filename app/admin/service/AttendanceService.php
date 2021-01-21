@@ -194,16 +194,38 @@ class AttendanceService extends BaseService
         $info = $this->findBy(["user_id" => request()->uid], "id, create_time", "create_time desc");
         $updateData = [
             "check_in_time" => time(),
-            "type" => 1
+            "type" => 1,
+            "result" => 1,
+            "reward" => 0
         ];
         # 迟到了
         if (time() > strtotime($info["create_time"])) {
             $time = Carbon::parse($info["create_time"]);
             $lateTime = $carbon->diffInMinutes($time);
+            $result = 0.9;
+            $reward = -10;
+            if ($lateTime > 60 && $lateTime <= 60 * 4) {
+                $result = 0.8;
+            }
+            if ($lateTime > 60 * 4) {
+                $result = 0.5;
+            }
+            if($lateTime > 30 && $lateTime <= 60) {
+                $reward = -20;
+            }
+            if ($lateTime > 60 && $lateTime <= 60 * 2) {
+                $reward = -50;
+            }
+            if ($lateTime > 60 * 2 && $lateTime <= 60 * 4) {
+                $reward = -100;
+            }
+            if ($lateTime > 60 * 4) {
+                $reward = -200;
+            }
             $updateData["late_time"] = $lateTime;
-            $updateData["result"] = 0.9;
+            $updateData["result"] = $result;
             $updateData["type"] = 3;
-            $updateData["reward"] = -10;
+            $updateData["reward"] = $reward;
         }
 
         return $this->updateWhere(["id" => $info["id"]], $updateData);

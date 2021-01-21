@@ -163,7 +163,7 @@ class Orders extends Base
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
 
         try {
-            $res = $service->updateWhere(["id" => $param["order_id"]], ["engineer_id" => 0, "status" => 1]);
+            $res = $service->deleteEngineer($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }

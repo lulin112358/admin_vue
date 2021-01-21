@@ -30,6 +30,11 @@ class SettlementLogService extends BaseService
         if (isset($param["create_time"]) && !empty($param["create_time"])) {
             $where[] = ["sl.create_time", ">=", strtotime($param["create_time"][0])];
             $where[] = ["sl.create_time", "<=", strtotime($param["create_time"][1])];
+        }else {
+            $where = [
+                ["sl.create_time", ">=", strtotime(date("Y-m-1", time()))],
+                ["sl.create_time", "<=", time()],
+            ];
         }
         $data = (new SettlementLogMapper())->settlementLogs($where);
         foreach ($data as $k => $v) {

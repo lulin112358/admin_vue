@@ -11,6 +11,18 @@ use excel\Excel;
 
 class OriginBiService
 {
+    # 订单状态
+    private $status = [
+        1 => "未发出",
+        2 => "已发出",
+        3 => "已交稿",
+        4 => "准备退款",
+        5 => "已退款",
+        6 => "已发全能",
+        7 => "已发发单",
+        8 => "返修中",
+    ];
+
     /**
      * 来源BI统计数据
      * @param $param
@@ -295,15 +307,21 @@ class OriginBiService
         # 尾款
         $finalPayment = (new OrdersFinalPaymentMapper())->finalPaymentRecWithOrderSn($where);
         $data = array_merge($deposit, $finalPayment);
-        foreach ($data as $k => $v)
+        foreach ($data as $k => $v) {
             $data[$k]["create_time"] = date("Y-m-d H:i:s", $v["create_time"]);
+            $data[$k]["order_create_time"] = date("Y-m-d H:i:s", $v["order_create_time"]);
+            $data[$k]["status"] = $this->status[$v["status"]];
+        }
         $header = [
-            ["收款账户", "account"],
-            ["收款金额", "change_amount"],
-            ["收款时间", "create_time"],
-            ["收款人", "name"],
             ["接单客服", "customer_name"],
             ["订单编号", "order_sn"],
+            ["要求", "require"],
+            ["收款金额", "change_amount"],
+            ["收款账户", "account"],
+            ["收款时间", "create_time"],
+            ["订单创建时间", "order_create_time"],
+            ["订单状态", "status"],
+            ["收款人", "name"],
         ];
         return Excel::exportData($data, $header, "对账详情数据");
     }

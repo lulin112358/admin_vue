@@ -8,6 +8,7 @@ use Alchemy\Zippy\Zippy;
 use app\mapper\AccountMapper;
 use app\mapper\CategoryMapper;
 use app\mapper\EngineerMapper;
+use app\mapper\OrderChangeLogMapper;
 use app\mapper\OrderFilesMapper;
 use app\mapper\OrdersAccountMapper;
 use app\mapper\OrdersDepositMapper;
@@ -620,7 +621,29 @@ class OrdersService extends BaseService
                 "id" => $data["main_order_id"],
                 $data["field"] => $data["value"]
             ];
-            return (new OrdersMainMapper())->updateBy($updateData);
+            # 添加修改记录
+            $changeData = [
+                "order_id" => $data["order_id"],
+                "main_order_id" => $data["main_order_id"],
+                "change_field" => $data["field"],
+                "change_value" => $data["value"],
+                "user_id" => request()->uid,
+                "create_time" => time()
+            ];
+            Db::startTrans();
+            try {
+                $res = (new OrderChangeLogMapper())->add($changeData);
+                if (!$res)
+                    throw new \Exception("操作失败");
+                $res1 = (new OrdersMainMapper())->updateBy($updateData);
+                if ($res1 === false)
+                    throw new \Exception("操作失败");
+                Db::commit();
+                return true;
+            }catch (\Exception $exception) {
+                Db::rollback();
+                return false;
+            }
         }else {
             # 修改orders表信息
             # 根据字段映射关系修改字段名
@@ -669,8 +692,29 @@ class OrdersService extends BaseService
             if ($data["field"] == "status" && $data["value"] == 1) {
                 $updateData["engineer_id"] = 0;
             }
-
-            return (new OrdersMapper())->updateBy($updateData);
+            # 添加修改记录
+            $changeData = [
+                "order_id" => $data["order_id"],
+                "main_order_id" => $data["main_order_id"],
+                "change_field" => $data["field"],
+                "change_value" => $data["value"],
+                "user_id" => request()->uid,
+                "create_time" => time()
+            ];
+            Db::startTrans();
+            try {
+                $res = (new OrderChangeLogMapper())->add($changeData);
+                if (!$res)
+                    throw new \Exception("操作失败");
+                $res1 = (new OrdersMapper())->updateBy($updateData);
+                if ($res1 === false)
+                    throw new \Exception("操作失败");
+                Db::commit();
+                return true;
+            }catch (\Exception $exception) {
+                Db::rollback();
+                return false;
+            }
         }
     }
 
@@ -683,24 +727,80 @@ class OrdersService extends BaseService
     public function deleteOrder($param) {
         Db::startTrans();
         try {
-            $info = $this->findBy($param, "main_order_id, status");
-            if ($info["status"] != 1)
+            $info = $this->selectBy($param, "main_order_id, status, order_sn");
+            $statusInfo = array_unique(array_column($info, "status"));
+            if (count($statusInfo) > 1 || $statusInfo[0] != 1)
                 throw new \Exception("该订单不允许删除");
-            $order_main_id = $info["main_order_id"];
+
+            $order_main_id = array_unique(array_column($info, "main_order_id"));
             $res = $this->deleteBy($param);
             if ($res === false)
                 throw new \Exception("操作失败");
-            $exits = $this->countBy(["main_order_id" => $order_main_id]);
-            if ($exits <= 0) {
-                $res = (new OrdersMainMapper())->deleteBy(["id" => $order_main_id]);
-                if ($res === false)
-                    throw new \Exception("操作失败!");
+            foreach ($order_main_id as $k => $v) {
+                $exits = $this->countBy(["main_order_id" => $v]);
+                if ($exits <= 0) {
+                    $res = (new OrdersMainMapper())->deleteBy(["id" => $v]);
+                    if ($res === false)
+                        throw new \Exception("操作失败!");
+                }
             }
+            $orderSn = array_column($info, "order_sn");
+            $changeData = [];
+            foreach ($orderSn as $k => $v) {
+                $item = [
+                    "user_id" => request()->uid,
+                    "order_sn" => $v,
+                    "delete_time" => time(),
+                    "delete_type" => 1,
+                    "create_time" => time()
+                ];
+                $changeData[] = $item;
+            }
+            $res1 = (new OrderChangeLogMapper())->addAll($changeData);
+            if (!$res1)
+                throw new \Exception("操作失败拉！");
             Db::commit();
             return true;
         }catch (\Exception $exception) {
             Db::rollback();
             return $exception->getMessage();
+        }
+    }
+
+    /**
+     * 删除工程师
+     * @param $param
+     * @return bool
+     */
+    public function deleteEngineer($param) {
+        Db::startTrans();
+        try {
+            $info = $this->selectBy(["id" => $param["order_id"]], "id, main_order_id, status, order_sn");
+            $res = $this->updateWhere(["id" => $param["order_id"]], ["engineer_id" => 0, "status" => 1]);
+            if ($res === false)
+                throw new \Exception("操作失败");
+
+            $changeData = [];
+            foreach ($info as $k => $v) {
+                $item = [
+                    "user_id" => request()->uid,
+                    "order_sn" => $v["order_sn"],
+                    "main_order_id" => $v["main_order_id"],
+                    "order_id" => $v["id"],
+                    "delete_time" => time(),
+                    "delete_type" => 2,
+                    "create_time" => time()
+                ];
+                $changeData[] = $item;
+            }
+            $res1 = (new OrderChangeLogMapper())->addAll($changeData);
+            if (!$res1)
+                throw new \Exception("操作失败拉！");
+            Db::commit();
+            return true;
+        }catch (\Exception $exception) {
+            Db::rollback();
+            return false;
         }
     }
 
