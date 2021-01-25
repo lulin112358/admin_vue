@@ -361,6 +361,12 @@ class OrdersService extends BaseService
         $engineerId = (new UserMapper())->findBy(["id" => request()->uid], "engineer_id")["engineer_id"];
         if ($engineerId == 0)
             throw new \Exception("您还不是内部编辑");
+        # 获取用户角色
+        $roles = (new UserRoleMapper())->columnBy(["user_id" => request()->uid], "role_id");
+        # 管理员可见所有人
+        if (in_array(1, $roles)) {
+            $engineerId = (new UserMapper())->columnBy([["engineer_id", "<>", 0]], "engineer_id");
+        }
         # 构造时间段查询条件
         $where = [];
         if (isset($params["date_time"]) && !empty($params["date_time"])) {
@@ -372,15 +378,17 @@ class OrdersService extends BaseService
                 $where[] = ["delivery_time", "<=", strtotime($params["date_time"][1])];
             }
         }
+        if (isset($params["engineer_id"]) && !empty($params["engineer_id"]))
+            $engineerId = $params["engineer_id"];
         $searchKey = $params["search_key"]??"";
         # orders_view试图
         if (!$export) {
             $data = Db::table("orders_view")
                 # 模糊匹配查询条件
-                ->where("manuscript_fee|order_sn|require", "like", "%$searchKey%")
+                ->where("note|biller|qq_nickname|order_sn|require", "like", "%$searchKey%")
                 ->where($where)
                 ->where(["engineer_id" => $engineerId])
-                ->field("create_time, order_sn, order_id, main_order_id, delivery_time, status, manuscript_fee, require")
+                ->field("create_time, order_sn, order_id, main_order_id, delivery_time, status, require, biller, note, qq_nickname")
                 ->orderRaw("if(status=3, 1, 0), if(status=5, 1, 0)")
                 ->order($params["search_order"])
                 ->order("order_id asc")
@@ -388,10 +396,10 @@ class OrdersService extends BaseService
         }else {         # 导出excel不需要分页
             $data = Db::table("orders_view")
                 # 模糊匹配查询条件
-                ->where("manuscript_fee|order_sn|require", "like", "%$searchKey%")
+                ->where("note|biller|qq_nickname|order_sn|require", "like", "%$searchKey%")
                 ->where($where)
                 ->where(["engineer_id" => $engineerId])
-                ->field("create_time, order_sn, order_id, main_order_id, delivery_time, status, manuscript_fee, require")
+                ->field("create_time, order_sn, order_id, main_order_id, delivery_time, status, require, biller, note, qq_nickname")
                 ->orderRaw("if(status=3, 1, 0), if(status=5, 1, 0)")
                 ->order($params["search_order"])
                 ->order("order_id asc")->select()->toArray();
@@ -400,7 +408,7 @@ class OrdersService extends BaseService
         foreach ($data as $k => $v) {
             $data[$k]["delivery_time"] = date("Y-m-d H", $v["delivery_time"]);
             $data[$k]["status"] = $this->status[$v["status"]];
-            $data[$k]["manuscript_fee"] = floatval($v["manuscript_fee"]);
+//            $data[$k]["manuscript_fee"] = floatval($v["manuscript_fee"]);
 
             # TODO 此处待优化
             $time = Carbon::parse(date("Y-m-d H:i:s", $v["delivery_time"]));
@@ -675,7 +683,7 @@ class OrdersService extends BaseService
             # 构造剪贴板内容
             if ($data["account_id"] == $data["wechat_id"]) {
                 $returnData = [
-                    "content" => "http://customer.erp2020.top/customer/order?oid=".base64_encode($mainRes->id).
+                    "content" => "http://customer.erp2020.top/customer/order?oid=".base64_encode($subRes->id).
                         "\r\n麻烦您核实并填写下表单内容，您的订单编号为：{$orderData['order_sn']}"
                 ];
             }else {
@@ -685,7 +693,7 @@ class OrdersService extends BaseService
                 # 获取来源
                 $origin = (new OriginMapper())->findBy(["id" => $data["origin_id"]], "origin_name")["origin_name"];
                 $returnData = [
-                    "content" => "http://customer.erp2020.top/customer/order?oid=".base64_encode($mainRes->id).
+                    "content" => "http://customer.erp2020.top/customer/order?oid=".base64_encode($subRes->id).
                         "\r\n麻烦您核实并填写下表单内容，您的订单编号为：{$orderData['order_sn']}，并添加我微信: {$wechat} 
 验证信息为: {$origin}-{$orderData['order_sn']}
 将文件及检测报告发给我微信。"
@@ -1210,9 +1218,12 @@ class OrdersService extends BaseService
         $_data = $this->innerEngineerOrders($param, true);
         $header = [
             ["订单编号", "order_sn"],
+            ["编辑", "qq_nickname"],
             ["要求", "require"],
             ["订单状态", "status"],
-            ["稿费", "manuscript_fee"],
+//            ["稿费", "manuscript_fee"],
+            ["发单人", "biller"],
+            ["备注", "note"],
             ["交稿时间", "delivery_time"],
             ["倒计时", "countdown"],
         ];

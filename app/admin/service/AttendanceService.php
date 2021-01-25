@@ -11,6 +11,7 @@ use app\mapper\UserRoleMapper;
 use app\mapper\VacationMapper;
 use Carbon\Carbon;
 use excel\Excel;
+use jwt\Jwt;
 
 class AttendanceService extends BaseService
 {
@@ -57,7 +58,10 @@ class AttendanceService extends BaseService
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function attendances($param) {
+    public function attendances($param, $export = false) {
+        if ($export) {
+            request()->uid = Jwt::decodeToken($param["token"])["data"]->uid;
+        }
         if (isset($param["range_time"]) && !empty($param["range_time"])) {
             $where = [
                 ["a.create_time", ">=", strtotime($param["range_time"][0])],
@@ -111,6 +115,7 @@ class AttendanceService extends BaseService
                 "attendance_count" => $attendanceCount,
                 "late_count" => $lateCount,
                 "late_time" => $lateTime,
+                "late_time_text" => $lateTime.'分',
                 "check_in_time" => $v[0]["check_in_time"]==0?"未出勤":date("Y-m-d H:i:s", $v[0]["check_in_time"]),
                 "check_out_time" => $v[0]["check_out_time"]==0?"未签退":date("Y-m-d H:i:s", $v[0]["check_out_time"]),
                 "check_in_timestamp" => $v[0]["check_in_time"],
@@ -118,8 +123,10 @@ class AttendanceService extends BaseService
                 "type" => $this->type[$v[0]["type"]],
                 "color" => $this->color[$v[0]["type"]],
                 "work_time" => array_sum(array_column($v, "work_time")),
+                "work_time_text" => array_sum(array_column($v, "work_time")).'时',
                 "leave_count" => $leaveCount,
                 "reward" => floatval(array_sum(array_column($v, "reward"))),
+                "count" => count($v),
                 "attendance_rate" => (floatval(round($attendanceCount / count($v), 2)) * 100) . "%",
                 "accident_rate" => (floatval(round($accidentCount / count($v), 2)) * 100) . "%",
                 "accident" => $accidentCount,
@@ -140,18 +147,38 @@ class AttendanceService extends BaseService
      * @throws \think\db\exception\ModelNotFoundException
      */
     public function export($param) {
-        $data = $this->attendances($param);
+        $data = $this->attendances($param, true);
         $header = [
             ["姓名", "name"],
             ["部门-职位", "department"],
+            ["出勤性质", "type"],
+            ["签到时间", "check_in_time"],
+            ["签退时间", "check_out_time"],
+            ["工作时长", "work_time_text"],
             ["出勤", "attendance_count"],
             ["迟到次数", "late_count"],
-            ["迟到时长", "late_time"],
+            ["迟到时长", "late_time_text"],
             ["请假天数", "leave_count"],
             ["出勤率", "attendance_rate"],
             ["意外率", "accident_rate"],
             ["奖惩", "reward"],
         ];
+        if (isset($param["range_time"]) && !empty($param["range_time"])) {
+            if (date("Y-m-d 00:00:00") != $param["range_time"][0]) {
+                $header = [
+                    ["姓名", "name"],
+                    ["部门-职位", "department"],
+                    ["工作时长", "work_time_text"],
+                    ["出勤", "attendance_count"],
+                    ["迟到次数", "late_count"],
+                    ["迟到时长", "late_time"],
+                    ["请假天数", "leave_count"],
+                    ["出勤率", "attendance_rate"],
+                    ["意外率", "accident_rate"],
+                    ["奖惩", "reward"],
+                ];
+            }
+        }
         return Excel::exportData($data, $header, "考勤数据");
     }
 
@@ -188,6 +215,10 @@ class AttendanceService extends BaseService
      * @return mixed
      */
     public function updateAttendance($param) {
+        if ($param["field"] == "late_time_text") {
+            $param["field"] = "late_time";
+            $param["value"] = strstr($param["value"], "分")?explode("分", $param["value"])[0]:$param["value"];
+        }
         $updateData = [
             "id" => $param["id"],
             $param["field"] => $param["value"]
@@ -226,7 +257,7 @@ class AttendanceService extends BaseService
             $late += 3600;
         # 迟到了
         if (time() > $late + 60) {
-            $time = Carbon::parse(date("Y-m-d H:i:s", $late + 60));
+            $time = Carbon::parse(date("Y-m-d H:i:s", $late));
             $lateTime = $carbon->diffInMinutes($time);
             $result = 0.9;
             $reward = -10;

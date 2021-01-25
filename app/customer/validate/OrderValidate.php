@@ -17,6 +17,6 @@ class OrderValidate extends Validate
     ];
 
     protected $scene = [
-        "update" => ["main_order_id", "total_amount", "deposit", "require", "customer_contact"]
+        "update" => ["order_id", "require", "customer_contact"]
     ];
 }

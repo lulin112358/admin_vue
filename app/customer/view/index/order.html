@@ -180,10 +180,10 @@
                           // deposit: this.addParam.deposit,
                           require: this.addParam.require,
                           customer_contact: this.addParam.customer_contact,
-                          main_order_id: this.order_id
+                          order_id: this.order_id
                         }
                         http.post("customer/order/updateOrder", param).then(res => {
-                            if (res.code === 0) {
+                            if (res.code !== 1) {
                                 this.$message.error(res.msg);
                             }else {
                                 this.$message({
