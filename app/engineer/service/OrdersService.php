@@ -57,18 +57,6 @@ class OrdersService extends BaseService
         if ($export) {
             request()->uid = Jwt::decodeToken($params["token"])["data"]->uid;
         }
-        # 构造字段查询条件
-        $map = [];
-        if (isset($params["search_fields"])) {
-            foreach ($params["search_fields"] as $k => $v) {
-                if (!$export) {
-                    $val = json_decode($v, true);
-                }else {
-                    $val = explode(",", $v);
-                }
-                $map[$val[0]][] = $val[1];
-            }
-        }
         # 构造时间段查询条件
         $where = [];
         if (isset($params["date_time"]) && !empty($params["date_time"])) {
@@ -106,49 +94,9 @@ class OrdersService extends BaseService
         }
 
         foreach ($data as $k => $v) {
-//            $data[$k]["create_time"] = date("Y-m-d H:i:s", $v["create_time"]);
             $data[$k]["delivery_time"] = date("Y-m-d H", $v["delivery_time"]);
-//            $data[$k]["commission_ratio"] = $v["commission_ratio"]<=1?($v["commission_ratio"] * 100)."%":$v["commission_ratio"]."元";
-//            $data[$k]["biller"] = is_null($v["biller"])?"暂未填写":$v["biller"];
             $data[$k]["status"] = $this->status[$v["status"]];
-//            $data[$k]["manuscript_fee_ratio"] = ($v["deposit"] + $v["final_payment"])==0?0:floatval(round(($v["manuscript_fee"] / ($v["deposit"] + $v["final_payment"])) * 100, 2));
-//            $data[$k]["manuscript_fee_ratio"] = floatval(round($v["manuscript_fee_ratio"] * 100, 2))."%";
-//            $data[$k]["build_time"] = Carbon::parse($data[$k]["create_time"])->diffForHumans(Carbon::now());
-            # 保留有效位数
-//            $data[$k]["total_amount"] = floatval($v["total_amount"]);
-//            $data[$k]["total_fee"] = floatval($v["total_amount"]);
-//            $data[$k]["deposit"] = floatval($v["deposit"]);
-//            $data[$k]["refund_amount"] = is_null($v["refund_amount"])?"未退款":floatval($v["refund_amount"]);
-//            $data[$k]["final_payment"] = floatval($v["final_payment"]);
             $data[$k]["manuscript_fee"] = floatval($v["manuscript_fee"]);
-//            $data[$k]["check_fee"] = floatval($v["check_fee"]);
-            # 消除分单后的总价/定金/尾款显示
-//            $order_sn = explode("-", $v["order_sn"]);
-//            if (count($order_sn) > 1) {
-//                if ($order_sn[1] != "1") {
-//                    $data[$k]["total_amount"] = "";
-//                    $data[$k]["deposit"] = "";
-//                    $data[$k]["final_payment"] = "";
-//                }
-//            }
-
-//            $billTime = Carbon::parse(date("Y-m-d H:i:s", $v["bill_time"]));
-//            $createTime = Carbon::parse($data[$k]["create_time"]);
-//            # 分钟差
-//            $billTimeMinutes = $createTime->diffInMinutes($billTime);
-//            # 小时差
-//            $billTimeHours = $createTime->diffInHours($billTime);
-//            # 天数差
-//            $billTimeDays = $createTime->diffInDays($billTime);
-//            if ($billTimeHours > 24) {
-//                $billTimeDiff = $billTimeDays."天".($billTimeHours - $billTimeDays * 24)."时".($billTimeMinutes - $billTimeHours * 60)."分";
-//            }else if ($billTimeMinutes > 60) {
-//                $billTimeDiff = $billTimeHours."时".($billTimeMinutes - $billTimeHours * 60)."分";
-//            }else{
-//                $billTimeDiff = $billTimeMinutes."分";
-//            }
-//            $data[$k]["bill_time"] = $v["bill_time"]==0?"未记录":$billTimeDiff;
-
 
             # TODO 此处待优化
             $time = Carbon::parse(date("Y-m-d H:i:s", $v["delivery_time"]));

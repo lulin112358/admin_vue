@@ -94,11 +94,30 @@ class EngineerService extends BaseService
      * @return mixed
      */
     public function updateEngineer($param) {
+        $map = [
+            "contact_qq" => "qq",
+            "contact_phone" => "phone"
+        ];
         $updateData = [
             "id" => $param["id"],
             $param["field"] => $param["value"]
         ];
-        return $this->updateBy($updateData);
+        Db::startTrans();
+        try {
+            $res = $this->updateBy($updateData);
+            if ($res === false)
+                throw new \Exception("更新失败");
+            if ($param["field"] == 'contact_qq' || $param["field"] == 'contact_phone') {
+                $res1 = (new UserEngineersMapper())->updateWhere(["engineer_id" => $param["id"]], [$map[$param["field"]] => $param["value"]]);
+                if ($res1 === false)
+                    throw new \Exception("更新失败拉");
+            }
+            Db::commit();
+            return true;
+        }catch (\Exception $exception) {
+            Db::rollback();
+            return false;
+        }
     }
 
     /**

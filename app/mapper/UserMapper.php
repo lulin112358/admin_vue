@@ -55,4 +55,19 @@ class UserMapper extends BaseMapper
             $query->field("*");
         }])->where($where)->field("*")->select()->toArray();
     }
+
+    /**
+     * 获取用户上班时间
+     * @return array|\think\Model|null
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function workTime() {
+        return Db::table("user")->alias("u")
+            ->join(["attendance_group" => "ag"], "ag.id=u.attendance_group_id")
+            ->where(["u.id" => request()->uid])
+            ->field("ag.start_time, ag.end_time")
+            ->find();
+    }
 }

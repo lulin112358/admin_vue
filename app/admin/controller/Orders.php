@@ -48,6 +48,20 @@ class Orders extends Base
         $this->ajaxReturn($data);
     }
 
+    /**
+     * 内部编辑订单
+     * @param OrdersService $service
+     */
+    public function innerEngineerOrders(OrdersService $service) {
+        $param = input("param.");
+        try {
+            $data = $service->innerEngineerOrders($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
+
 
     /**
      * 获取指定订单记录
@@ -271,6 +285,20 @@ class Orders extends Base
         $param = input("param.");
         try {
             $service->export($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+    }
+
+    /**
+     * 导出内部编辑订单数据
+     *
+     * @param OrdersService $service
+     */
+    public function innerEngineerExport(OrdersService $service) {
+        $param = input("param.");
+        try {
+            $service->innerEngineerExport($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }

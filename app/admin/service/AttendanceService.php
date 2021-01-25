@@ -65,7 +65,7 @@ class AttendanceService extends BaseService
             ];
         }else {
             $where = [
-                ["a.create_time", ">=", strtotime(date("Y-m-1", time()))],
+                ["a.create_time", ">=", strtotime(date("Y-m-d", time()))],
                 ["a.create_time", "<=", time()],
             ];
         }
@@ -76,6 +76,9 @@ class AttendanceService extends BaseService
         }else{
             if (isset($param["user_id"]) && !empty($param["user_id"])) {
                 $where[] = ["u.id", "=", $param["user_id"]];
+            }
+            if (isset($param["department_code"]) && !empty($param["department_code"])) {
+                $where[] = ["u.department_code", "=", $param["department_code"]];
             }
         }
         $data = (new AttendanceMapper())->attendances($where);
@@ -102,15 +105,24 @@ class AttendanceService extends BaseService
             $accidentCount = $dataCollect->where("type", "=", 5)->count();
             $item = [
                 "user_id" => $v[0]["user_id"],
+                "id" => $v[0]["id"],
                 "name" => $k,
                 "department" => $v[0]["department"],
                 "attendance_count" => $attendanceCount,
                 "late_count" => $lateCount,
                 "late_time" => $lateTime,
+                "check_in_time" => $v[0]["check_in_time"]==0?"未出勤":date("Y-m-d H:i:s", $v[0]["check_in_time"]),
+                "check_out_time" => $v[0]["check_out_time"]==0?"未签退":date("Y-m-d H:i:s", $v[0]["check_out_time"]),
+                "check_in_timestamp" => $v[0]["check_in_time"],
+                "check_out_timestamp" => $v[0]["check_out_time"],
+                "type" => $this->type[$v[0]["type"]],
+                "color" => $this->color[$v[0]["type"]],
+                "work_time" => array_sum(array_column($v, "work_time")),
                 "leave_count" => $leaveCount,
                 "reward" => floatval(array_sum(array_column($v, "reward"))),
                 "attendance_rate" => (floatval(round($attendanceCount / count($v), 2)) * 100) . "%",
                 "accident_rate" => (floatval(round($accidentCount / count($v), 2)) * 100) . "%",
+                "accident" => $accidentCount,
             ];
             $retData[] = $item;
         }
@@ -163,6 +175,8 @@ class AttendanceService extends BaseService
         foreach ($data as $k => $v) {
             $data[$k]["type"] = $this->type[$v["type"]];
             $data[$k]["color"] = $this->color[$v["type"]];
+            $data[$k]["check_in_time"] = $v["check_in_time"]==0?"未出勤":date("Y-m-d H:i:s", $v["check_in_time"]);
+            $data[$k]["check_out_time"] = $v["check_out_time"]==0?"未签退":date("Y-m-d H:i:s", $v["check_out_time"]);
         }
         return $data;
     }
@@ -180,6 +194,9 @@ class AttendanceService extends BaseService
         ];
         if ($param["field"] == "type") {
             $updateData["result"] = $this->result[$param["value"]];
+            if ($param["value"] == 5) {
+                $updateData["reward"] = -10;
+            }
         }
         return $this->updateBy($updateData);
     }
@@ -191,6 +208,10 @@ class AttendanceService extends BaseService
     public function checkIn() {
         Carbon::setLocale("zh");
         $carbon = new Carbon();
+        # 获取该员工的上班时间
+        $workTime = (new UserMapper())->workTime();
+        # 获取该员工昨日下班时间
+        $checkOutTime = $this->findBy([["user_id", "=", request()->uid], ["create_time", ">=", strtotime(date("Y-m-d", strtotime("-1 day")))], ["check_out_time", "<>", 0]], "check_out_time")["check_out_time"];
         $info = $this->findBy(["user_id" => request()->uid], "id, create_time", "create_time desc");
         $updateData = [
             "check_in_time" => time(),
@@ -198,9 +219,14 @@ class AttendanceService extends BaseService
             "result" => 1,
             "reward" => 0
         ];
+        # 迟到时间
+        $late = strtotime(date("Y-m-d").' '.$workTime["start_time"]);
+        # 如果该员工超过12点下班 则可以延迟一小时
+        if (date("Y-m-d", $checkOutTime) == date("Y-m-d", time()))
+            $late += 3600;
         # 迟到了
-        if (time() > strtotime($info["create_time"])) {
-            $time = Carbon::parse($info["create_time"]);
+        if (time() > $late + 60) {
+            $time = Carbon::parse(date("Y-m-d H:i:s", $late + 60));
             $lateTime = $carbon->diffInMinutes($time);
             $result = 0.9;
             $reward = -10;
@@ -239,7 +265,7 @@ class AttendanceService extends BaseService
         Carbon::setLocale("zh");
         $info = $this->findBy([["user_id", "=", request()->uid], ["check_in_time", "<>", 0]], "id, check_in_time", "create_time desc");
         $time = Carbon::parse($info["check_in_time"]);
-        $workTime = $time->diffInHours($time);
+        $workTime = (new Carbon())->diffInHours($time);
         return $this->updateWhere(["id" => $info["id"]], ["check_out_time" => time(), "work_time" => $workTime]);
     }
 

@@ -283,9 +283,10 @@ class CustomerBiService
         $final = array_combine(array_column($_finalPayment, "name"), array_column($_finalPayment, "customer_id"));
         $refund = array_combine(array_column($_refund, "name"), array_column($_refund, "customer_id"));
         $tail = array_merge($final, $refund, $deposit);
-        $department = array_merge(array_combine(array_column($_depositData, "name"), array_column($_depositData, "customer_id")), array_combine(array_column($_finalPayment, "name"), array_column($_finalPayment, "department")), array_combine(array_column($_refund, "name"), array_column($_refund, "department")));
+        $department = array_merge(array_combine(array_column($_depositData, "name"), array_column($_depositData, "department")), array_combine(array_column($_finalPayment, "name"), array_column($_finalPayment, "department")), array_combine(array_column($_refund, "name"), array_column($_refund, "department")));
+        $keys = array_keys($tmp);
         foreach ($tail as $k => $v) {
-            if (!in_array($k, array_keys($tmp))) {
+            if (!in_array($k, $keys)) {
                 $cusTotalAmount = floatval(round(($depositData[$k]??0) + ($finalPaymentData[$k]??0), 2));
                 $entryDays = $entryTime[$v]??0;
                 $item = [
@@ -308,13 +309,18 @@ class CustomerBiService
                 $retData[] = $item;
             }
         }
-
+        #上工日均冠比
+        $day_sort = array_column($retData, "day_amount");
+        array_multisort($day_sort, SORT_DESC, $retData);
+        $day_max = $retData[0]["day_amount"]??0;
+        #入账冠比
         $sort = array_column($retData, "total_amount");
         array_multisort($sort, SORT_DESC, $retData);
         $max = $retData[0]["total_amount"]??0;
         foreach ($retData as $k => $v) {
             $retData[$k]["rank"] = $k+1;
             $retData[$k]["champion_ratio"] = $max==0?"0%":floatval(round(($v["total_amount"] / $max) * 100, 2))."%";
+            $retData[$k]["day_champion_ratio"] = $day_max==0?"0%":floatval(round(($v["day_amount"] / $day_max) * 100, 2))."%";
         }
         return $retData;
     }

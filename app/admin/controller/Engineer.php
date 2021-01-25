@@ -131,6 +131,19 @@ class Engineer extends Base
     }
 
     /**
+     * 获取所有内部编辑
+     * @param EngineerService $service
+     */
+    public function innerEngineer(EngineerService $service) {
+        try {
+            $data = $service->selectBy(["is_inner" => 1, "is_delete" => 0, "status" => 1], "id, qq_nickname", "create_time desc");
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
+
+    /**
      * 获取邀请链接
      */
     public function affLink() {

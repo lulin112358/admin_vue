@@ -3,6 +3,7 @@
 use app\admin\controller\Account;
 use app\admin\controller\AmountAccount;
 use app\admin\controller\Attendance;
+use app\admin\controller\AttendanceGroup;
 use app\admin\controller\AuthFields;
 use app\admin\controller\Category;
 use app\admin\controller\Crontab;
@@ -14,6 +15,7 @@ use app\admin\controller\GroupChat;
 use app\admin\controller\IpWhite;
 use app\admin\controller\ManuscriptFee;
 use app\admin\controller\MarketBi;
+use app\admin\controller\Memorabilia;
 use app\admin\controller\Orders;
 use app\admin\controller\OrdersDeposit;
 use app\admin\controller\OrdersFinalPayment;
@@ -180,6 +182,7 @@ Route::group('admin', function () {
     Route::get("engineer", Engineer::class."@engineer");
     Route::get("engineer/search", Engineer::class."@engineerSearch");
     Route::get("engineers_base", Engineer::class."@engineerBaseInfo");
+    Route::get("engineer/inner", Engineer::class."@innerEngineer");
     Route::get("engineer/aff_link", Engineer::class."@affLink");
     Route::post("engineer", Engineer::class."@addEngineer");
     Route::delete("engineer", Engineer::class."@delEngineer");
@@ -191,6 +194,7 @@ Route::group('admin', function () {
     Route::get("down/doc_list", Orders::class."@docList");
     Route::get("confirm_info", Orders::class."@confirmInfo");
     Route::get("orders/auto_fill", Orders::class."@ordersAutoFill");
+    Route::get("orders/inner_engineer", Orders::class."@innerEngineerOrders");
     Route::post("orders", Orders::class."@addOrder");
     Route::put("orders", Orders::class."@updateOrder");
     Route::delete("orders", Orders::class."@delOrder");
@@ -310,6 +314,19 @@ Route::group('admin', function () {
     Route::get("part_time_row", PartTime::class."@partTimeRow");
     Route::put("salary", PartTime::class."@updateSalary");
     Route::put("part_times", PartTime::class."@updatePartTime");
+
+    # 大事记
+    Route::get("memorabilia", Memorabilia::class."@memorabilia");
+    Route::post("memorabilia", Memorabilia::class."@addMemorabilia");
+    Route::put("memorabilia", Memorabilia::class."@updateMemorabilia");
+    Route::delete("memorabilia", Memorabilia::class."@delMemorabilia");
+
+    # 考勤组
+    Route::get("attendance_group", AttendanceGroup::class."@attendanceGroups");
+    Route::get("attendance_group/info", AttendanceGroup::class."@attendanceGroupInfo");
+    Route::post("attendance_group", AttendanceGroup::class."@addAttendanceGroup");
+    Route::put("attendance_group", AttendanceGroup::class."@updateAttendanceGroup");
+    Route::delete("attendance_group", AttendanceGroup::class."@delAttendanceGroup");
 })->allowCrossDomain()->middleware([JwtMiddleware::class, IpFilter::class]);
 
 # 后台路由组   不需要jwt登录验证
@@ -317,6 +334,7 @@ Route::group('admin', function () {
     Route::post('login', Login::class."@login");
 //    Route::post('test', Login::class."@test");
     Route::post("orders/export", Orders::class."@export");
+    Route::post("innerEngineerOrders/export", Orders::class."@innerEngineerExport");
     Route::post("engineer/export", Engineer::class."@export");
     Route::post("manuscript_fee/export", ManuscriptFee::class."@export");
     Route::post("can_settlement/export", ManuscriptFee::class."@canSettlementExport");
@@ -334,6 +352,7 @@ Route::group('admin', function () {
     # 文件上传
     Route::post("upload", Upload::class."@upload");
     Route::post("upload_order_doc", Upload::class."@uploadOrderDoc");
+    Route::post("editor_upload", Upload::class."@editorUpload");
     # 文档下载
     Route::get("orders/down_doc", Orders::class."@downDoc");
 })->allowCrossDomain()->middleware([IpFilter::class]);
