@@ -6,6 +6,8 @@ use app\admin\controller\Attendance;
 use app\admin\controller\AttendanceGroup;
 use app\admin\controller\AuthFields;
 use app\admin\controller\Category;
+use app\admin\controller\CollectCode;
+use app\admin\controller\CollectCodeUser;
 use app\admin\controller\Crontab;
 use app\admin\controller\CustomerBi;
 use app\admin\controller\Degree;
@@ -327,6 +329,16 @@ Route::group('admin', function () {
     Route::post("attendance_group", AttendanceGroup::class."@addAttendanceGroup");
     Route::put("attendance_group", AttendanceGroup::class."@updateAttendanceGroup");
     Route::delete("attendance_group", AttendanceGroup::class."@delAttendanceGroup");
+
+    # 收款码
+    Route::get("collect_code", CollectCode::class."@collectCode");
+    Route::get("collect_code/info", CollectCode::class."@collectCodeInfo");
+    Route::post("collect_code", CollectCode::class."@addCollectCode");
+    Route::put("collect_code", CollectCode::class."@updateCollectCode");
+    Route::delete("collect_code", CollectCode::class."@delCollectCode");
+    Route::get("collect_code_user", CollectCodeUser::class."@collectCodeUser");
+    Route::put("collect_code_user", CollectCodeUser::class."@assignAuth");
+    Route::get("collect_code/user", CollectCode::class."@userCollectCode");
 })->allowCrossDomain()->middleware([JwtMiddleware::class, IpFilter::class]);
 
 # 后台路由组   不需要jwt登录验证
