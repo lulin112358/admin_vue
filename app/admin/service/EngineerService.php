@@ -23,7 +23,7 @@ class EngineerService extends BaseService
      * @return mixed
      */
     public function engineerSearch($param) {
-        $data = $this->selectBy([["contact_qq", "like", "%{$param['query']}%"], ["status", "=", 1], ["is_delete", "=", 0]],
+        $data = $this->selectBy([["contact_qq|qq_nickname|contact_phone|name|wechat|wechat_nickname", "like", "%{$param['query']}%"], ["status", "=", 1], ["is_delete", "=", 0]],
             "id, qq_nickname, contact_qq");
         foreach ($data as $k => $v)
             $data[$k]["qqinfo"] = $v["qq_nickname"]." / ".$v["contact_qq"];
