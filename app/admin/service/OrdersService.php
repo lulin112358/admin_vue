@@ -200,9 +200,9 @@ class OrdersService extends BaseService
                 ->where("manuscript_fee|biller|cate_name|check_fee|commission_ratio|customer_manager|customer_name|market_maintain|market_manager|market_user|order_sn|total_amount|customer_contact|deposit|final_payment|require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|note", "like", "%$searchKey%")
                 ->where($where)
                 ->fieldRaw("*, if((ifnull(deposit,0) + ifnull(final_payment,0))=0,0,(manuscript_fee / (ifnull(deposit,0) + ifnull(final_payment,0)))) as manuscript_fee_ratio")
-                ->orderRaw("if(status=3, 1, 0), if(status=5, 1, 0)")
+                ->orderRaw("if(is_down=1, 1, 0)")
                 ->order($params["search_order"])
-                ->order("order_id asc")
+                ->order("main_order_id asc")
                 ->paginate(100, true)->items();
         }else {         # 导出excel不需要分页
             $data = Db::table("orders_view")->alias("ov")
@@ -268,9 +268,9 @@ class OrdersService extends BaseService
             $order_sn = explode("-", $v["order_sn"]);
             if (count($order_sn) > 1) {
                 if ($order_sn[1] != "1") {
-                    $data[$k]["total_amount"] = "";
-                    $data[$k]["deposit"] = "";
-                    $data[$k]["final_payment"] = "";
+                    $data[$k]["total_amount"] = "↑";
+                    $data[$k]["deposit"] = "↑";
+                    $data[$k]["final_payment"] = "↑";
                 }
             }
 
@@ -336,7 +336,6 @@ class OrdersService extends BaseService
             }
             $data[$k]["countdown"] = $diff;
         }
-
         return $data;
     }
 
@@ -636,6 +635,7 @@ class OrdersService extends BaseService
                 "require" => $data["require"]??'',
                 "note" => $data["note"]??"",
                 "delivery_time" => strtotime($data["delivery_time"].":00:00"),
+                "sort_delivery_time" => strtotime($data["delivery_time"].":00:00"),
                 "create_time" => time(),
                 "update_time" => time()
             ];
@@ -773,7 +773,7 @@ class OrdersService extends BaseService
                 $updateData["status"] = 2;
                 $updateData["bill_time"] = time();
             }
-            # 如果更新订单状态为已交稿则更新实际交稿时间/验证稿费是否可以为0
+            # 如果更新订单状态为已交稿则更新实际交稿时间/验证稿费是否可以为0 查询是否可以更新is_down状态
             if ($data["field"] == "status" && $data["value"] == 3) {
                 # 获取内部写手
                 $innerEngineers = (new EngineerMapper())->columnBy(["is_inner" => 1], "id");
@@ -793,10 +793,21 @@ class OrdersService extends BaseService
                         return "尾款没有收齐 不允许交稿";
                 }
                 $updateData["actual_delivery_time"] = time();
+                # 查询是否可以更新is_down状态
+                $isDownData = array_unique($this->columnBy(["main_order_id" => $data["main_order_id"]], "status"));
+                if (count($isDownData) == 1 && ($isDownData[0] == 3 || $isDownData[0] == 5)) {
+                    $res3 = $this->updateWhere(["main_order_id" => $data["main_order_id"]], ["is_down" => 1]);
+                    if ($res3 === false)
+                        throw new \Exception("操作失败");
+                }
             }
-            # 订单状态改为不是已交稿 需要重新核定
+            # 订单状态改为不是已交稿 需要重新核定 重置is_down状态
             if ($data["field"] == "status" && $data["value"] != 3) {
                 $updateData["is_check"] = 0;
+                # 重置is_down状态
+                $res2 = $this->updateWhere(["main_order_id" => $data["main_order_id"]], ["is_down" => 0]);
+                if ($res2 === false)
+                    throw new \Exception("操作失败");
             }
             # 订单改为未发出时 重置写手
             if ($data["field"] == "status" && $data["value"] == 1) {
@@ -1008,7 +1019,8 @@ class OrdersService extends BaseService
                     "delivery_time" => $info["delivery_time"],
                     "create_time" => $create_time,
                     "update_time" => $create_time,
-                    "is_split" => 1
+                    "is_split" => 1,
+                    "sort_delivery_time" => $info["delivery_time"]
                 ];
                 $res = $this->add($insertData);
                 if (!$res)
@@ -1025,7 +1037,8 @@ class OrdersService extends BaseService
                         "delivery_time" => $info["delivery_time"],
                         "create_time" => $create_time,
                         "update_time" => $create_time,
-                        "is_split" => 1
+                        "is_split" => 1,
+                        "sort_delivery_time" => $info["delivery_time"]
                     ];
                 }
                 $res = $this->addAll($insertData);
