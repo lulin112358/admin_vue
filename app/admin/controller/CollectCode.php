@@ -104,4 +104,13 @@ class CollectCode extends Base
         }
         $this->ajaxReturn($data);
     }
+
+    /**
+     * 下载收款码
+     */
+    public function downCollectCode() {
+        $param = input("param.");
+        $file = root_path().'public'.explode(request()->host(), $param["file_path"])[1];
+        download_file($file, "收款码.".substr(strrchr($param["file_path"], '.'), 1));
+    }
 }

@@ -17,7 +17,7 @@ class AuthFieldsService extends BaseService
 
     # 订单状态
     private $status = [
-        ["value" => 1, "label" => "未发出"],
+        ["value" => 1, "label" => "未安排"],
 //        ["value" => 2, "label" => "已发出"],
         ["value" => 3, "label" => "已交稿"],
         ["value" => 4, "label" => "准备退款"],

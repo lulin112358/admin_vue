@@ -367,6 +367,7 @@ Route::group('admin', function () {
     Route::post("editor_upload", Upload::class."@editorUpload");
     # 文档下载
     Route::get("orders/down_doc", Orders::class."@downDoc");
+    Route::get("collect_code/down", CollectCode::class."@downCollectCode");
 })->allowCrossDomain()->middleware([IpFilter::class]);
 
 # 定时任务

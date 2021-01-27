@@ -35,6 +35,10 @@ class Login extends Base
         if (!password_verify($param['password'], $user['password']))
             $this->ajaxReturn(Code::ERROR, '密码错误');
 
+        if ($user["status"] == 0) {
+            $this->ajaxReturn(Code::ERROR, "该用户已锁定");
+        }
+
         # 查找用户所属权限组
         $roles = (new UserRoleMapper())->columnBy(["user_id" => $user["id"]], "role_id");
 

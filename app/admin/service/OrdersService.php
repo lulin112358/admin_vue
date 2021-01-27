@@ -4,7 +4,6 @@
 namespace app\admin\service;
 
 
-use Alchemy\Zippy\Zippy;
 use app\mapper\AccountMapper;
 use app\mapper\CategoryMapper;
 use app\mapper\EngineerMapper;
@@ -31,8 +30,8 @@ class OrdersService extends BaseService
 
     # 订单状态
     private $status = [
-        1 => "未发出",
-        2 => "已发出",
+        1 => "未安排",
+        2 => "已安排",
         3 => "已交稿",
         4 => "准备退款",
         5 => "已退款",
