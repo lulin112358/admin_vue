@@ -9,9 +9,9 @@ use think\Validate;
 class EngineerValidate extends Validate
 {
     protected $rule = [
-        "contact_qq|QQ" => "require",
+        "contact_qq|QQ" => "require|unique:engineer",
         "qq_nickname|QQ昵称" => "require",
-        "contact_phone|电话" => "require",
+        "contact_phone|电话" => "require|unique:engineer",
         "top_degree_id|最高学历" => "require",
         "profession_id|专业" => "require",
         "school_id|学校" => "require",
