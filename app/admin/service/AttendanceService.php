@@ -94,8 +94,7 @@ class AttendanceService extends BaseService
         foreach ($tmp as $k => $v) {
             $dataCollect = collect($v);
             # 出勤考勤
-            $attendanceCount = $dataCollect->whereIn("type", [1, 2, 3, 6])->count();
-            $attendanceCount = floatval($dataCollect->where("type", "=", 7)->count() / 2 + $attendanceCount);
+            $attendanceCount = array_sum($dataCollect->column("result"));
             # 迟到信息
             $lateInfo = $dataCollect->where("type", 3)->toArray();
             # 迟到次数
@@ -294,6 +293,10 @@ class AttendanceService extends BaseService
      */
     public function checkOut() {
         Carbon::setLocale("zh");
+        $isCheckOut = $this->findBy([["user_id", "=", request()->uid], ["create_time", "=", strtotime(date("Y-m-d 9:00:00", strtotime("-1 day")))]], "check_out_time", "create_time desc");
+        if ($isCheckOut["check_out_time"] == 0) {
+            throw new \Exception("昨天未签退 请刷新页面后签到");
+        }
         $info = $this->findBy([["user_id", "=", request()->uid], ["check_in_time", "<>", 0]], "id, check_in_time", "create_time desc");
         $time = Carbon::parse($info["check_in_time"]);
         $workTime = (new Carbon())->diffInHours($time);
@@ -359,5 +362,8 @@ class AttendanceService extends BaseService
         }
         (new AttendanceMapper())->addAll($data);
         (new PartTimeMapper())->addAll($data1);
+        # 查询昨日未签退用户记录半勤
+        $noCheckOut = $this->columnBy([["create_time", "=", strtotime(date("Y-m-d 9:00:00", strtotime("-1 day")))], ["check_out_time", "=", 0], ["result", ">", 0.5]], "id");
+        $this->updateWhere(["id" => $noCheckOut], ["result" => 0.5]);
     }
 }
