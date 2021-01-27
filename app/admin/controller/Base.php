@@ -116,7 +116,6 @@ class Base
                 $columns[] = "order_id";
                 $columns[] = "color";
                 $columns[] = "status_color";
-                $columns[] = "cell_merge";
             }
             if (request()->uid != 1) {
                 if (is_array($data)) {
