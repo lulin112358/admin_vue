@@ -297,7 +297,11 @@ class AttendanceService extends BaseService
         $info = $this->findBy([["user_id", "=", request()->uid], ["check_in_time", "<>", 0]], "id, check_in_time", "create_time desc");
         $time = Carbon::parse($info["check_in_time"]);
         $workTime = (new Carbon())->diffInHours($time);
-        return $this->updateWhere(["id" => $info["id"]], ["check_out_time" => time(), "work_time" => $workTime]);
+        # 获取考勤结果
+        $result = round($workTime / 8, 1);
+        if ($result >= 1)
+            $result = 1;
+        return $this->updateWhere(["id" => $info["id"]], ["check_out_time" => time(), "work_time" => $workTime, "result" => $result]);
     }
 
     /**
