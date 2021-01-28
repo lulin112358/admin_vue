@@ -35,7 +35,7 @@ class AttendanceMapper extends BaseMapper
         return Db::table("attendance")
             ->where(["user_id" => request()->uid])
             ->whereNotIn("type", "4,5")
-            ->field("check_out_time, create_time")
+            ->field("check_out_time, create_time, check_in_time")
             ->order("create_time desc")
             ->limit(0, 2)
             ->select()->toArray();

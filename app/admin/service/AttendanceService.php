@@ -301,7 +301,7 @@ class AttendanceService extends BaseService
 //            }
 //        }
         if (isset($isCheckOut[1])) {
-            if ($isCheckOut[1]["check_out_time"] == 0) {
+            if ($isCheckOut[1]["check_out_time"] == 0 && $isCheckOut[0]["check_in_time"] == 0) {
                 throw new \Exception("昨天未签退 请刷新页面后签到");
             }
         }
