@@ -249,7 +249,13 @@ class OrdersService extends BaseService
                 ->order("order_id asc")->group("ov.order_id")->select()->toArray();
         }
 
+        # 获取学校名称
+        $schoolIds = array_unique(array_column($data, "school_id"));
+        $schoolMap = (new SchoolMapper())->selectBy(["id" => $schoolIds], "id, name");
+        $schoolMap = array_combine(array_column($schoolMap, "id"), array_column($schoolMap, "name"));
+        $schoolMap[0] = "未填写";
         foreach ($data as $k => $v) {
+            $data[$k]["school_name"] = $schoolMap[$v["school_id"]];
             $data[$k]["create_time"] = date("Y-m-d H:i:s", $v["create_time"]);
             $data[$k]["delivery_time"] = date("Y-m-d H", $v["delivery_time"]);
             $data[$k]["commission_ratio"] = $v["commission_ratio"]<=1?($v["commission_ratio"] * 100)."%":$v["commission_ratio"]."元";
