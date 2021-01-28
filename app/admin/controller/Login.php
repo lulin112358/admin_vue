@@ -69,19 +69,19 @@ class Login extends Base
 //        }
 //    }
 
-    public function test() {
-        $data = Db::table("orders")->field("main_order_id, status, id")->select()->toArray();
-        $tmp = [];
-        foreach ($data as $k => $v) {
-            $tmp[$v["main_order_id"]][] = $v;
-        }
-        foreach ($tmp as $k => $v) {
-            $arr = array_unique(array_column($v, "status"));
-            if (count($arr) == 1 && ($arr[0] == 3 || $arr[0] == 5)) {
-                Db::table("orders")->where(["main_order_id" => $v[0]["main_order_id"]])->update(["is_down" => 1]);
-            }
-        }
-    }
+//    public function test() {
+//        $data = Db::table("orders")->field("main_order_id, status, id")->select()->toArray();
+//        $tmp = [];
+//        foreach ($data as $k => $v) {
+//            $tmp[$v["main_order_id"]][] = $v;
+//        }
+//        foreach ($tmp as $k => $v) {
+//            $arr = array_unique(array_column($v, "status"));
+//            if (count($arr) == 1 && ($arr[0] == 3 || $arr[0] == 5)) {
+//                Db::table("orders")->where(["main_order_id" => $v[0]["main_order_id"]])->update(["is_down" => 1]);
+//            }
+//        }
+//    }
 
 //    public function test() {
 //        $map = [

@@ -344,7 +344,7 @@ Route::group('admin', function () {
 # 后台路由组   不需要jwt登录验证
 Route::group('admin', function () {
     Route::post('login', Login::class."@login");
-    Route::post('test', Login::class."@test");
+//    Route::post('test', Login::class."@test");
     Route::post("orders/export", Orders::class."@export");
     Route::post("innerEngineerOrders/export", Orders::class."@innerEngineerExport");
     Route::post("engineer/export", Engineer::class."@export");

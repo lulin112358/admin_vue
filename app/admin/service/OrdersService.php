@@ -202,7 +202,8 @@ class OrdersService extends BaseService
                 ->fieldRaw("*, if((ifnull(deposit,0) + ifnull(final_payment,0))=0,0,(manuscript_fee / (ifnull(deposit,0) + ifnull(final_payment,0)))) as manuscript_fee_ratio")
                 ->orderRaw("if(is_down=1, 1, 0)")
                 ->order($params["search_order"])
-                ->order("main_order_id asc")
+                ->order("main_order_id")
+                ->order("order_id asc")
                 ->paginate(100, true)->items();
         }else {         # 导出excel不需要分页
             $data = Db::table("orders_view")->alias("ov")
@@ -242,8 +243,9 @@ class OrdersService extends BaseService
                 ->where("ov.manuscript_fee|ov.biller|cate_name|ov.check_fee|commission_ratio|customer_manager|customer_name|market_maintain|market_manager|market_user|ov.order_sn|total_amount|customer_contact|deposit|final_payment|ov.require|amount_account|wechat|nickname|account|origin_name|contact_qq|qq_nickname|ov.note", "like", "%$searchKey%")
                 ->where($where)
                 ->fieldRaw("sl.create_time as settlement_time, ov.*, if((ifnull(deposit,0) + ifnull(final_payment,0))=0,0,(ov.manuscript_fee / (ifnull(deposit,0) + ifnull(final_payment,0)))) as manuscript_fee_ratio")
-                ->orderRaw("if(ov.status=3, 1, 0), if(ov.status=5, 1, 0)")
+                ->orderRaw("if(is_down=1, 1, 0)")
                 ->order($params["search_order"])
+                ->order("main_order_id")
                 ->order("order_id asc")->group("ov.order_id")->select()->toArray();
         }
 

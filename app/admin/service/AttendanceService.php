@@ -293,9 +293,17 @@ class AttendanceService extends BaseService
      */
     public function checkOut() {
         Carbon::setLocale("zh");
-        $isCheckOut = $this->findBy([["user_id", "=", request()->uid], ["create_time", "=", strtotime(date("Y-m-d 9:00:00", strtotime("-1 day")))], ["type", "not in", [4, 5]]], "check_out_time", "create_time desc");
-        if ($isCheckOut && $isCheckOut["check_out_time"] == 0) {
-            throw new \Exception("昨天未签退 请刷新页面后签到");
+        $isCheckOut = (new AttendanceMapper())->checkOutInfo();
+//        $isCheckOut = $this->findBy([["user_id", "=", request()->uid], ["create_time", "=", strtotime(date("Y-m-d 9:00:00", strtotime("-1 day")))], ["type", "not in", [4, 5]]], "check_out_time, create_time", "create_time desc");
+//        if (date("Y-m-d", time()) != date("Y-m-d", strtotime($isCheckOut["create_time"]))) {
+//            if ($isCheckOut && $isCheckOut["check_out_time"] == 0) {
+//                throw new \Exception("昨天未签退 请刷新页面后签到");
+//            }
+//        }
+        if (isset($isCheckOut[1])) {
+            if ($isCheckOut[1]["check_out_time"] == 0) {
+                throw new \Exception("昨天未签退 请刷新页面后签到");
+            }
         }
         $info = $this->findBy([["user_id", "=", request()->uid], ["check_in_time", "<>", 0]], "id, check_in_time", "create_time desc");
         $time = Carbon::parse($info["check_in_time"]);
