@@ -117,12 +117,9 @@ class RefundService extends BaseService
                 throw new \Exception("操作失败!");
 
             # 查询是否可以更新is_down状态
-            $isDownData = array_unique((new OrdersMapper())->columnBy(["main_order_id" => $info["order_main_id"]], "status"));
-            if (count($isDownData) == 1 && ($isDownData[0] == 3 || $isDownData[0] == 5)) {
-                $res3 = $this->updateWhere(["main_order_id" => $info["order_main_id"]], ["is_down" => 1]);
-                if ($res3 === false)
-                    throw new \Exception("操作失败");
-            }
+            $res3 = (new OrdersMapper())->updateWhere(["main_order_id" => $info["order_main_id"]], ["is_down" => 1]);
+            if ($res3 === false)
+                throw new \Exception("操作失败");
 
             Db::commit();
             return true;

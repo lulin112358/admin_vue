@@ -533,9 +533,9 @@ class OrdersService extends BaseService
         $order_sn = explode("-", $data["order_sn"]);
         if (count($order_sn) > 1) {
             if ($order_sn[1] != "1") {
-                $data["total_amount"] = "";
-                $data["deposit"] = "";
-                $data["final_payment"] = "";
+                $data["total_amount"] = "↑";
+                $data["deposit"] = "↑";
+                $data["final_payment"] = "↑";
             }
         }
 
@@ -586,7 +586,7 @@ class OrdersService extends BaseService
                 $data["color"] = "green";
         }
         $data["status_color"] = $this->statusColor[$status];
-        if ($data["status"] == 3) {
+        if ($status == 3) {
             $diff = "已交稿";
             $data["color"] = "black";
         }
@@ -796,8 +796,15 @@ class OrdersService extends BaseService
                 }
                 $updateData["actual_delivery_time"] = time();
                 # 查询是否可以更新is_down状态
-                $isDownData = array_unique($this->columnBy(["main_order_id" => $data["main_order_id"]], "status"));
-                if (count($isDownData) == 1 && ($isDownData[0] == 3 || $isDownData[0] == 5)) {
+                $isDownData = $this->columnBy([["main_order_id", "=", $data["main_order_id"]], ["id", "<>", $data["order_id"]]], "status");
+                if (count($isDownData) != 0) {
+                    $isDownData = array_unique($isDownData);
+                    if (count($isDownData) == 1 && ($isDownData[0] == 3 || $isDownData[0] == 5)) {
+                        $res3 = $this->updateWhere(["main_order_id" => $data["main_order_id"]], ["is_down" => 1]);
+                        if ($res3 === false)
+                            throw new \Exception("操作失败");
+                    }
+                }else {
                     $res3 = $this->updateWhere(["main_order_id" => $data["main_order_id"]], ["is_down" => 1]);
                     if ($res3 === false)
                         throw new \Exception("操作失败");
