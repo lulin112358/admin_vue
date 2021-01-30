@@ -768,13 +768,15 @@ class OrdersService extends BaseService
             if (in_array($data["field"], array_keys($this->orderFieldMap)))
                 $data["field"] = $this->orderFieldMap[$data["field"]];
             # 更新数据库
-            # 时间格式特殊处理
-            if ($data["field"] == "delivery_time")
-                $data["value"] = strtotime($data["value"].":00:00");
             $updateData = [
                 "id" => $data["order_id"],
                 $data["field"] => $data["value"]
             ];
+            # 时间格式特殊处理
+            if ($data["field"] == "delivery_time") {
+                $updateData[$data["field"]] = strtotime($data["value"].":00:00");
+                $updateData["sort_delivery_time"] = strtotime($data["value"].":00:00");
+            };
             # 如果更新工程师则更新发单人、发单时间和订单状态
             if ($data["field"] == "engineer_id") {
                 $updateData["biller"] = request()->uid;

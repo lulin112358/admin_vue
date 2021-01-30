@@ -241,11 +241,7 @@ class CustomerBiService
 
         $entryTime = [];
         foreach ($tmp as $k => $v) {
-            $dataCollect = collect($v);
-            # 出勤考勤
-            $attendanceCount = $dataCollect->whereIn("type", [1, 2, 3, 6])->count();
-            $attendanceCount = floatval($dataCollect->where("type", "=", 7)->count() / 2 + $attendanceCount);
-            $entryTime[$v[0]["user_id"]] = $attendanceCount;
+            $entryTime[$v[0]["user_id"]] = floatval(round(array_sum(array_column($v, "result")), 2));
         }
 
         # 总入账
