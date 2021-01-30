@@ -335,7 +335,7 @@
               this.addParam.school_id = this.addParam.school_id[this.addParam.school_id.length - 1]
               this.addParam.personnel_id = this.personnel_id
               http.post("customer/engineer", this.addParam).then(res => {
-                if (res.code === 0) {
+                if (res.code !== 1) {
                   this.$message.error(res.msg);
                 }else {
                   this.$message({
