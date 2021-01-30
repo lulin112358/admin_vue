@@ -82,6 +82,10 @@ class Login extends Base
 //            }
 //        }
 //    }
+//
+//    public function test() {
+//        Db::table("orders_main")->where(["category_id" => [7, 8, 10]])->update(["school_id" => 0]);
+//    }
 
 //    public function test() {
 //        $map = [

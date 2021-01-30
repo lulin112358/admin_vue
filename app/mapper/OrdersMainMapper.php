@@ -320,7 +320,7 @@ class OrdersMainMapper extends BaseMapper
             ->join(["origin" => "o"], "o.id=om.origin_id")
             ->where(["ods.is_split" => 0])
             ->where($where)
-            ->field("od.change_deposit as deposit, o.origin_name, ods.order_sn, od.create_time")
+            ->field("od.change_deposit as deposit, o.origin_name, ods.order_sn, od.create_time, om.category_id")
             ->select()->toArray();
     }
     public function customerDetailFinal($where) {
@@ -330,7 +330,7 @@ class OrdersMainMapper extends BaseMapper
             ->join(["origin" => "o"], "o.id=om.origin_id")
             ->where(["ods.is_split" => 0])
             ->where($where)
-            ->field("od.change_amount as final_payment, o.origin_name, ods.order_sn, od.create_time")
+            ->field("od.change_amount as final_payment, o.origin_name, ods.order_sn, od.create_time, om.category_id")
             ->select()->toArray();
     }
     public function customerDetailRefund($where) {
@@ -340,7 +340,7 @@ class OrdersMainMapper extends BaseMapper
             ->join(["origin" => "o"], "o.id=om.origin_id")
             ->where(["ods.is_split" => 0])
             ->where($where)
-            ->field("od.refund_amount, od.refund_time as create_time, o.origin_name, ods.order_sn")
+            ->field("od.refund_amount, od.refund_time as create_time, o.origin_name, ods.order_sn, om.category_id")
             ->select()->toArray();
     }
 

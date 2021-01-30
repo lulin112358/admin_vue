@@ -6,6 +6,7 @@ namespace app\admin\service;
 
 use app\mapper\AccountMapper;
 use app\mapper\AttendanceMapper;
+use app\mapper\CategoryMapper;
 use app\mapper\OrdersMainMapper;
 use app\mapper\UserMapper;
 use Carbon\Carbon;
@@ -338,7 +339,9 @@ class CustomerBiService
             $startTime = strtotime(date("Y-m-d", time()));
             $endTime = time();
         }
-        # 获取客服业绩金额
+        # 获取分类信息
+        $categoryData = (new CategoryMapper())->all();
+        $categoryMap = array_combine(array_column($categoryData, "id"), array_column($categoryData, "cate_name"));
 
         # 定金
         $mapper = new OrdersMainMapper();
@@ -357,6 +360,7 @@ class CustomerBiService
             foreach ($v as $key => $val) {
                 $item = [
                     "origin_name" => $val["origin_name"],
+                    "category" => $categoryMap[$val["category_id"]],
                     "deposit" => floatval($k=='deposit'?$val["deposit"]:0),
                     "final_payment" => floatval($k=='final_payment'?$val["final_payment"]:0),
                     "refund_amount" => floatval($k=='refund'?$val["refund_amount"]:0),
