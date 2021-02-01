@@ -133,7 +133,7 @@ class ManuscriptFeeService extends BaseService
         if (!$flag)
             return false;
 
-        return (new OrdersMapper())->updateWhere(["id" => $param["id"]], ["is_check" => 1]);
+        return (new OrdersMapper())->updateWhere(["id" => $param["id"]], ["is_check" => 1, "check_time" => time(), "check_user" => request()->uid]);
     }
 
     /**

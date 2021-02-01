@@ -24,6 +24,6 @@ class EngineerValidate extends Validate
     protected $scene = [
         "add" => ["contact_qq", "qq_nickname", "contact_phone", "top_degree_id", "profession_id", "school_id",
             "good_at_software_id", "tendency_id", "alipay", "collection_code"],
-        "update" => ["contact_qq", "collection_code"]
+        "update" => ["collection_code"]
     ];
 }
