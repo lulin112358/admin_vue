@@ -38,7 +38,7 @@ class OrdersMapper extends BaseMapper
     public function canSettlement($where) {
         return Db::table("orders")->alias("o")
             ->join(["engineer" => "e"], "e.id=o.engineer_id")
-            ->where([["o.status", "=", 3], ["o.engineer_id", "<>", 0], ["o.is_check", "=", 1], ["settlemented", "<", Db::raw("manuscript_fee")]])
+            ->where([["o.status", "=", 3], ["o.engineer_id", "<>", 0], ["o.is_check", "=", 1], ["o.is_clear", "=", 0], ["settlemented", "<", Db::raw("manuscript_fee")]])
             ->where($where)
             ->field("o.id, o.engineer_id, o.manuscript_fee, o.settlemented, o.deduction, o.actual_delivery_time, o.delivery_time, e.qq_nickname, e.contact_qq, e.collection_code")
             ->select()->toArray();
@@ -81,7 +81,7 @@ class OrdersMapper extends BaseMapper
         return Db::table("orders")->alias("o")
             ->join(["orders_main" => "om"], "om.id=o.main_order_id")
             ->join(["category" => "c"], "c.id=om.category_id")
-            ->where([["o.status", "=", 3], ["o.engineer_id", "=", $engineer_id], ["o.is_check", "=", 1]])
+            ->where([["o.status", "=", 3], ["o.engineer_id", "=", $engineer_id], ["o.is_check", "=", 1], ["o.is_clear", "=", 0]])
             ->where($where)
             ->where([["o.manuscript_fee", "<>", Db::raw("o.settlemented")]])
             ->field("o.require, o.id, o.order_sn, o.status, o.delivery_time, o.actual_delivery_time, o.manuscript_fee, o.settlemented, o.deduction, c.cate_name, o.is_check")

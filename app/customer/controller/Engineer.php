@@ -26,7 +26,7 @@ class Engineer extends Base
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
         if (!$res)
-            $this->ajaxReturn(Code::ERROR, "添加失败");
+            $this->ajaxReturn(Code::ERROR, "添加失败 请检查QQ昵称是否包含特殊表情 如包含请删除后重试");
         $this->ajaxReturn("添加成功");
     }
 

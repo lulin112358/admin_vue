@@ -512,16 +512,44 @@ class CustomerBiService
                 $retData[] = $item;
             }
         }
-        #上工日均冠比
-        $day_sort = array_column($retData, "day_amount");
-        array_multisort($day_sort, SORT_DESC, $retData);
+        $time = Carbon::parse(date("Y-m-d", $where[0][2]));
+        $timeEnd = Carbon::parse(date("Y-m-d", $where[1][2]));
+        $diffDay = $timeEnd->diffInDays($time);
+        $timeArr = [];
+        while ($diffDay > 0) {
+            $timeArr[] = $time->toDateString();
+            $time->addDays();
+            $diffDay--;
+        }
+
+        $dateArr = array_column($retData, "name");
+        foreach ($timeArr as $k => $v) {
+            if (!in_array($v, $dateArr)) {
+                $retData[] = [
+                    "name" => $v,
+                    "department" => $retData[0]['department'],
+                    "deal_rate" => "0%",
+                    "total_amount" => 0,
+                    "total_count" => 0,
+                    "write_count" => 0,
+                    "reduce_repeat_count" => 0,
+                    "other_count" => 0,
+                    "deposit" => 0,
+                    "final_payment" => 0,
+                    "refund_amount" => 0,
+                    "customer_id" => $retData[0]["customer_id"],
+                    "day_count" => 0,
+                    "day_amount" => 0,
+                    "entry_days" => 0
+                ];
+            }
+        }
+
         $day_max = $retData[0]["day_amount"]??0;
-        #入账冠比
+        $max = $retData[0]["total_amount"]??0;
         $sort = array_column($retData, "name");
         array_multisort($sort, SORT_ASC, $retData);
-        $max = $retData[0]["total_amount"]??0;
         foreach ($retData as $k => $v) {
-            $retData[$k]["rank"] = $k+1;
             $retData[$k]["champion_ratio"] = $max==0?"0%":floatval(round(($v["total_amount"] / $max) * 100, 2))."%";
             $retData[$k]["day_champion_ratio"] = $day_max==0?"0%":floatval(round(($v["day_amount"] / $day_max) * 100, 2))."%";
         }
