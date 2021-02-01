@@ -374,6 +374,160 @@ class CustomerBiService
         return $retData;
     }
 
+    /**
+     * 客服业绩时间维度数据
+     * @param $param
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function cusOrderPerfDay($param) {
+        Carbon::setLocale("zh");
+        if (isset($param["range_time"]) && !empty($param["range_time"])) {
+            $where = [
+                ["om.create_time", ">=", strtotime($param["range_time"][0])],
+                ["om.create_time", "<=", strtotime($param["range_time"][1])],
+                ["om.customer_id", "=", $param["customer_id"]]
+            ];
+            $attendanceMap = [
+                ["a.create_time", ">=", strtotime($param["range_time"][0])],
+                ["a.create_time", "<=", strtotime($param["range_time"][1])],
+                ["a.user_id", "=", $param["customer_id"]]
+            ];
+        }else {
+            $where = [
+                ["om.create_time", ">=", strtotime(date("Y-m-d", time()))],
+                ["om.create_time", "<=", time()],
+                ["om.customer_id", "=", $param["customer_id"]]
+            ];
+            $attendanceMap = [
+                ["a.create_time", ">=", strtotime(date("Y-m-d", time()))],
+                ["a.create_time", "<=", time()],
+                ["a.user_id", "=", $param["customer_id"]]
+            ];
+        }
+        # 查找客服业绩数量
+        $customerData = (new OrdersMainMapper())->customerOrderData($where);
+        # 获取客服业绩金额
+        $mapper = new OrdersMainMapper();
+        $map = [["od.create_time", ">=", $where[0][2]], ["od.create_time", "<=", $where[1][2]], ["om.customer_id", "=", $param["customer_id"]]];
+        # 定金
+        $_depositData = $mapper->customerOrderDeposit($map);
+        $depositData = [];
+        foreach ($_depositData as $k => $v) {
+            $depositData[date("Y-m-d", $v["create_time"])] = $depositData[date("Y-m-d", $v["create_time"])]??0;
+            $depositData[date("Y-m-d", $v["create_time"])] += $v["deposit"];
+            $_depositData[$k]["create_time"] = date("Y-m-d", $v["create_time"]);
+        }
+
+        # 尾款
+        $_finalPayment = $mapper->customerOrderFinal($map);
+        $finalPaymentData = [];
+        foreach ($_finalPayment as $k => $v) {
+            $finalPaymentData[date("Y-m-d", $v["create_time"])] = $finalPaymentData[date("Y-m-d", $v["create_time"])]??0;
+            $finalPaymentData[date("Y-m-d", $v["create_time"])] += $v["final_payment"];
+            $_finalPayment[$k]["create_time"] = date("Y-m-d", $v["create_time"]);
+        }
+
+        # 退款
+        $map = [["od.refund_time", ">=", $where[0][2]], ["od.refund_time", "<=", $where[1][2]], ["om.customer_id", "=", $param["customer_id"]]];
+        $_refund = $mapper->customerRefund($map);
+        $refundData = [];
+        foreach ($_refund as $k => $v) {
+            $refundData[date("Y-m-d", $v["refund_time"])] = $refundData[date("Y-m-d", $v["refund_time"])]??0;
+            $refundData[date("Y-m-d", $v["refund_time"])] += $v["refund_amount"];
+            $_refund[$k]["refund_time"] = date("Y-m-d", $v["refund_time"]);
+        }
+
+        # 客服在所选时间内的上工天数
+        $data = (new AttendanceMapper())->attendances($attendanceMap);
+        $tmp = [];
+        foreach ($data as $k => $v)
+            $tmp[date("Y-m-d", $v["create_time"])][] = $v;
+
+        $entryTime = [];
+        foreach ($tmp as $k => $v) {
+            $entryTime[$k] = floatval(round(array_sum(array_column($v, "result")), 2));
+        }
+
+        # 总入账
+        $totalAmountAll = array_sum(array_values($depositData)) + array_sum(array_values($finalPaymentData));
+
+        $tmp = [];
+        foreach ($customerData as $k => $v)
+            $tmp[date("Y-m-d", $v["create_time"])][] = $v;
+
+        $retData = [];
+        foreach ($tmp as $k => $v) {
+            $cusTotalAmount = floatval(round(($depositData[$k]??0) + ($finalPaymentData[$k]??0), 2));
+            $entryDays = $entryTime[$v[0]["customer_id"]]??0;
+            $item = [
+                "name" => $k,
+                "department" => $v[0]["department"],
+                "deal_rate" => $totalAmountAll==0?"0%":(round($cusTotalAmount / $totalAmountAll, 2) * 100) . "%",
+                "total_amount" => $cusTotalAmount,
+                "total_count" => count($v),
+                "write_count" => collect($v)->where("category_id", "in", [9])->count(),
+                "reduce_repeat_count" => collect($v)->where("category_id", "in", [7,8,10])->count(),
+                "other_count" => collect($v)->whereNotIn("category_id", [7,8,9,10])->count(),
+                "deposit" => $depositData[$k]??0,
+                "final_payment" => $finalPaymentData[$k]??0,
+                "refund_amount" => $refundData[$k]??0,
+                "customer_id" => $v[0]["customer_id"],
+                "day_count" => $entryDays==0?0:round(count($v) / $entryDays, 1),
+                "day_amount" => $entryDays==0?0:floatval(round($cusTotalAmount / $entryDays, 2)),
+                "entry_days" => $entryDays
+            ];
+            $retData[] = $item;
+        }
+
+        $deposit = array_combine(array_column($_depositData, "create_time"), array_column($_depositData, "customer_id"));
+        $final = array_combine(array_column($_finalPayment, "create_time"), array_column($_finalPayment, "customer_id"));
+        $refund = array_combine(array_column($_refund, "refund_time"), array_column($_refund, "customer_id"));
+        $tail = array_merge($final, $refund, $deposit);
+        $department = array_merge(array_combine(array_column($_depositData, "create_time"), array_column($_depositData, "department")), array_combine(array_column($_finalPayment, "create_time"), array_column($_finalPayment, "department")), array_combine(array_column($_refund, "refund_time"), array_column($_refund, "department")));
+        $keys = array_keys($tmp);
+        foreach ($tail as $k => $v) {
+            if (!in_array($k, $keys)) {
+                $cusTotalAmount = floatval(round(($depositData[$k]??0) + ($finalPaymentData[$k]??0), 2));
+                $entryDays = $entryTime[$v]??0;
+                $item = [
+                    "name" => $k,
+                    "department" => $department[$k],
+                    "deal_rate" => $totalAmountAll==0?"0%":(round($cusTotalAmount / $totalAmountAll, 2) * 100) . "%",
+                    "total_amount" => $cusTotalAmount,
+                    "total_count" => 0,
+                    "write_count" => 0,
+                    "reduce_repeat_count" => 0,
+                    "other_count" => 0,
+                    "deposit" => $depositData[$k]??0,
+                    "final_payment" => $finalPaymentData[$k]??0,
+                    "refund_amount" => $refundData[$k]??0,
+                    "customer_id" => $v,
+                    "day_count" => 0,
+                    "day_amount" => $entryDays==0?0:floatval(round($cusTotalAmount / $entryDays, 2)),
+                    "entry_days" => $entryDays
+                ];
+                $retData[] = $item;
+            }
+        }
+        #上工日均冠比
+        $day_sort = array_column($retData, "day_amount");
+        array_multisort($day_sort, SORT_DESC, $retData);
+        $day_max = $retData[0]["day_amount"]??0;
+        #入账冠比
+        $sort = array_column($retData, "name");
+        array_multisort($sort, SORT_ASC, $retData);
+        $max = $retData[0]["total_amount"]??0;
+        foreach ($retData as $k => $v) {
+            $retData[$k]["rank"] = $k+1;
+            $retData[$k]["champion_ratio"] = $max==0?"0%":floatval(round(($v["total_amount"] / $max) * 100, 2))."%";
+            $retData[$k]["day_champion_ratio"] = $day_max==0?"0%":floatval(round(($v["day_amount"] / $day_max) * 100, 2))."%";
+        }
+        return $retData;
+    }
+
 
     /**
      * 导出客服订单业绩

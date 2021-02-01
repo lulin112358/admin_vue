@@ -290,6 +290,7 @@ Route::group('admin', function () {
     Route::get("customer_order", CustomerBi::class."@customerOrderBi");
     Route::get("customer_order/detail", CustomerBi::class."@cusOrderPerfDetailBi");
     Route::get("cus_order_perf", CustomerBi::class."@cusOrderPerfBi");
+    Route::get("cus_order_perf/day", CustomerBi::class."@cusOrderPerfDay");
     Route::get("market_bi", MarketBi::class."@marketUserBi");
     Route::get("market_bi/detail", MarketBi::class."@marketUserOriginBi");
     Route::get("origin_bi", OriginBi::class."@originBi");

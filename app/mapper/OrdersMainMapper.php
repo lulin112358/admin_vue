@@ -150,7 +150,7 @@ class OrdersMainMapper extends BaseMapper
             ->join(["orders_main" => "om"], "om.id=od.main_order_id")
             ->join(["user" => "u"], "u.id=om.customer_id")
             ->where($where)
-            ->field("od.change_deposit as deposit, u.name, om. customer_id, u.department")
+            ->field("od.change_deposit as deposit, u.name, om. customer_id, u.department, od.create_time")
             ->select()->toArray();
     }
     public function customerOrderFinal($where) {
@@ -158,7 +158,7 @@ class OrdersMainMapper extends BaseMapper
             ->join(["orders_main" => "om"], "om.id=od.main_order_id")
             ->join(["user" => "u"], "u.id=om.customer_id")
             ->where($where)
-            ->field("od.change_amount as final_payment, u.name, om. customer_id, u.department")
+            ->field("od.change_amount as final_payment, u.name, om. customer_id, u.department, od.create_time")
             ->select()->toArray();
     }
     public function customerRefund($where) {
@@ -166,7 +166,7 @@ class OrdersMainMapper extends BaseMapper
             ->join(["orders_main" => "om"], "om.id=od.order_main_id")
             ->join(["user" => "u"], "u.id=om.customer_id")
             ->where($where)
-            ->field("od.refund_amount, u.name, om. customer_id, u.department")
+            ->field("od.refund_amount, u.name, om. customer_id, u.department, od.refund_time")
             ->select()->toArray();
     }
 

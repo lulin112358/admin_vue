@@ -79,6 +79,20 @@ class CustomerBi extends Base
         $this->ajaxReturn($list);
     }
 
+    /**
+     * 客服业绩时间维度数据
+     * @param CustomerBiService $service
+     */
+    public function cusOrderPerfDay(CustomerBiService $service) {
+        $param = input("param.");
+        try {
+            $data = $service->cusOrderPerfDay($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
+
 
     /**
      * 导出
