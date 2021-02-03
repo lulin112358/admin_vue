@@ -23,6 +23,7 @@ class UserExtendService extends BaseService
     public function userExtendInfo($param) {
         // 设置中文
         Carbon::setLocale("zh");
+        $carbon = new Carbon();
         $where = [
             "u.id" => $param["user_id"]
         ];
@@ -33,7 +34,16 @@ class UserExtendService extends BaseService
         $data["status"] = $data["status"] == 1 ? "在职" : "离职";
         $data["school_id"] = $data["school_name"];
         $data["attendance_rate"] = count($attendance)==0?"0%":(floatval(round(array_sum($attendance)/count($attendance), 2))*100)."%";
-        $data["entry_days"] = (new Carbon())->diffInDays($time);
+        $part = 1;
+        $diffYear = $carbon->diffInYears($time);
+        $diffMonth = $carbon->diffInMonths($time);
+        if ($diffYear > 0) {
+            $part = 4;
+        }
+        if ($diffYear <= 0 && $diffMonth > 0) {
+            $part = 2;
+        }
+        $data["entry_days"] = (new Carbon())->diffForHumans($time, true, false, $part);
         $data["entry_time"] = $data["entry_time"] == 0 ? date("Y-m-d", $data["tmp_entry_time"]) : date("Y-m-d", $data["entry_time"]);
         return $data;
     }
@@ -72,7 +82,7 @@ class UserExtendService extends BaseService
                 "degree_id" => $param["degree_id"],
                 "hometown" => $param["hometown"],
                 "current_residence" => $param["current_residence"],
-                "school_id" => $param["school_id"],
+                "school_id" => $param["school_id"]??0,
                 "create_time" => time(),
                 "update_time" => time()
             ];

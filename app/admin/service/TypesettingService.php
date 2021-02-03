@@ -21,8 +21,8 @@ class TypesettingService extends BaseService
             $param["filePath"] = root_path()."public/storage/".$param["file_path"];
             $param["schemaId"] = explode("/", $param["schema_id"])[0];
             $res = (new TTApiManager())->uploadPaper($param);
-            if (method_exists($res, "getErrorCode") && $res->getErrorCode()==5000)
-                throw new \Exception("失败");
+            if (method_exists($res, "getErrorCode"))
+                throw new \Exception($res->getErrorMag());
 
             $addData = [
                 "user_id" => request()->uid,
@@ -39,7 +39,7 @@ class TypesettingService extends BaseService
                 throw new \Exception("失败");
             return true;
         }catch (\Exception $exception) {
-            return false;
+            return $exception->getMessage();
         }
     }
 

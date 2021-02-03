@@ -30,8 +30,8 @@ class Typesetting extends Base
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
-        if (!$res)
-            $this->ajaxReturn(Code::ERROR, "上传失败");
+        if (is_string($res))
+            $this->ajaxReturn(Code::ERROR, $res);
         $this->ajaxReturn("上传成功");
     }
 

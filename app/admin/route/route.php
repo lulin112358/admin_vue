@@ -33,6 +33,7 @@ use app\admin\controller\Secrets;
 use app\admin\controller\SettlementLog;
 use app\admin\controller\Software;
 use app\admin\controller\StationLetter;
+use app\admin\controller\Task;
 use app\admin\controller\Tendency;
 use app\admin\controller\Typesetting;
 use app\admin\controller\Upload;
@@ -340,6 +341,14 @@ Route::group('admin', function () {
     Route::get("collect_code_user", CollectCodeUser::class."@collectCodeUser");
     Route::put("collect_code_user", CollectCodeUser::class."@assignAuth");
     Route::get("collect_code/user", CollectCode::class."@userCollectCode");
+
+    # 任务
+    Route::get("task", Task::class."@tasks");
+    Route::post("task", Task::class."@addTask");
+    Route::put("task", Task::class."@updateTask");
+    Route::put("task/status", Task::class."@updateStatus");
+    Route::delete("task", Task::class."@delTask");
+    Route::get("task/info", Task::class."@taskInfo");
 })->allowCrossDomain()->middleware([JwtMiddleware::class, IpFilter::class]);
 
 # 后台路由组   不需要jwt登录验证

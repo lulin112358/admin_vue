@@ -442,14 +442,15 @@ class CustomerBiService
 
         # 客服在所选时间内的上工天数
         $data = (new AttendanceMapper())->attendances($attendanceMap);
-        $tmp = [];
-        foreach ($data as $k => $v)
-            $tmp[date("Y-m-d", $v["create_time"])][] = $v;
-
-        $entryTime = [];
-        foreach ($tmp as $k => $v) {
-            $entryTime[$k] = floatval(round(array_sum(array_column($v, "result")), 2));
-        }
+        $entryDays = floatval(round(array_sum(array_column($data, "result")), 2));
+//        $tmp = [];
+//        foreach ($data as $k => $v)
+//            $tmp[date("Y-m-d", $v["create_time"])][] = $v;
+//
+//        $entryTime = [];
+//        foreach ($tmp as $k => $v) {
+//            $entryTime[$k] = floatval(round(array_sum(array_column($v, "result")), 2));
+//        }
 
         # 总入账
         $totalAmountAll = array_sum(array_values($depositData)) + array_sum(array_values($finalPaymentData));
@@ -461,7 +462,6 @@ class CustomerBiService
         $retData = [];
         foreach ($tmp as $k => $v) {
             $cusTotalAmount = floatval(round(($depositData[$k]??0) + ($finalPaymentData[$k]??0), 2));
-            $entryDays = $entryTime[$v[0]["customer_id"]]??0;
             $item = [
                 "name" => $k,
                 "department" => $v[0]["department"],
@@ -491,7 +491,6 @@ class CustomerBiService
         foreach ($tail as $k => $v) {
             if (!in_array($k, $keys)) {
                 $cusTotalAmount = floatval(round(($depositData[$k]??0) + ($finalPaymentData[$k]??0), 2));
-                $entryDays = $entryTime[$v]??0;
                 $item = [
                     "name" => $k,
                     "department" => $department[$k],
@@ -540,7 +539,7 @@ class CustomerBiService
                     "customer_id" => $retData[0]["customer_id"],
                     "day_count" => 0,
                     "day_amount" => 0,
-                    "entry_days" => 0
+                    "entry_days" => $entryDays
                 ];
             }
         }

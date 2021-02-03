@@ -154,8 +154,13 @@ class OrdersService extends BaseService
         $where = [];
         if (isset($params["date_time"]) && !empty($params["date_time"])) {
             if (strstr($params["search_order"], "create_time")) {
-                $where[] = ["create_time", ">=", strtotime($params["date_time"][0])];
-                $where[] = ["create_time", "<=", strtotime($params["date_time"][1])];
+                if ($export) {
+                    $where[] = ["ov.create_time", ">=", strtotime($params["date_time"][0])];
+                    $where[] = ["ov.create_time", "<=", strtotime($params["date_time"][1])];
+                }else{
+                    $where[] = ["create_time", ">=", strtotime($params["date_time"][0])];
+                    $where[] = ["create_time", "<=", strtotime($params["date_time"][1])];
+                }
             }else if (strstr($params["search_order"], "delivery_time")){
                 $where[] = ["delivery_time", ">=", strtotime($params["date_time"][0])];
                 $where[] = ["delivery_time", "<=", strtotime($params["date_time"][1])];
@@ -775,7 +780,7 @@ class OrdersService extends BaseService
             # 时间格式特殊处理
             if ($data["field"] == "delivery_time") {
                 $updateData[$data["field"]] = strtotime($data["value"].":00:00");
-                $updateData["sort_delivery_time"] = strtotime($data["value"].":00:00");
+//                $updateData["sort_delivery_time"] = strtotime($data["value"].":00:00");
             };
             # 如果更新工程师则更新发单人、发单时间和订单状态
             if ($data["field"] == "engineer_id") {
