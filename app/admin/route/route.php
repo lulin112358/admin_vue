@@ -349,6 +349,8 @@ Route::group('admin', function () {
     Route::put("task/status", Task::class."@updateStatus");
     Route::delete("task", Task::class."@delTask");
     Route::get("task/info", Task::class."@taskInfo");
+    Route::get("task/users", Task::class."@taskUsers");
+    Route::post("task/assign", Task::class."@assignTask");
 })->allowCrossDomain()->middleware([JwtMiddleware::class, IpFilter::class]);
 
 # 后台路由组   不需要jwt登录验证

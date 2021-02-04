@@ -5,7 +5,9 @@ namespace app\admin\controller;
 
 
 use app\admin\service\TaskService;
+use app\admin\service\TaskUserService;
 use app\Code;
+use app\validate\TaskUserValidate;
 use app\validate\TaskValidate;
 
 class Task extends Base
@@ -91,6 +93,7 @@ class Task extends Base
             $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
         try {
             $data = $service->findBy(["id" => $param["id"]]);
+            $data["process_time"] = date("Y-m-d H:i:s", $data["process_time"]);
             if (!empty($data["cycle_config"])) {
                 $data["cycle_config"] = json_decode($data["cycle_config"], true);
             }
@@ -117,5 +120,40 @@ class Task extends Base
         if ($res === false)
             $this->ajaxReturn(Code::ERROR, "更新失败");
         $this->ajaxReturn("更新成功");
+    }
+
+    /**
+     * 获取任务用户
+     * @param TaskUserService $service
+     */
+    public function taskUsers(TaskUserService $service, TaskUserValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("taskUser")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $data = $service->taskUsers($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
+
+    /**
+     * 分配任务
+     * @param TaskUserService $service
+     * @param TaskUserValidate $validate
+     */
+    public function assignTask(TaskUserService $service, TaskUserValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("assignTask")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $res = $service->assignTask($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        if (!$res)
+            $this->ajaxReturn(Code::ERROR, "分配失败");
+        $this->ajaxReturn("分配成功");
     }
 }

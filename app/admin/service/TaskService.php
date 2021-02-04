@@ -38,25 +38,25 @@ class TaskService extends BaseService
     private function processConfig($cycleType, $config) {
         switch ($cycleType) {
             case 1:
-                $ret = "每天,".$config["hours"]."点".$config["minutes"]."分执行";
+                $ret = "每天,".($config["hours"]??12)."点".($config["minutes"]??0)."分执行";
                 break;
             case 2:
-                $ret = "每".$config["day"]."天, 第".$config["hours"]."点".$config["minutes"]."分执行";
+                $ret = "每".($config["day"]??1)."天, 第".($config["hours"]??12)."点".($config["minutes"]??0)."分执行";
                 break;
             case 3:
-                $ret = "每小时, 第".$config["minutes"].'分钟执行';
+                $ret = "每小时, 第".($config["minutes"]??0).'分钟执行';
                 break;
             case 4:
-                $ret = "每".$config["hours"].'小时,第'.$config["minutes"].'分钟执行';
+                $ret = "每".($config["hours"]??12).'小时,第'.($config["minutes"]??0).'分钟执行';
                 break;
             case 5:
-                $ret = "每".$config["minutes"].'分钟执行';
+                $ret = "每".($config["minutes"]??0).'分钟执行';
                 break;
             case 6:
-                $ret = "每".$this->week[$config["week_day"]].', '.$config["hours"].'点'.$config["minutes"].'分执行';
+                $ret = "每".$this->week[($config["week_day"]??1)].', '.($config["hours"]??12).'点'.($config["minutes"]??0).'分执行';
                 break;
             default:
-                $ret = "每月, ".$config["month_day"].'日'.$config["hours"].'点'.$config["minutes"].'分执行';
+                $ret = "每月, ".($config["month_day"]??1).'日'.($config["hours"]??12).'点'.($config["minutes"]??0).'分执行';
                 break;
         }
         return $ret;
