@@ -156,4 +156,40 @@ class Task extends Base
             $this->ajaxReturn(Code::ERROR, "分配失败");
         $this->ajaxReturn("分配成功");
     }
+
+    /**
+     * 获取需要审核的列表
+     * @param TaskUserService $service
+     * @param TaskUserValidate $validate
+     */
+    public function needAudit(TaskUserService $service, TaskUserValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("taskUser")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $data = $service->needAudit($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
+
+    /**
+     * 审核通过
+     * @param TaskUserService $service
+     * @param TaskUserValidate $validate
+     */
+    public function auditTask(TaskUserService $service, TaskUserValidate $validate) {
+        $param = input("param.");
+        if (!$validate->scene("auditTask")->check($param))
+            $this->ajaxReturn(Code::PARAM_VALIDATE, $validate->getError());
+        try {
+            $res = $service->auditTask($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        if (!$res)
+            $this->ajaxReturn(Code::ERROR, "操作失败");
+        $this->ajaxReturn("操作成功");
+    }
 }

@@ -347,9 +347,11 @@ Route::group('admin', function () {
     Route::post("task", Task::class."@addTask");
     Route::put("task", Task::class."@updateTask");
     Route::put("task/status", Task::class."@updateStatus");
+    Route::put("task/audit", Task::class."@auditTask");
     Route::delete("task", Task::class."@delTask");
     Route::get("task/info", Task::class."@taskInfo");
     Route::get("task/users", Task::class."@taskUsers");
+    Route::get("task/audit", Task::class."@needAudit");
     Route::post("task/assign", Task::class."@assignTask");
 })->allowCrossDomain()->middleware([JwtMiddleware::class, IpFilter::class]);
 

@@ -37,6 +37,39 @@ class TaskUserService extends BaseService
     }
 
     /**
+     * 获取需要审核的列表
+     * @param $param
+     * @return array
+     */
+    public function needAudit($param) {
+        $where = ["tu.task_id" => $param["task_id"]];
+        $data = (new TaskUserMapper())->needAudit($where);
+        foreach ($data as $k => $v) {
+            $data[$k]["cycle_count"] = $v["cycle_count"] - 1;
+        }
+        return $data;
+    }
+
+    /**
+     * 审核通过
+     * @param $param
+     * @return mixed
+     */
+    public function auditTask($param) {
+        $type = (new TaskUserMapper())->getType(["tu.id" => $param["id"]]);
+        if ($type == 1) {
+            $data = [
+                "cycle_count" => 0,
+            ];
+        }else {
+            $data = [
+                "cycle_count" => 1,
+            ];
+        }
+        return $this->updateWhere(["id" => $param["id"]], $data);
+    }
+
+    /**
      * 分配任务
      * @param $param
      * @return bool
@@ -91,8 +124,10 @@ class TaskUserService extends BaseService
                     $flag = (new TaskHandle())->{$this->cycleType[$v["cycle_type"]]}($v);
                 }
             }
-            if ($flag === true)
+            if ($flag === true) {
                 return ["lock" => $flag, "content" => $v["task_content"], "title" => $v["task_name"]];
+                break;
+            }
         }
         return ["lock" => $flag];
     }
