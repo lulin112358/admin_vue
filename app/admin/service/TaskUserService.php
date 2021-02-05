@@ -45,7 +45,7 @@ class TaskUserService extends BaseService
         $where = ["tu.task_id" => $param["task_id"]];
         $data = (new TaskUserMapper())->needAudit($where);
         foreach ($data as $k => $v) {
-            $data[$k]["cycle_count"] = $v["cycle_count"] - 1;
+            $data[$k]["cycle_count"] = ($v["cycle_count"] - 1) < 0 ? 0 : ($v["cycle_count"] - 1);
         }
         return $data;
     }
