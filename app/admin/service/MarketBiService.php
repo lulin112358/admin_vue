@@ -100,13 +100,16 @@ class MarketBiService
         $final = array_combine(array_column($_finalPayment, "market_user_name"), array_column($_finalPayment, "market_user"));
         $refund = array_combine(array_column($_refund, "market_user_name"), array_column($_refund, "market_user"));
         $tail = array_merge($final, $refund, $deposit);
+        $tmpKeys = array_keys($tmp);
         foreach ($tail as $k => $v) {
-            if (!in_array($k, array_keys($tmp)) && !is_null($v)) {
+            if (!in_array($k, $tmpKeys) && !is_null($v)) {
+                $tmpKeys[] = $k;
+                $totalAmount = ($depositData[$k]??0) + ($finalPaymentData[$k]??0);
                 $grossProfit_ = $grossProfit[$k] - $checkFeeMap[$k] - $manuscriptFeeMap[$k] - $grossProfitMap[$k];
                 $item = [
                     "name" => $k,
                     "market_user_id" => $v,
-                    "total_amount" => $finalPaymentData[$k]??0,
+                    "total_amount" => $totalAmount,
                     "refund_amount" => $refundData[$k]??0,
                     "total_count" => 0,
                     "gross_profit" => floatval(round($grossProfit_, 2)),
@@ -219,12 +222,15 @@ class MarketBiService
             $retData[] = $item;
         }
         $tail = array_merge(array_keys($depositData), array_keys($finalPaymentData), array_keys($refundData));
+        $tmpKeys = array_keys($tmp);
         foreach ($tail as $k => $v) {
-            if (!in_array($v, array_keys($tmp))) {
+            if (!in_array($v, $tmpKeys)) {
+                $tmpKeys[] = $v;
+                $totalAmount = ($depositData[$v]??0) + ($finalPaymentData[$v]??0);
                 $grossProfit_ = $grossProfit[$v] - $checkFeeMap[$v] - $manuscriptFeeMap[$v] - $grossProfitMap[$v];
                 $item = [
                     "origin_name" => $v,
-                    "total_amount" => $finalPaymentData[$v]??0,
+                    "total_amount" => $totalAmount,
                     "total_count" => 0,
                     "refund_amount" => $refundData[$v]??0,
                     "gross_profit" => floatval(round($grossProfit_, 2)),
