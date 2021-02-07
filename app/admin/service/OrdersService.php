@@ -780,6 +780,9 @@ class OrdersService extends BaseService
             # 时间格式特殊处理
             if ($data["field"] == "delivery_time") {
                 $updateData[$data["field"]] = strtotime($data["value"].":00:00");
+                $info = $this->findBy(["id" => $data["order_id"]], "is_split");
+                if ($info["is_split"] == 0)
+                    $this->updateWhere(["main_order_id" => $data["main_order_id"]], ["sort_delivery_time" => strtotime($data["value"].":00:00")]);
 //                $updateData["sort_delivery_time"] = strtotime($data["value"].":00:00");
             };
             # 如果更新工程师则更新发单人、发单时间和订单状态

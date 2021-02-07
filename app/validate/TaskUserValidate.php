@@ -16,7 +16,7 @@ class TaskUserValidate extends Validate
 
     protected $scene = [
         "taskUser" => ["task_id"],
-        "assignTask" => ["task_id", "user_id"],
+        "assignTask" => ["task_id"],
         "auditTask" => ["id"]
     ];
 }
