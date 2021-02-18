@@ -111,7 +111,7 @@ class AttendanceService extends BaseService
                 "id" => $v[0]["id"],
                 "name" => $k,
                 "department" => $v[0]["department"],
-                "attendance_count" => $attendanceCount,
+                "attendance_count" => floatval(round($attendanceCount, 1)),
                 "late_count" => $lateCount,
                 "late_time" => $lateTime,
                 "late_time_text" => $lateTime.'分',

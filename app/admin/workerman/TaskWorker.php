@@ -64,7 +64,6 @@ class TaskWorker extends Server
                     if (in_array($v["user_id"], $userIdArr)) {
                         $this->users[$v["user_id"]]->send(json_encode(["lock" => true, "content" => $v["task_content"], "title" => $v["task_name"]]));
                     }
-                    (new TaskUserMapper())->updateWhere(["id" => $v["id"]], ["cycle_count" => Db::raw("cycle_count + 1")]);
                 }
             }
         });

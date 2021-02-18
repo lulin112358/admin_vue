@@ -6,6 +6,7 @@ namespace app\admin\workerman;
 
 use app\mapper\TaskUserMapper;
 use Carbon\Carbon;
+use think\facade\Db;
 
 class TaskHandle
 {
@@ -19,6 +20,7 @@ class TaskHandle
             return true;
         $config = json_decode($data["cycle_config"], true);
         if ((int)date("H", time()) == (int)$config["hours"] && (int)date("i", time()) == (int)$config["minutes"]) {
+            (new TaskUserMapper())->updateWhere(["id" => $data["id"]], ["cycle_count" => Db::raw("cycle_count + 1")]);
             return true;
         }
         return false;
@@ -40,7 +42,7 @@ class TaskHandle
         $config = json_decode($data["cycle_config"], true);
         if ($carbon->diffInDays($lastTime) >= $config["day"]) {
             if ((int)date("H", time()) == (int)$config["hours"] && (int)date("i", time()) == (int)$config["minutes"]) {
-                (new TaskUserMapper())->updateWhere(["id" => $data["id"]], ["last_time" => time()]);
+                (new TaskUserMapper())->updateWhere(["id" => $data["id"]], ["last_time" => time(), "cycle_count" => Db::raw("cycle_count + 1")]);
                 return true;
             }
         }
@@ -58,6 +60,7 @@ class TaskHandle
             return true;
         $config = json_decode($data["cycle_config"], true);
         if ((int)date("i", time()) == (int)$config["minutes"]) {
+            (new TaskUserMapper())->updateWhere(["id" => $data["id"]], ["cycle_count" => Db::raw("cycle_count + 1")]);
             return true;
         }
         return false;
@@ -78,7 +81,7 @@ class TaskHandle
         $config = json_decode($data["cycle_config"], true);
         if ($carbon->diffInHours($lastTime) >= $config["hours"]) {
             if ((int)date("i", time()) == (int)$config["minutes"]) {
-                (new TaskUserMapper())->updateWhere(["id" => $data["id"]], ["last_time" => time()]);
+                (new TaskUserMapper())->updateWhere(["id" => $data["id"]], ["last_time" => time(), "cycle_count" => Db::raw("cycle_count + 1")]);
                 return true;
             }
         }
@@ -99,7 +102,7 @@ class TaskHandle
         $carbon = new Carbon();
         $config = json_decode($data["cycle_config"], true);
         if ($carbon->diffInMinutes($lastTime) >= $config["minutes"]) {
-            (new TaskUserMapper())->updateWhere(["id" => $data["id"]], ["last_time" => time()]);
+            (new TaskUserMapper())->updateWhere(["id" => $data["id"]], ["last_time" => time(), "cycle_count" => Db::raw("cycle_count + 1")]);
             return true;
         }
         return false;
@@ -123,6 +126,7 @@ class TaskHandle
         if ($weekDay == $config["week_day"] &&
             (int)date("H", time()) == (int)$config["hours"] &&
             (int)date("i", time()) == (int)$config["minutes"]) {
+            (new TaskUserMapper())->updateWhere(["id" => $data["id"]], ["cycle_count" => Db::raw("cycle_count + 1")]);
             return true;
         }
         return false;
@@ -141,6 +145,7 @@ class TaskHandle
         if ($monthDay == (int)$config["month_day"] &&
             (int)date("H", time()) == (int)$config["hours"] &&
             (int)date("m", time()) == (int)$config["minutes"]) {
+            (new TaskUserMapper())->updateWhere(["id" => $data["id"]], ["cycle_count" => Db::raw("cycle_count + 1")]);
             return true;
         }
         return false;
