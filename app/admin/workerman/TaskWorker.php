@@ -6,7 +6,6 @@ namespace app\admin\workerman;
 
 use app\admin\service\TaskUserService;
 use app\mapper\TaskUserMapper;
-use think\facade\Db;
 use think\worker\Server;
 use Workerman\Lib\Timer;
 
@@ -54,16 +53,22 @@ class TaskWorker extends Server
             foreach ($tasks as $k => $v) {
                 if ($v["type"] == 1) {
                     $flag = false;
-                    if ($v["cycle_count"] > 0) {
+                    if ($v["cycle_count"] > 2) {
                         $flag = date("Y-m-d H:i:00", time()) == date("Y-m-d H:i:00", $v["process_time"]);
                     }
                 }else {
+                    $tips = (new TaskHandle())->everyDayRemind($v);
                     $flag = (new TaskHandle())->{$this->cycleType[$v["cycle_type"]]}($v);
                 }
+                # 锁屏通知
                 if ($flag) {
                     if (in_array($v["user_id"], $userIdArr)) {
                         $this->users[$v["user_id"]]->send(json_encode(["lock" => true, "content" => $v["task_content"], "title" => $v["task_name"]]));
                     }
+                }
+                # 每日任务整点提醒
+                if ($tips && in_array($v["user_id"], $userIdArr)) {
+                    $this->users[$v["user_id"]]->send(json_encode(["tips" => true, "content" => $v["task_content"], "title" => $v["task_name"], "time" => date("Y-m-d H:i:s")]));
                 }
             }
         });

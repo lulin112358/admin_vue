@@ -647,6 +647,7 @@ class OrdersService extends BaseService
                 "order_sn" => $orderSn,
                 "require" => $data["require"]??'',
                 "note" => $data["note"]??"",
+                "engineer_id" => $data["engineer_id"]??0,
                 "delivery_time" => strtotime($data["delivery_time"].":00:00"),
                 "sort_delivery_time" => strtotime($data["delivery_time"].":00:00"),
                 "create_time" => time(),

@@ -114,11 +114,11 @@ class TaskUserService extends BaseService
         foreach ($data as $k => $v) {
             if ($v["type"] == 1) {
                 $flag = false;
-                if ($v["cycle_count"] > 0) {
+                if ($v["cycle_count"] > 2) {
                     $flag = date("Y-m-d H:i:00", time()) == date("Y-m-d H:i:00", $v["process_time"]);
                 }
             }else {
-                if ($v["cycle_count"] > 1) {
+                if ($v["cycle_count"] > 2) {
                     $flag = true;
                 }else {
                     $flag = (new TaskHandle())->{$this->cycleType[$v["cycle_type"]]}($v);
