@@ -642,12 +642,16 @@ class OrdersService extends BaseService
             if (!$mainRes)
                 throw new \Exception("订单信息添加失败");
             # 分订单信息添加
+            $flag = (isset($data["engineer_id"]) && $data["engineer_id"] != 0);
             $orderData = [
                 "main_order_id" => $mainRes->id,
                 "order_sn" => $orderSn,
                 "require" => $data["require"]??'',
                 "note" => $data["note"]??"",
                 "engineer_id" => $data["engineer_id"]??0,
+                "status" => $flag ? 2 : 1,
+                "biller" => $flag ? request()->uid : 0,
+                "bill_time" => $flag ? time() : 0,
                 "delivery_time" => strtotime($data["delivery_time"].":00:00"),
                 "sort_delivery_time" => strtotime($data["delivery_time"].":00:00"),
                 "create_time" => time(),
