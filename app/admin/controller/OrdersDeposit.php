@@ -63,4 +63,17 @@ class OrdersDeposit extends Base
             $this->ajaxReturn(Code::ERROR, "修改失败");
         $this->ajaxReturn("修改成功");
     }
+
+    /**
+     * 获取用户今日对账信息
+     * @param OrdersDepositService $service
+     */
+    public function userPaymentLogByDay(OrdersDepositService $service) {
+        try {
+            $data = $service->userPaymentLogByDay();
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
 }

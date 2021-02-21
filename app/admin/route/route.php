@@ -271,6 +271,7 @@ Route::group('admin', function () {
     Route::put("vacation/cancel", Vacation::class."@cancelVacation");
     Route::post("attendance", Vacation::class."@putVacation");
     Route::get("vacations", Vacation::class."@vacations");
+    Route::get("bill_check", OrdersDeposit::class."@userPaymentLogByDay");
 
     # IP
     Route::get("ip_white", IpWhite::class."@ipWhites");

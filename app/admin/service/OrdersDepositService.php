@@ -4,6 +4,7 @@
 namespace app\admin\service;
 
 
+use app\mapper\OrdersAccountMapper;
 use app\mapper\OrdersDepositMapper;
 use app\mapper\OrdersFinalPaymentMapper;
 use think\facade\Db;
@@ -96,5 +97,43 @@ class OrdersDepositService extends BaseService
         }else{
             return (new OrdersFinalPaymentMapper())->updateWhere(["id" => $param["id"]], ["amount_account_id" => $param["amount_account_id"], "update_time" => time()]);
         }
+    }
+
+    /**
+     * 获取用户今日对账信息
+     * @param $param
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function userPaymentLogByDay() {
+        $where = [
+            ["od.payee_id", "=", request()->uid],
+            ["od.create_time", ">=", strtotime(date("Y-m-d", time()))],
+            ["od.create_time", "<=", time()]
+        ];
+        $data = [];
+        # 获取接单账号信息
+        $account = (new OrdersAccountMapper())->ordersAccount();
+        foreach ($account as $k => $v) {
+            $account[$k]["account_info"] = $v["nickname"]."/".$v["account"];
+        }
+        $accountMap = array_combine(array_column($account, "id"), array_column($account, "account_info"));
+        $deposit = (new OrdersDepositMapper())->depositRecWithOrderSn($where);
+        $finalPayment = (new OrdersFinalPaymentMapper())->finalPaymentRecWithOrderSn($where);
+        foreach ($deposit as $k => $v) {
+            $v["create_time"] = date("Y-m-d H:i:s", $v["create_time"]);
+            $v["type"] = "定金";
+            $v["order_account"] = $accountMap[$v["order_account_id"]];
+            $data[] = $v;
+        }
+        foreach ($finalPayment as $k => $v) {
+            $v["create_time"] = date("Y-m-d H:i:s", $v["create_time"]);
+            $v["type"] = "尾款";
+            $v["order_account"] = $accountMap[$v["order_account_id"]];
+            $data[] = $v;
+        }
+        return $data;
     }
 }

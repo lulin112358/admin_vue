@@ -64,7 +64,7 @@ class OrdersDepositMapper extends BaseMapper
             ->join(["user" => "u1"], "u1.id=om.customer_id", "left")
             ->where($where)
             ->where(["or.is_split" => 0])
-            ->field("aa.account, od.change_deposit as change_amount, or.order_sn, od.create_time, u.name, u1.name as customer_name, or.require, or.create_time as order_create_time, or.status")
+            ->field("o.origin_name, om.customer_contact, om.order_account_id, aa.account, od.change_deposit as change_amount, or.order_sn, od.create_time, u.name, u1.name as customer_name, or.require, or.create_time as order_create_time, or.status")
             ->select()->toArray();
     }
 }

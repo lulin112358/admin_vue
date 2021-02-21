@@ -339,7 +339,7 @@ class AttendanceService extends BaseService
         # 兼职
         $userId1 = (new UserMapper())->columnBy(["status" => 1, "work_nature" => [0, 2]], "id");
         # 查询提前请假记录
-        $vacation = (new VacationMapper())->selectBy(["status" => 0]);
+        $vacation = (new VacationMapper())->selectBy(["status" => 0, "vacation_time" => strtotime(date("Y-m-d 09:00:00", time()))]);
         # 添加考勤记录
         $data = [];
         foreach($userId as $k => $v) {
@@ -350,7 +350,7 @@ class AttendanceService extends BaseService
                 "create_time" => strtotime(date("Y-m-d 09:00:00", time()))
             ];
             foreach ($vacation as $key => $val) {
-                if ($v == $val["user_id"] && $val["vacation_time"] == strtotime(date("Y-m-d 09:00:00", time()))) {
+                if ($v == $val["user_id"]) {
                     $item["type"] = $val["vacation_type"];
                     if ($val["vacation_type"] == 7) {
                         $item["result"] = 0.5;
