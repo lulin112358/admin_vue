@@ -188,7 +188,7 @@ class Task extends Base
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }
-        if (!$res)
+        if ($res === false)
             $this->ajaxReturn(Code::ERROR, "操作失败");
         $this->ajaxReturn("操作成功");
     }
