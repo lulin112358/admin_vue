@@ -92,7 +92,7 @@ class SettlementLogService extends BaseService
                 "create_time" => time()
             ];
             $settlementFee = $settlementFee - ($v["manuscript_fee"] - $v["settlemented"] - $v["deduction"]);
-            if ($settlementFee <= 0) {
+            if ($settlementFee < 0) {
                 $insertData[$k]["settlement_fee"] = $settlementFee + ($v["manuscript_fee"] - $v["settlemented"] - $v["deduction"]);
                 $updateData[$k]["settlemented"] = $v["settlemented"] + $settlementFee + ($v["manuscript_fee"] - $v["settlemented"] - $v["deduction"]);
                 $updateData[$k]["is_clear"] = 0;
