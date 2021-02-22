@@ -317,4 +317,29 @@ class Orders extends Base
         }
         $this->ajaxReturn($data);
     }
+
+    /**
+     * 待审核订单
+     * @param OrdersService $service
+     */
+    public function reviewOrders(OrdersService $service) {
+        try {
+            $data = $service->reviewOrders();
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
+
+    public function canProvide(OrdersService $service) {
+        $param = input("param.");
+        try {
+            $res = $service->canProvide($param);
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        if ($res === false)
+            $this->ajaxReturn(Code::ERROR, "操作失败");
+        $this->ajaxReturn("操作成功");
+    }
 }

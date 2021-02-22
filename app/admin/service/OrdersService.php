@@ -809,9 +809,9 @@ class OrdersService extends BaseService
                 $totalAmount = (new OrdersMainMapper())->findBy(["id" => $data["main_order_id"]], "total_amount")["total_amount"];
                 $deposit = (new OrdersDepositMapper())->findBy(["main_order_id" => $data["main_order_id"], "status" => 1], "deposit")["deposit"];
                 $finalPayment = (new OrdersFinalPaymentMapper())->findBy(["main_order_id" => $data["main_order_id"], "status" => 1], "final_payment")["final_payment"];
-                # 查询是否未中介来源 中介来源允许没收齐尾款交稿
+                # 查询是否未中介来源 中介来源允许没收齐尾款交稿 写作可以不收齐尾款交稿
                 $isIntermediary = (new OrdersMainMapper())->isIntermediary(["om.id" => $data["main_order_id"]]);
-                if (!$isIntermediary) {
+                if (!$isIntermediary["is_intermediary"] && $isIntermediary["category_id"] != 9) {
                     if ($totalAmount != ($deposit + $finalPayment))
                         return "尾款没有收齐 不允许交稿";
                 }
@@ -1288,6 +1288,41 @@ class OrdersService extends BaseService
             $school_ids_arr[] = $school_ids[$v];
         }
         return (new SchoolMapper())->selectBy(["id" => $school_ids_arr], "id, name");
+    }
+
+    /**
+     * 待审核订单
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function reviewOrders() {
+        # 待审核订单
+        $data = (new OrdersMainMapper())->reviewOrders();
+        # 用户
+        $users = (new UserMapper())->all();
+        $usersMap = array_combine(array_column($users, "id"), array_column($users, "name"));
+        # 编辑
+        $engineer = (new EngineerMapper())->all("id, qq_nickname");
+        $engineerMap = array_combine(array_column($engineer, "id"), array_column($engineer, "qq_nickname"));
+        $engineerMap[0] = "未安排";
+        foreach ($data as $k => $v) {
+            $data[$k]["manuscript_fee"] = floatval($v["manuscript_fee"]);
+            $data[$k]["can_provide"] = floatval($v["can_provide"]);
+            $data[$k]["customer_name"] = $usersMap[$v["customer_id"]];
+            $data[$k]["engineer_name"] = $engineerMap[$v["engineer_id"]];
+            $data[$k]["delivery_time"] = date("Y-m-d H:i:s", $v["delivery_time"]);
+            $data[$k]["actual_delivery_time"] = $v["actual_delivery_time"] == 0 ? "未交稿" : date("Y-m-d H:i:s", $v["actual_delivery_time"]);
+            $data[$k]["is_check"] = $v["is_check"] == 0 ? "未核对" : "已核对";
+        }
+        return $data;
+    }
+
+    public function canProvide($param) {
+        $canProvide = (new OrdersMapper())->findBy(["id" => $param["id"]], "can_provide");
+        $canProvide = $canProvide["can_provide"] + $param["fee"];
+        return (new OrdersMapper())->updateWhere(["id" => $param["id"]], ["can_provide" => $canProvide]);
     }
 
 

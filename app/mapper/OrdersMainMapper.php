@@ -466,6 +466,24 @@ class OrdersMainMapper extends BaseMapper
         return Db::table("orders_main")->alias("om")
             ->join(["origin" => "o"], "o.id=om.origin_id")
             ->where($where)
-            ->value("o.is_intermediary");
+            ->field("o.is_intermediary, om.category_id")
+            ->find();
+    }
+
+    /**
+     * 获取待审核订单
+     * @return array
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\DbException
+     * @throws \think\db\exception\ModelNotFoundException
+     */
+    public function reviewOrders() {
+        return Db::table("orders")->alias("o")
+            ->join(["orders_main" => "om"], "om.id=o.main_order_id")
+            ->where(["om.customer_manager" => request()->uid])
+            ->where([["om.category_id", "not in", [7, 8, 10, 11, 28]]])
+            ->where([[Db::Raw("o.manuscript_fee"), "<>", Db::Raw("o.can_provide")]])
+            ->field("o.can_provide, o.id, o.engineer_id, om.customer_id, o.order_sn, o.require, o.note, o.delivery_time, o.actual_delivery_time, o.manuscript_fee, o.is_check, o.status")
+            ->select()->toArray();
     }
 }

@@ -198,8 +198,10 @@ Route::group('admin', function () {
     Route::get("confirm_info", Orders::class."@confirmInfo");
     Route::get("orders/auto_fill", Orders::class."@ordersAutoFill");
     Route::get("orders/inner_engineer", Orders::class."@innerEngineerOrders");
+    Route::get("orders/review_orders", Orders::class."@reviewOrders");
     Route::post("orders", Orders::class."@addOrder");
     Route::put("orders", Orders::class."@updateOrder");
+    Route::put("orders/can_provide", Orders::class."@canProvide");
     Route::delete("orders", Orders::class."@delOrder");
     Route::delete("orders/engineer", Orders::class."@delEngineer");
     Route::post("orders/split", Orders::class."@splitOrder");
