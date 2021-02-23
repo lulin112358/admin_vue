@@ -782,6 +782,13 @@ class OrdersService extends BaseService
                 "id" => $data["order_id"],
                 $data["field"] => $data["value"]
             ];
+            # 如果类型为降重ppt格式修改则可直接结算
+            if ($data["field"] == "manuscript_fee") {
+                $categoryId = (new OrdersMainMapper())->findBy(["id" => $data["main_order_id"]], "category_id")["category_id"];
+                if (in_array($categoryId, [7,8,10,11,28])) {
+                    $updateData["can_provide"] = $data["value"];
+                }
+            }
             # 时间格式特殊处理
             if ($data["field"] == "delivery_time") {
                 $updateData[$data["field"]] = strtotime($data["value"].":00:00");
@@ -1297,9 +1304,16 @@ class OrdersService extends BaseService
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function reviewOrders() {
+    public function reviewOrders($param) {
         # 待审核订单
-        $data = (new OrdersMainMapper())->reviewOrders();
+        $where = [];
+        if (isset($param["search_key"]) && !empty($param["search_key"]))
+            $where[] = ["o.order_sn", "like", "%{$param['search_key']}%"];
+        if (isset($param["delivery_time"]) && !empty($param["delivery_time"])) {
+            $where[] = ["o.delivery_time", ">=", strtotime($param["delivery_time"][0])];
+            $where[] = ["o.delivery_time", "<=", strtotime($param["delivery_time"][1])];
+        }
+        $data = (new OrdersMainMapper())->reviewOrders($where);
         # 用户
         $users = (new UserMapper())->all();
         $usersMap = array_combine(array_column($users, "id"), array_column($users, "name"));

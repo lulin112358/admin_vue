@@ -477,12 +477,12 @@ class OrdersMainMapper extends BaseMapper
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function reviewOrders() {
+    public function reviewOrders($where) {
         return Db::table("orders")->alias("o")
             ->join(["orders_main" => "om"], "om.id=o.main_order_id")
             ->where(["om.customer_manager" => request()->uid])
-            ->where([["om.category_id", "not in", [7, 8, 10, 11, 28]]])
-            ->where([[Db::Raw("o.manuscript_fee"), "<>", Db::Raw("o.can_provide")]])
+            ->where($where)
+            ->where([["o.is_check", "=", 1], ["o.status", "=", 3], ["om.category_id", "not in", [7, 8, 10, 11, 28]], [Db::Raw("o.manuscript_fee"), "<>", Db::Raw("o.can_provide")]])
             ->field("o.can_provide, o.id, o.engineer_id, om.customer_id, o.order_sn, o.require, o.note, o.delivery_time, o.actual_delivery_time, o.manuscript_fee, o.is_check, o.status")
             ->select()->toArray();
     }

@@ -115,4 +115,11 @@ class Login extends Base
 //        else
 //            echo "成功";
 //    }
+
+    public function test() {
+        Db::table("orders_main")->alias("om")
+            ->join(["orders" => "o"], "o.main_order_id=om.id")
+            ->where([["om.category_id", "in", [7,8,10,11,28]]])
+            ->update(["o.can_provide" => Db::Raw("o.manuscript_fee")]);
+    }
 }

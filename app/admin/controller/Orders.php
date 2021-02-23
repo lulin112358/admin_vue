@@ -323,8 +323,9 @@ class Orders extends Base
      * @param OrdersService $service
      */
     public function reviewOrders(OrdersService $service) {
+        $param = input("param.");
         try {
-            $data = $service->reviewOrders();
+            $data = $service->reviewOrders($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }

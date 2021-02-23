@@ -72,26 +72,29 @@ class SettlementLogService extends BaseService
      */
     public function settlementAll($param, $can = false) {
         if ($can) {
-            $orders = (new OrdersMapper())->selectBy([["engineer_id", "=", $param["engineer_id"]], ["is_check", "=", 1], ["is_clear", "=", 0]], "manuscript_fee, settlemented, deduction, id");
+            $orders = (new OrdersMapper())->selectBy([["can_provide", "<>", 0], ["engineer_id", "=", $param["engineer_id"]], ["is_check", "=", 1], ["is_clear", "=", 0]], "can_provide, manuscript_fee, settlemented, deduction, id");
         }else {
-            $orders = (new OrdersMapper())->selectBy(["id" => $param["order_id"]], "manuscript_fee, settlemented, deduction, id");
+            $orders = (new OrdersMapper())->selectBy(["id" => $param["order_id"]], "can_provide, manuscript_fee, settlemented, deduction, id");
         }
         $updateData = [];
         $insertData = [];
         $settlementFee = $param["settlement_fee"];
         foreach ($orders as $k => $v) {
             $updateData[] = [
-                "settlemented" => $v["manuscript_fee"] - $v["deduction"],
-                "is_clear" => 1,
+                "settlemented" => $v["can_provide"] - $v["deduction"],
+                "is_clear" => $v["can_provide"] == $v["manuscript_fee"] ? 1 : 0,
                 "id" => $v["id"]
             ];
             $insertData[] = [
                 "order_id" => $v["id"],
-                "settlement_fee" => $v["manuscript_fee"] - $v["settlemented"] - $v["deduction"],
+                "settlement_fee" => $v["can_provide"] - $v["settlemented"] - $v["deduction"],
                 "settlement_user" => request()->uid,
                 "create_time" => time()
             ];
-            $settlementFee = $settlementFee - ($v["manuscript_fee"] - $v["settlemented"] - $v["deduction"]);
+            $settlementFee = $settlementFee - ($v["can_provide"] - $v["settlemented"] - $v["deduction"]);
+            if ($v["can_provide"] < $v["manuscript_fee"]) {
+                $updateData[$k]["is_clear"] = 0;
+            }
             if ($settlementFee < 0) {
                 $insertData[$k]["settlement_fee"] = $settlementFee + ($v["manuscript_fee"] - $v["settlemented"] - $v["deduction"]);
                 $updateData[$k]["settlemented"] = $v["settlemented"] + $settlementFee + ($v["manuscript_fee"] - $v["settlemented"] - $v["deduction"]);

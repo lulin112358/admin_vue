@@ -96,7 +96,7 @@ class ManuscriptFeeService extends BaseService
                     $_day = $carbonObj->daysInMonth;
                 }
                 if (strtotime("{$_year}-{$_month}-{$_day}") <= strtotime(date("Y-m-{$settlementDay}", time()))){
-                    $recentSettlement += $val["manuscript_fee"];
+                    $recentSettlement += in_array($val["category_id"], [7,8,10,11,28]) ? $val["manuscript_fee"] : $val["can_provide"];
                 }
             }
             $recentSettlement = $recentSettlement - $settlemented - $deduction;
@@ -146,6 +146,7 @@ class ManuscriptFeeService extends BaseService
             $data[$k]["manuscript_fee"] = floatval($v["manuscript_fee"]);
             $data[$k]["settlemented"] = floatval($v["settlemented"]);
             $data[$k]["deduction"] = floatval($v["deduction"]);
+            $data[$k]["can_provide"] = in_array($v["category_id"], [7,8,10,11,28]) ? floatval($v["manuscript_fee"]) : floatval($v["can_provide"]);
             # 计算预计结算时间
             $time = ($v["delivery_time"] > $v["actual_delivery_time"]) ? $v["actual_delivery_time"] : $v["delivery_time"];
             $time = Carbon::parse(date("Y-m-d H:i:s", $time));
@@ -167,14 +168,11 @@ class ManuscriptFeeService extends BaseService
             # 结算状态
             if ($v["status"] == 5) {
                 $settlementStatus = "不合格已退款不结算";
-            }
-            if ($v["settlemented"] == 0) {
+            }else if ($v["settlemented"] == 0) {
                 $settlementStatus = "未结算";
-            }
-            if ($data[$k]["remain_fee"] == 0) {
+            }else if ($data[$k]["remain_fee"] == 0) {
                 $settlementStatus = "已结算";
-            }
-            if ($v["settlemented"] != 0 && $data[$k]["remain_fee"] != 0) {
+            }else if ($v["settlemented"] != 0 && $data[$k]["remain_fee"] != 0) {
                 $settlementStatus = "部分结算";
             }
             $data[$k]["settlement_status"] = $settlementStatus;
