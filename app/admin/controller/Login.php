@@ -117,9 +117,11 @@ class Login extends Base
 //    }
 
     public function test() {
-        Db::table("orders_main")->alias("om")
-            ->join(["orders" => "o"], "o.main_order_id=om.id")
-            ->where([["om.category_id", "in", [7,8,10,11,28]]])
-            ->update(["o.can_provide" => Db::Raw("o.manuscript_fee")]);
+//        Db::table("orders_main")->alias("om")
+//            ->join(["orders" => "o"], "o.main_order_id=om.id")
+//            ->where([["om.category_id", "in", [7,8,10,11,28]]])
+//            ->update(["o.can_provide" => Db::Raw("o.manuscript_fee")]);
+
+        Db::table("orders")->where([["settlemented", "<>", 0]])->update(["can_provide" => Db::Raw("settlemented")]);
     }
 }

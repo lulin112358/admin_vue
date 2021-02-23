@@ -66,7 +66,7 @@ class OrdersMapper extends BaseMapper
                     ->whereOr("o.manuscript_fee", "=", 0);
             })
 //            ->where([["o.manuscript_fee", "<>", Db::raw("o.settlemented")]])
-            ->field("o.require, o.id, o.order_sn, o.status, o.delivery_time, o.actual_delivery_time, o.manuscript_fee, o.settlemented, o.deduction, c.cate_name, o.is_check")
+            ->field("o.can_provide, om.category_id, o.require, o.id, o.order_sn, o.status, o.delivery_time, o.actual_delivery_time, o.manuscript_fee, o.settlemented, o.deduction, c.cate_name, o.is_check")
             ->select()->toArray();
     }
 

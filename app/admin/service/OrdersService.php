@@ -1318,14 +1318,16 @@ class OrdersService extends BaseService
         $users = (new UserMapper())->all();
         $usersMap = array_combine(array_column($users, "id"), array_column($users, "name"));
         # 编辑
-        $engineer = (new EngineerMapper())->all("id, qq_nickname");
+        $engineer = (new EngineerMapper())->all("id, qq_nickname, contact_qq");
         $engineerMap = array_combine(array_column($engineer, "id"), array_column($engineer, "qq_nickname"));
         $engineerMap[0] = "未安排";
+        $engineerQQMap = array_combine(array_column($engineer, "id"), array_column($engineer, "contact_qq"));
+        $engineerQQMap[0] = "未安排";
         foreach ($data as $k => $v) {
             $data[$k]["manuscript_fee"] = floatval($v["manuscript_fee"]);
             $data[$k]["can_provide"] = floatval($v["can_provide"]);
             $data[$k]["customer_name"] = $usersMap[$v["customer_id"]];
-            $data[$k]["engineer_name"] = $engineerMap[$v["engineer_id"]];
+            $data[$k]["engineer_name"] = $engineerMap[$v["engineer_id"]].' / '.$engineerQQMap[$v["engineer_id"]];
             $data[$k]["delivery_time"] = date("Y-m-d H:i:s", $v["delivery_time"]);
             $data[$k]["actual_delivery_time"] = $v["actual_delivery_time"] == 0 ? "未交稿" : date("Y-m-d H:i:s", $v["actual_delivery_time"]);
             $data[$k]["is_check"] = $v["is_check"] == 0 ? "未核对" : "已核对";

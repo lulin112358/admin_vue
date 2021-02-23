@@ -482,7 +482,7 @@ class OrdersMainMapper extends BaseMapper
             ->join(["orders_main" => "om"], "om.id=o.main_order_id")
             ->where(["om.customer_manager" => request()->uid])
             ->where($where)
-            ->where([["o.is_check", "=", 1], ["o.status", "=", 3], ["om.category_id", "not in", [7, 8, 10, 11, 28]], [Db::Raw("o.manuscript_fee"), "<>", Db::Raw("o.can_provide")]])
+            ->where([["o.is_clear", "=", 0], ["o.is_check", "=", 1], ["o.status", "=", 3], ["om.category_id", "not in", [7, 8, 10, 11, 28]], [Db::Raw("o.manuscript_fee"), "<>", Db::Raw("o.can_provide")]])
             ->field("o.can_provide, o.id, o.engineer_id, om.customer_id, o.order_sn, o.require, o.note, o.delivery_time, o.actual_delivery_time, o.manuscript_fee, o.is_check, o.status")
             ->select()->toArray();
     }
