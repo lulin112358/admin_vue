@@ -110,7 +110,7 @@ class OrdersDepositService extends BaseService
     public function userPaymentLogByDay() {
         $where = [
             ["od.payee_id", "=", request()->uid],
-            ["od.create_time", ">=", strtotime(date("Y-m-d", time()))],
+            ["od.is_check", "=", 0],
             ["od.create_time", "<=", time()]
         ];
         $data = [];

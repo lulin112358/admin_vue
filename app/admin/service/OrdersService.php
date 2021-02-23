@@ -731,6 +731,7 @@ class OrdersService extends BaseService
      * @return mixed
      */
     public function updateOrder($data) {
+        $updateMapper = null;
         # 修改尾款
         if ($data["field"] == "final_payment") {
             return (new OrdersFinalPaymentService())->updateFinalPayment($data);
@@ -758,20 +759,7 @@ class OrdersService extends BaseService
                 "user_id" => request()->uid,
                 "create_time" => time()
             ];
-            Db::startTrans();
-            try {
-                $res = (new OrderChangeLogMapper())->add($changeData);
-                if (!$res)
-                    throw new \Exception("操作失败");
-                $res1 = (new OrdersMainMapper())->updateBy($updateData);
-                if ($res1 === false)
-                    throw new \Exception("操作失败");
-                Db::commit();
-                return true;
-            }catch (\Exception $exception) {
-                Db::rollback();
-                return false;
-            }
+            $updateMapper = new OrdersMainMapper();
         }else {
             # 修改orders表信息
             # 根据字段映射关系修改字段名
@@ -849,6 +837,8 @@ class OrdersService extends BaseService
             # 订单改为未发出时 重置写手
             if ($data["field"] == "status" && $data["value"] == 1) {
                 $updateData["engineer_id"] = 0;
+                $updateData["biller"] = 0;
+                $updateData["bill_time"] = 0;
             }
             # 添加修改记录
             $changeData = [
@@ -859,20 +849,35 @@ class OrdersService extends BaseService
                 "user_id" => request()->uid,
                 "create_time" => time()
             ];
-            Db::startTrans();
-            try {
-                $res = (new OrderChangeLogMapper())->add($changeData);
-                if (!$res)
-                    throw new \Exception("操作失败");
-                $res1 = (new OrdersMapper())->updateBy($updateData);
-                if ($res1 === false)
-                    throw new \Exception("操作失败");
-                Db::commit();
-                return true;
-            }catch (\Exception $exception) {
-                Db::rollback();
-                return false;
-            }
+            $updateMapper = new OrdersMapper();
+//            Db::startTrans();
+//            try {
+//                $res = (new OrderChangeLogMapper())->add($changeData);
+//                if (!$res)
+//                    throw new \Exception("操作失败");
+//                $res1 = (new OrdersMapper())->updateBy($updateData);
+//                if ($res1 === false)
+//                    throw new \Exception("操作失败");
+//                Db::commit();
+//                return true;
+//            }catch (\Exception $exception) {
+//                Db::rollback();
+//                return false;
+//            }
+        }
+        Db::startTrans();
+        try {
+            $res = (new OrderChangeLogMapper())->add($changeData);
+            if (!$res)
+                throw new \Exception("操作失败");
+            $res1 = $updateMapper->updateBy($updateData);
+            if ($res1 === false)
+                throw new \Exception("操作失败");
+            Db::commit();
+            return true;
+        }catch (\Exception $exception) {
+            Db::rollback();
+            return false;
         }
     }
 
@@ -934,7 +939,7 @@ class OrdersService extends BaseService
         Db::startTrans();
         try {
             $info = $this->selectBy(["id" => $param["order_id"]], "id, main_order_id, status, order_sn");
-            $res = $this->updateWhere(["id" => $param["order_id"]], ["engineer_id" => 0, "status" => 1]);
+            $res = $this->updateWhere(["id" => $param["order_id"]], ["engineer_id" => 0, "status" => 1, "biller" => 0, "bill_time" => 0]);
             if ($res === false)
                 throw new \Exception("操作失败");
 

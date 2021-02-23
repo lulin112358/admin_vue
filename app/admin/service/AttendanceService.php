@@ -85,6 +85,8 @@ class AttendanceService extends BaseService
                 $where[] = ["u.department_code", "=", $param["department_code"]];
             }
         }
+        $days = Carbon::parse(date("Y-m-d H:i:s", $where[0][2]));
+        $days = $days->diffInDays(Carbon::parse(date("Y-m-d H:i:s", $where[1][2])));
         $data = (new AttendanceMapper())->attendances($where);
         $tmp = [];
         foreach ($data as $k => $v)
@@ -106,6 +108,7 @@ class AttendanceService extends BaseService
             $leaveCount = floatval($dataCollect->where("type", "=", 6)->count() / 2 + $leaveCount);
             # 意外请假
             $accidentCount = $dataCollect->where("type", "=", 5)->count();
+            $workTime = array_sum(array_column($v, "work_time"));
             $item = [
                 "user_id" => $v[0]["user_id"],
                 "id" => $v[0]["id"],
@@ -121,7 +124,7 @@ class AttendanceService extends BaseService
                 "check_out_timestamp" => $v[0]["check_out_time"],
                 "type" => $this->type[$v[0]["type"]],
                 "color" => $this->color[$v[0]["type"]],
-                "work_time" => array_sum(array_column($v, "work_time")),
+                "work_time" => $workTime,
                 "work_time_text" => array_sum(array_column($v, "work_time")).'时',
                 "leave_count" => $leaveCount,
                 "reward" => floatval(array_sum(array_column($v, "reward"))),
@@ -129,6 +132,8 @@ class AttendanceService extends BaseService
                 "attendance_rate" => (floatval(round($attendanceCount / count($v), 2)) * 100) . "%",
                 "accident_rate" => (floatval(round($accidentCount / count($v), 2)) * 100) . "%",
                 "accident" => $accidentCount,
+                "average" => floatval(round($workTime / $days, 1))."时",
+                "average_sort" => floatval(round($workTime / $days, 1)),
             ];
             $retData[] = $item;
         }
