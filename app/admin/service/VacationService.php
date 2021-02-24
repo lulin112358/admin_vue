@@ -64,6 +64,8 @@ class VacationService extends BaseService
         foreach ($data as $k => $v) {
             $data[$k]["vacation_time"] = date("Y-m-d", $v["vacation_time"]);
             $data[$k]["create_time"] = date("Y-m-d H:i:s", $v["create_time"]);
+            $data[$k]["vacation_time_sort"] = $v["vacation_time"];
+            $data[$k]["create_time_sort"] = $v["create_time"];
             $data[$k]["status"] = $v["status"]==0?"休班":"已取消休班";
             $data[$k]["show"] = $v["vacation_time"] > time() && $v["status"]==0;
         }

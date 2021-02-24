@@ -698,10 +698,12 @@ class OrdersService extends BaseService
                 throw new \Exception("添加失败!");
             Db::commit();
             # 构造剪贴板内容
+            $finalPayment = ($data["total_amount"]??0) - ($data["deposit_amount"]??0);
+            $finalPaymentText = $finalPayment == 0 ? '' : "({$finalPayment})";
             if ($data["account_id"] == $data["wechat_id"]) {
                 $returnData = [
                     "content" => "http://customer.erp2020.top/customer/order?oid=".base64_encode($subRes->id).
-                        "\r\n麻烦您核实并填写下表单内容，您的订单编号为：{$orderData['order_sn']}"
+                        "\r\n麻烦您核实并填写下表单内容，您的订单编号为：{$orderData['order_sn']}$finalPaymentText"
                 ];
             }else {
                 # 获取沉淀微信
@@ -712,7 +714,7 @@ class OrdersService extends BaseService
                 $returnData = [
                     "content" => "http://customer.erp2020.top/customer/order?oid=".base64_encode($subRes->id).
                         "\r\n麻烦您核实并填写下表单内容，您的订单编号为：{$orderData['order_sn']}，并添加我微信: {$wechat} 
-验证信息为: {$origin}-{$orderData['order_sn']}
+验证信息为: {$origin}-{$orderData['order_sn']}$finalPaymentText
 将文件及检测报告发给我微信。"
                 ];
             }
@@ -1106,10 +1108,14 @@ class OrdersService extends BaseService
     public function confirmInfo($param) {
         # 获取所需信息
         $info = (new OrdersMapper())->confirmInfo(["o.id" => $param["order_id"]]);
+        $deposit = (new OrdersDepositMapper())->findBy(["main_order_id" => $info["id"], "status" => 1], "deposit")["deposit"];
+        $finalPayment = (new OrdersFinalPaymentMapper())->findBy(["main_order_id" => $info["id"], "status" => 1], "final_payment")["final_payment"];
+        $finalPayment = ($info["total_amount"] - $deposit - $finalPayment);
+        $finalPaymentText = $finalPayment == 0 ? '' : "($finalPayment)";
         # 构造剪贴板内容
         if ($info["account_id"] == $info["wechat_id"]) {
             $text = "http://customer.erp2020.top/customer/order?oid=".base64_encode($param["order_id"]).
-                "\r\n麻烦您核实并填写下表单内容, 您的订单编号为: {$info['order_sn']}";
+                "\r\n麻烦您核实并填写下表单内容, 您的订单编号为: {$info['order_sn']}$finalPaymentText";
         }else {
             # 获取沉淀微信
             $wechatId = (new OrdersAccountMapper())->findBy(["id" => $info["wechat_id"]], "account_id")["account_id"];
@@ -1118,7 +1124,7 @@ class OrdersService extends BaseService
             $origin = (new OriginMapper())->findBy(["id" => $info["origin_id"]], "origin_name")["origin_name"];
             $text = "http://customer.erp2020.top/customer/order?oid=".base64_encode($param["order_id"]).
                 "\r\n麻烦您核实并填写下表单内容，您的订单编号为：{$info["order_sn"]}，并添加我微信: {$wechat}
-验证信息为: {$origin}-{$info['order_sn']}
+验证信息为: {$origin}-{$info['order_sn']}$finalPaymentText
 将文件及检测报告发给我微信。";
         }
         return $text;
