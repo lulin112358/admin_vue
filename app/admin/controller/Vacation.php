@@ -31,8 +31,9 @@ class Vacation extends Base
      * @param VacationService $service
      */
     public function vacations(VacationService $service) {
+        $param = input("param.");
         try {
-            $data = $service->vacations();
+            $data = $service->vacations($param);
         }catch (\Exception $exception) {
             $this->ajaxReturn(Code::ERROR, $exception->getMessage());
         }

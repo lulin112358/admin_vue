@@ -75,6 +75,7 @@ Route::group('admin', function () {
 
     # 用户路由
     Route::get('user', User::class.'@userList');
+    Route::get('user/on', User::class.'@getUsers');
     Route::get('user/extend', UserExtend::class.'@userExtendInfo');
     Route::get('user/user_manager', User::class.'@managerUser');
     Route::get('user/customer_user', User::class.'@customerUser');

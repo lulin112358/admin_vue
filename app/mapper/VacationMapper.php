@@ -41,11 +41,12 @@ class VacationMapper extends BaseMapper
      * 获取请假列表
      * @return mixed
      */
-    public function vacations() {
+    public function vacations($where) {
         return Db::table("vacation")->alias("v")
             ->join(["user" => "u"], "u.id=v.user_id")
-            ->where(["v.user_id" => request()->uid])
+            ->where($where)
             ->field("v.*, u.name")
+            ->order("v.vacation_time desc")
             ->order("v.create_time desc")
             ->select()->toArray();
     }

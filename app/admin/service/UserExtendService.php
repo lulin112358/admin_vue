@@ -58,6 +58,7 @@ class UserExtendService extends BaseService
         if ($exits) {
             $data = [
                 "age" => $param["age"],
+                "actual_age" => $param["actual_age"],
                 "sex" => $param["sex"],
                 "id_card" => $param["id_card"],
                 "entry_time" => strtotime($param["entry_time"]),
@@ -76,6 +77,7 @@ class UserExtendService extends BaseService
             $data = [
                 "user_id" => $param["user_id"],
                 "age" => $param["age"],
+                "actual_age" => $param["actual_age"],
                 "sex" => $param["sex"],
                 "id_card" => $param["id_card"],
                 "entry_time" => strtotime($param["entry_time"]),

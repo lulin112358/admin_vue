@@ -4,6 +4,7 @@
 namespace app\admin\service;
 
 
+use app\mapper\UserRoleMapper;
 use app\mapper\VacationMapper;
 
 class VacationService extends BaseService
@@ -43,8 +44,23 @@ class VacationService extends BaseService
      * 获取请假列表
      * @return mixed
      */
-    public function vacations() {
-        $data = (new VacationMapper())->vacations();
+    public function vacations($param) {
+        $where = [
+            ["v.vacation_time", ">=", strtotime(date("Y-m-1"))],
+            ["v.vacation_time", "<=", time()]
+        ];
+        $roles = (new UserRoleMapper())->columnBy(["user_id" => request()->uid], "role_id");
+        if (!in_array(1, $roles)) {
+            $where[] = ["v.user_id", "=", request()->uid];
+        }
+        if (isset($param["vacation_time"]) && !empty($param["vacation_time"])) {
+            $where[] = ["v.vacation_time", ">=", strtotime($param["vacation_time"][0])];
+            $where[] = ["v.vacation_time", "<=", strtotime($param["vacation_time"][1])];
+        }
+        if (isset($param["user_id"]) && !empty($param["user_id"])) {
+            $where[] = ["v.user_id", "=", $param["user_id"]];
+        }
+        $data = (new VacationMapper())->vacations($where);
         foreach ($data as $k => $v) {
             $data[$k]["vacation_time"] = date("Y-m-d", $v["vacation_time"]);
             $data[$k]["create_time"] = date("Y-m-d H:i:s", $v["create_time"]);

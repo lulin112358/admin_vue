@@ -313,4 +313,17 @@ class User extends Base
         }
         $this->ajaxReturn($data);
     }
+
+    /**
+     * 获取所有在职员工
+     * @param UserService $service
+     */
+    public function getUsers(UserService $service) {
+        try {
+            $data = $service->selectBy(["status" => 1], "id, name");
+        }catch (\Exception $exception) {
+            $this->ajaxReturn(Code::ERROR, $exception->getMessage());
+        }
+        $this->ajaxReturn($data);
+    }
 }
